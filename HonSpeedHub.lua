@@ -4,7 +4,7 @@ local MASTER_KEY  = "chenchen1116"
 local VALID_KEYS  = {
 	["chenchen1116"] = true,
 }
-print("[HON SPEED HUB] 载入中 · v5.4 · 若只看到这一行说明文件在中途中断")
+print("[HON SPEED HUB] 载入中 · v5.5 · 若只看到这一行说明文件在中途中断")
 local twait  = (type(task) == "table" and task.wait)  or wait  or function() end
 local tspawn = (type(task) == "table" and task.spawn) or spawn or function(f, ...) return f(...) end
 if type(twait) ~= "function" then twait = function() end end
@@ -205,7 +205,7 @@ label({ Text = "HON SPEED HUB", Font = Enum.Font.GothamBold, TextSize = 21,
 	TextColor3 = Color3.fromRGB(238, 243, 255),
 	Position = UDim2.new(0, 36, 0, 16), Size = UDim2.new(0, 200, 0, 24),
 	TextXAlignment = Enum.TextXAlignment.Left }, Header)
-label({ Text = "Universal Hub  ·  W / V / CF  ·  v5.4", Font = Enum.Font.Gotham, TextSize = 11,
+label({ Text = "Universal Hub  ·  W / V / CF  ·  v5.5", Font = Enum.Font.Gotham, TextSize = 11,
 	TextColor3 = Color3.fromRGB(140, 149, 172),
 	Position = UDim2.new(0, 36, 0, 42), Size = UDim2.new(0, 240, 0, 16),
 	TextXAlignment = Enum.TextXAlignment.Left }, Header)
@@ -247,8 +247,8 @@ do
 		local b = new("TextButton", { Text = n, Font = Enum.Font.GothamBold, TextSize = 13,
 			TextColor3 = Color3.fromRGB(140, 149, 172), BackgroundTransparency = 1,
 			BorderSizePixel = 0, AutoButtonColor = false,
-			Size = UDim2.new(1, -24, 0, 34), Position = UDim2.new(0, 12, 0, 12 + (i - 1) * 38), Parent = TabBar })
-		local ul = new("Frame", { Size = UDim2.new(0, 3, 0, 20), Position = UDim2.new(0, 0, 0.5, -10),
+			Size = UDim2.new(1, -16, 0, 40), Position = UDim2.new(0, 8, 0, 10 + (i - 1) * 44), Parent = TabBar })
+		local ul = new("Frame", { Size = UDim2.new(0, 4, 0, 26), Position = UDim2.new(0, 0, 0.5, -13),
 			BackgroundColor3 = Modes[1].Accent, BackgroundTransparency = 1, BorderSizePixel = 0, Parent = b })
 		corner(ul, 1)
 		TabBtns[i] = { Btn = b, Underline = ul }
@@ -263,6 +263,24 @@ do
 		bindClick(b, "标签" .. n, function() SetTab(i) end)
 	end
 end
+-- 手机端触摸兜底：直接按坐标判断点了侧栏的第几个
+-- 这样即使按钮事件因为任何原因没进来，也一定切得动
+TabBar.InputBegan:Connect(function(i)
+	if i.UserInputType ~= Enum.UserInputType.Touch and i.UserInputType ~= Enum.UserInputType.MouseButton1 then return end
+	local rel = i.Position - TabBar.AbsolutePosition
+	if rel.X < 0 or rel.X > TabBar.AbsoluteSize.X then return end
+	local idx = math.floor((rel.Y - 10) / 44) + 1
+	if idx >= 1 and idx <= 8 then SetTab(idx) end
+end)
+-- 引擎卡片：同样按坐标兜底
+CardHolder.InputBegan:Connect(function(i)
+	if i.UserInputType ~= Enum.UserInputType.Touch and i.UserInputType ~= Enum.UserInputType.MouseButton1 then return end
+	local rel = i.Position - CardHolder.AbsolutePosition
+	if rel.X < 0 or rel.X > CardHolder.AbsoluteSize.X then return end
+	local idx = math.floor(rel.Y / 60) + 1
+	if idx >= 1 and idx <= 3 then SetMode(idx) end
+end)
+
 local Pages = new("ScrollingFrame", { Name = "Content", Size = UDim2.new(0, 464, 0, 336), Position = UDim2.new(0, 180, 0, 84),
 	BackgroundTransparency = 1, BorderSizePixel = 0, ScrollBarThickness = 4,
 	ScrollBarImageTransparency = 0.6, ScrollBarImageColor3 = Modes[1].Accent,
@@ -1790,6 +1808,7 @@ function SetTab(i)
 	CurTab = i
 	print("[HON] 切换到第 " .. tostring(i) .. " 页")
 	if notify then pcall(function() notify("第 " .. tostring(i) .. " 页") end) end
+	if Status then pcall(function() Status.Text = "当前第 " .. tostring(i) .. " 页 · 点左侧栏切页" end) end
 	-- 先切页面（这一步绝不能失败，否则所有页面会同时显示、叠在一起）
 	PageEng.Visible, PageAssist.Visible, PageEsp.Visible, PageTouch.Visible, PageTool.Visible, PageFun.Visible, PageMore.Visible, PageUtil.Visible =
 		(i == 1), (i == 2), (i == 3), (i == 4), (i == 5), (i == 6), (i == 7), (i == 8)
@@ -1815,6 +1834,7 @@ function SetMode(i)
 	State.ModeIndex = i
 	print("[HON] 切换到引擎 " .. tostring(i) .. " " .. tostring(Modes[i] and Modes[i].Name))
 	if notify then pcall(function() notify("引擎：" .. tostring(Modes[i] and Modes[i].Name)) end) end
+	if Status then pcall(function() Status.Text = "当前引擎：" .. tostring(Modes[i] and Modes[i].Name) end) end
 	local m = Modes[i]
 	if State.SpeedLocked then
 		SpeedSlider.SetRange(m.Min, math.max(m.Max, State.Speed))
@@ -2897,4 +2917,4 @@ TweenService:Create(Main, TweenInfo.new(0.45, Enum.EasingStyle.Back, Enum.Easing
 	Size = UDim2.new(0, PANEL_W, 0, PANEL_H), BackgroundTransparency = 0.05 }):Play()
 TweenService:Create(Main, TweenInfo.new(0.45, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
 	Position = UDim2.new(0.5, -PANEL_W / 2, 0.5, -PANEL_H / 2) }):Play()
-print("[HON SPEED HUB] v5.4 已加载 · 完整文件约 2901 行 · 若你的脚本远大于此行数说明粘贴重复了")
+print("[HON SPEED HUB] v5.5 已加载 · 完整文件约 2921 行 · 若你的脚本远大于此行数说明粘贴重复了")
