@@ -112,11 +112,14 @@ function bindClick(btn, tag, fn)
 		local ok, err = pcall(fn)
 		if not ok then warn("[HON] 点击[" .. tostring(tag) .. "]出错: " .. tostring(err)) end
 	end
-	btn.MouseButton1Click:Connect(fire)
-	btn.InputBegan:Connect(function(i)
-		if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then fire() end
+	pcall(function() btn.MouseButton1Click:Connect(fire) end)
+	pcall(function() btn.Activated:Connect(fire) end)
+	pcall(function() btn.TouchTap:Connect(fire) end)
+	pcall(function()
+		btn.InputBegan:Connect(function(i)
+			if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then fire() end
+		end)
 	end)
-	btn.TouchTap:Connect(fire)
 end
 
 local function Mode() return Modes[State.ModeIndex] end
@@ -1270,9 +1273,9 @@ corner(StatusFrame, 12)
 Status = label({ Text = "就绪", Font = Enum.Font.Gotham, TextSize = 11, TextColor3 = Color3.fromRGB(150, 159, 182),
 	Position = UDim2.new(0, 12, 0, 0), Size = UDim2.new(1, -24, 1, 0),
 	TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Center, RichText = true }, StatusFrame)
-label({ Text = "M 切引擎 · F2 开关\nL 锁面板 · E/Q 飞行\nRightCtrl 显隐",
+label({ Text = "M 切引擎 · F2 开关\nL 锁面板 · E/Q 飞行\n, . 切页 · RightCtrl 显隐",
 	Font = Enum.Font.Gotham, TextSize = 9, TextColor3 = Color3.fromRGB(105, 113, 134),
-	Position = UDim2.new(0, 0, 1, -46), Size = UDim2.new(0, 168, 0, 40),
+	Position = UDim2.new(0, 0, 1, -58), Size = UDim2.new(0, 168, 0, 52),
 	TextXAlignment = Enum.TextXAlignment.Center, TextWrapped = true }, Main)
 HudFrame = new("Frame", { Size = UDim2.new(0, 172, 0, 40), Position = UDim2.new(0.5, -86, 1, -104),
 	BackgroundColor3 = Color3.fromRGB(13, 15, 23), BackgroundTransparency = 0.25,
@@ -1786,11 +1789,10 @@ end)
 function SetTab(i)
 	CurTab = i
 	print("[HON] 切换到第 " .. tostring(i) .. " 页")
+	if notify then pcall(function() notify("第 " .. tostring(i) .. " 页") end) end
 	-- 先切页面（这一步绝不能失败，否则所有页面会同时显示、叠在一起）
-	pcall(function()
-		PageEng.Visible, PageAssist.Visible, PageEsp.Visible, PageTouch.Visible, PageTool.Visible, PageFun.Visible, PageMore.Visible, PageUtil.Visible =
-			(i == 1), (i == 2), (i == 3), (i == 4), (i == 5), (i == 6), (i == 7), (i == 8)
-	end)
+	PageEng.Visible, PageAssist.Visible, PageEsp.Visible, PageTouch.Visible, PageTool.Visible, PageFun.Visible, PageMore.Visible, PageUtil.Visible =
+		(i == 1), (i == 2), (i == 3), (i == 4), (i == 5), (i == 6), (i == 7), (i == 8)
 	pcall(function()
 		Pages.CanvasSize = UDim2.new(0, 0, 0, PAGE_H[i] or 520)
 		Pages.CanvasPosition = Vector2.new(0, 0)
@@ -1812,6 +1814,7 @@ end
 function SetMode(i)
 	State.ModeIndex = i
 	print("[HON] 切换到引擎 " .. tostring(i) .. " " .. tostring(Modes[i] and Modes[i].Name))
+	if notify then pcall(function() notify("引擎：" .. tostring(Modes[i] and Modes[i].Name)) end) end
 	local m = Modes[i]
 	if State.SpeedLocked then
 		SpeedSlider.SetRange(m.Min, math.max(m.Max, State.Speed))
@@ -2641,6 +2644,10 @@ UserInputService.InputBegan:Connect(function(input, processed)
 		PowerToggle.Set(not State.Enabled)
 	elseif k == Enum.KeyCode.L then
 		applyPanelLock(not State.PanelLocked)
+	elseif k == Enum.KeyCode.Comma then
+		SetTab((CurTab - 2) % 8 + 1)
+	elseif k == Enum.KeyCode.Period then
+		SetTab((CurTab % 8) + 1)
 	elseif k == Enum.KeyCode.M then
 		SetMode((State.ModeIndex % #Modes) + 1)
 	end
@@ -2890,4 +2897,4 @@ TweenService:Create(Main, TweenInfo.new(0.45, Enum.EasingStyle.Back, Enum.Easing
 	Size = UDim2.new(0, PANEL_W, 0, PANEL_H), BackgroundTransparency = 0.05 }):Play()
 TweenService:Create(Main, TweenInfo.new(0.45, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
 	Position = UDim2.new(0.5, -PANEL_W / 2, 0.5, -PANEL_H / 2) }):Play()
-print("[HON SPEED HUB] v5.4 已加载 · 完整文件约 2894 行 · 若你的脚本远大于此行数说明粘贴重复了")
+print("[HON SPEED HUB] v5.4 已加载 · 完整文件约 2901 行 · 若你的脚本远大于此行数说明粘贴重复了")
