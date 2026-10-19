@@ -4,7 +4,7 @@ local MASTER_KEY  = "chenchen1116"
 local VALID_KEYS  = {
 	["chenchen1116"] = true,
 }
-print("[HON SPEED HUB] 载入中 · v5.6 · 若只看到这一行说明文件在中途中断")
+print("[HON SPEED HUB] 载入中 · v5.7 · 若只看到这一行说明文件在中途中断")
 local twait  = (type(task) == "table" and task.wait)  or wait  or function() end
 local tspawn = (type(task) == "table" and task.spawn) or spawn or function(f, ...) return f(...) end
 if type(twait) ~= "function" then twait = function() end end
@@ -205,7 +205,7 @@ label({ Text = "HON SPEED HUB", Font = Enum.Font.GothamBold, TextSize = 21,
 	TextColor3 = Color3.fromRGB(238, 243, 255),
 	Position = UDim2.new(0, 36, 0, 16), Size = UDim2.new(0, 200, 0, 24),
 	TextXAlignment = Enum.TextXAlignment.Left }, Header)
-label({ Text = "Universal Hub  ·  W / V / CF  ·  v5.6", Font = Enum.Font.Gotham, TextSize = 11,
+label({ Text = "Universal Hub  ·  W / V / CF  ·  v5.7", Font = Enum.Font.Gotham, TextSize = 11,
 	TextColor3 = Color3.fromRGB(140, 149, 172),
 	Position = UDim2.new(0, 36, 0, 42), Size = UDim2.new(0, 240, 0, 16),
 	TextXAlignment = Enum.TextXAlignment.Left }, Header)
@@ -263,19 +263,30 @@ do
 		bindClick(b, "标签" .. n, function() SetTab(i) end)
 	end
 end
-local Pages = new("ScrollingFrame", { Name = "Content", Size = UDim2.new(0, 464, 0, 336), Position = UDim2.new(0, 180, 0, 84),
-	BackgroundTransparency = 1, BorderSizePixel = 0, ScrollBarThickness = 4,
-	ScrollBarImageTransparency = 0.6, ScrollBarImageColor3 = Modes[1].Accent,
-	CanvasSize = UDim2.new(0, 0, 0, 520), AutomaticCanvasSize = Enum.AutomaticSize.None, Parent = Main })
+local PageHost = new("Frame", { Name = "Content", Size = UDim2.new(0, 464, 0, 336), Position = UDim2.new(0, 180, 0, 84),
+	BackgroundTransparency = 1, BorderSizePixel = 0, ClipsDescendants = true, Parent = Main })
 local PAGE_H = { 520, 380, 400, 680, 910, 410, 530, 720 }
-local PageEng = new("Frame", { Size = UDim2.new(1, 0, 0, PAGE_H[1]), BackgroundTransparency = 1, Visible = true, Parent = Pages })
-local PageAssist = new("Frame", { Size = UDim2.new(1, 0, 0, PAGE_H[2]), BackgroundTransparency = 1, Visible = false, Parent = Pages })
-local PageEsp = new("Frame", { Size = UDim2.new(1, 0, 0, PAGE_H[3]), BackgroundTransparency = 1, Visible = false, Parent = Pages })
-local PageTouch = new("Frame", { Size = UDim2.new(1, 0, 0, PAGE_H[4]), BackgroundTransparency = 1, Visible = false, Parent = Pages })
-local PageTool = new("Frame", { Size = UDim2.new(1, 0, 0, PAGE_H[5]), BackgroundTransparency = 1, Visible = false, Parent = Pages })
-local PageFun = new("Frame", { Size = UDim2.new(1, 0, 0, PAGE_H[6]), BackgroundTransparency = 1, Visible = false, Parent = Pages })
-local PageMore = new("Frame", { Size = UDim2.new(1, 0, 0, PAGE_H[7]), BackgroundTransparency = 1, Visible = false, Parent = Pages })
-local PageUtil = new("Frame", { Size = UDim2.new(1, 0, 0, PAGE_H[8]), BackgroundTransparency = 1, Visible = false, Parent = Pages })
+PageList = {}
+local function mkPage(i, visible)
+	return new("ScrollingFrame", { Name = "Page" .. tostring(i),
+		Size = UDim2.new(1, 0, 1, 0), Position = UDim2.new(0, 0, 0, 0),
+		BackgroundTransparency = 1, BorderSizePixel = 0, ScrollBarThickness = 4,
+		ScrollBarImageTransparency = 0.55, ScrollBarImageColor3 = Modes[1].Accent,
+		CanvasSize = UDim2.new(0, 0, 0, PAGE_H[i]),
+		AutomaticCanvasSize = Enum.AutomaticSize.Y,
+		ScrollingDirection = Enum.ScrollingDirection.Y,
+		ElasticBehavior = Enum.ElasticBehavior.WhenScrollable,
+		Visible = visible, Parent = PageHost })
+end
+local PageEng = mkPage(1, true)
+local PageAssist = mkPage(2, false)
+local PageEsp = mkPage(3, false)
+local PageTouch = mkPage(4, false)
+local PageTool = mkPage(5, false)
+local PageFun = mkPage(6, false)
+local PageMore = mkPage(7, false)
+local PageUtil = mkPage(8, false)
+PageList = { PageEng, PageAssist, PageEsp, PageTouch, PageTool, PageFun, PageMore, PageUtil }
 local function makeSlider(parent, title, y, min, max, default, suffix, onChange, lockable, onLockChange, editable)
 	local wrap = new("Frame", { Size = UDim2.new(1, 0, 0, 46), Position = UDim2.new(0, 0, 0, y), BackgroundTransparency = 1, Parent = parent })
 	label({ Text = title, Font = Enum.Font.GothamBold, TextSize = 12, TextColor3 = Color3.fromRGB(196, 204, 224),
@@ -1792,13 +1803,16 @@ function SetTab(i)
 	if notify then pcall(function() notify("第 " .. tostring(i) .. " 页") end) end
 	if Status then pcall(function() Status.Text = "当前第 " .. tostring(i) .. " 页 · 点左侧栏切页" end) end
 	-- 先切页面（这一步绝不能失败，否则所有页面会同时显示、叠在一起）
-	PageEng.Visible, PageAssist.Visible, PageEsp.Visible, PageTouch.Visible, PageTool.Visible, PageFun.Visible, PageMore.Visible, PageUtil.Visible =
-		(i == 1), (i == 2), (i == 3), (i == 4), (i == 5), (i == 6), (i == 7), (i == 8)
+	for j, pg in ipairs(PageList) do
+		if pg then pg.Visible = (j == i) end
+	end
 	pcall(function()
-		Pages.CanvasSize = UDim2.new(0, 0, 0, PAGE_H[i] or 520)
-		Pages.CanvasPosition = Vector2.new(0, 0)
+		local pg = PageList[i]
+		if pg then pg.CanvasPosition = Vector2.new(0, 0) end
 	end)
-	pcall(function() Pages.ScrollBarImageColor3 = Mode().Accent end)
+	pcall(function()
+		for _, pg in ipairs(PageList) do pg.ScrollBarImageColor3 = Mode().Accent end
+	end)
 	-- 再刷新侧栏高亮（这里出错也不影响切页）
 	pcall(function()
 		for j, t in ipairs(TabBtns) do
@@ -2918,4 +2932,4 @@ TweenService:Create(Main, TweenInfo.new(0.45, Enum.EasingStyle.Back, Enum.Easing
 	Size = UDim2.new(0, PANEL_W, 0, PANEL_H), BackgroundTransparency = 0.05 }):Play()
 TweenService:Create(Main, TweenInfo.new(0.45, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
 	Position = UDim2.new(0.5, -PANEL_W / 2, 0.5, -PANEL_H / 2) }):Play()
-print("[HON SPEED HUB] v5.6 已加载 · 完整文件约 2922 行 · 若你的脚本远大于此行数说明粘贴重复了")
+print("[HON SPEED HUB] v5.7 已加载 · 完整文件约 2936 行 · 若你的脚本远大于此行数说明粘贴重复了")
