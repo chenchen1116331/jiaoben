@@ -102,6 +102,23 @@ local State = {
 	AntiKB = false, AntiStun = false, Freecam = false,
 	SafePos = nil,
 }
+function bindClick(btn, tag, fn)
+	if not btn then return end
+	local last = 0
+	local function fire()
+		local now = tick()
+		if now - last < 0.28 then return end
+		last = now
+		local ok, err = pcall(fn)
+		if not ok then warn("[HON] 点击[" .. tostring(tag) .. "]出错: " .. tostring(err)) end
+	end
+	btn.MouseButton1Click:Connect(fire)
+	btn.InputBegan:Connect(function(i)
+		if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then fire() end
+	end)
+	btn.TouchTap:Connect(fire)
+end
+
 local function Mode() return Modes[State.ModeIndex] end
 local cur = 0
 local fps, fpsAcc, fpsFrames = 0, 0, 0
@@ -240,7 +257,7 @@ do
 				TweenService:Create(b, TWEEN_FAST, { BackgroundTransparency = 0.94 }):Play()
 			end
 		end)
-		b.MouseButton1Click:Connect(function() SetTab(i) end)
+		bindClick(b, "标签" .. n, function() SetTab(i) end)
 	end
 end
 local Pages = new("ScrollingFrame", { Name = "Content", Size = UDim2.new(0, 464, 0, 336), Position = UDim2.new(0, 180, 0, 84),
@@ -427,7 +444,7 @@ for i, m in ipairs(Modes) do
 	label({ Text = m.Tag, Font = Enum.Font.GothamBold, TextSize = 9, TextColor3 = m.Accent,
 		Position = UDim2.new(1, -86, 0.5, -8), Size = UDim2.new(0, 74, 0, 16), TextXAlignment = Enum.TextXAlignment.Right }, card)
 	Cards[i] = { Card = card, Stroke = stroke, Bar = bar }
-	card.MouseButton1Click:Connect(function() SetMode(i) end)
+	bindClick(card, "引擎" .. m.Id, function() SetMode(i) end)
 end
 local SpeedSlider  = makeSlider(PageEng, "速度 SPEED", 206, Modes[1].Min, Modes[1].Max, State.Speed, " sp",
 	function(v) State.Speed = v end, true, function(v) State.SpeedLocked = v end, true)
@@ -1768,12 +1785,16 @@ UiResetBtn.MouseButton1Click:Connect(function()
 end)
 function SetTab(i)
 	CurTab = i
+	print("[HON] 切换到第 " .. tostring(i) .. " 页")
 	-- 先切页面（这一步绝不能失败，否则所有页面会同时显示、叠在一起）
 	pcall(function()
 		PageEng.Visible, PageAssist.Visible, PageEsp.Visible, PageTouch.Visible, PageTool.Visible, PageFun.Visible, PageMore.Visible, PageUtil.Visible =
 			(i == 1), (i == 2), (i == 3), (i == 4), (i == 5), (i == 6), (i == 7), (i == 8)
 	end)
-	pcall(function() Pages.CanvasSize = UDim2.new(0, 0, 0, PAGE_H[i] or 520) end)
+	pcall(function()
+		Pages.CanvasSize = UDim2.new(0, 0, 0, PAGE_H[i] or 520)
+		Pages.CanvasPosition = Vector2.new(0, 0)
+	end)
 	pcall(function() Pages.ScrollBarImageColor3 = Mode().Accent end)
 	-- 再刷新侧栏高亮（这里出错也不影响切页）
 	pcall(function()
@@ -1790,6 +1811,7 @@ function SetTab(i)
 end
 function SetMode(i)
 	State.ModeIndex = i
+	print("[HON] 切换到引擎 " .. tostring(i) .. " " .. tostring(Modes[i] and Modes[i].Name))
 	local m = Modes[i]
 	if State.SpeedLocked then
 		SpeedSlider.SetRange(m.Min, math.max(m.Max, State.Speed))
@@ -2868,4 +2890,4 @@ TweenService:Create(Main, TweenInfo.new(0.45, Enum.EasingStyle.Back, Enum.Easing
 	Size = UDim2.new(0, PANEL_W, 0, PANEL_H), BackgroundTransparency = 0.05 }):Play()
 TweenService:Create(Main, TweenInfo.new(0.45, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
 	Position = UDim2.new(0.5, -PANEL_W / 2, 0.5, -PANEL_H / 2) }):Play()
-print("[HON SPEED HUB] v5.4 已加载 · 完整文件约 2872 行 · 若你的脚本远大于此行数说明粘贴重复了")
+print("[HON SPEED HUB] v5.4 已加载 · 完整文件约 2894 行 · 若你的脚本远大于此行数说明粘贴重复了")
