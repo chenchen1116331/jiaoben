@@ -4,7 +4,7 @@ local MASTER_KEY  = "chenchen1116"
 local VALID_KEYS  = {
 	["chenchen1116"] = true,
 }
-print("[HON SPEED HUB] 载入中 · v5.5 · 若只看到这一行说明文件在中途中断")
+print("[HON SPEED HUB] 载入中 · v5.6 · 若只看到这一行说明文件在中途中断")
 local twait  = (type(task) == "table" and task.wait)  or wait  or function() end
 local tspawn = (type(task) == "table" and task.spawn) or spawn or function(f, ...) return f(...) end
 if type(twait) ~= "function" then twait = function() end end
@@ -205,7 +205,7 @@ label({ Text = "HON SPEED HUB", Font = Enum.Font.GothamBold, TextSize = 21,
 	TextColor3 = Color3.fromRGB(238, 243, 255),
 	Position = UDim2.new(0, 36, 0, 16), Size = UDim2.new(0, 200, 0, 24),
 	TextXAlignment = Enum.TextXAlignment.Left }, Header)
-label({ Text = "Universal Hub  ·  W / V / CF  ·  v5.5", Font = Enum.Font.Gotham, TextSize = 11,
+label({ Text = "Universal Hub  ·  W / V / CF  ·  v5.6", Font = Enum.Font.Gotham, TextSize = 11,
 	TextColor3 = Color3.fromRGB(140, 149, 172),
 	Position = UDim2.new(0, 36, 0, 42), Size = UDim2.new(0, 240, 0, 16),
 	TextXAlignment = Enum.TextXAlignment.Left }, Header)
@@ -263,24 +263,6 @@ do
 		bindClick(b, "标签" .. n, function() SetTab(i) end)
 	end
 end
--- 手机端触摸兜底：直接按坐标判断点了侧栏的第几个
--- 这样即使按钮事件因为任何原因没进来，也一定切得动
-TabBar.InputBegan:Connect(function(i)
-	if i.UserInputType ~= Enum.UserInputType.Touch and i.UserInputType ~= Enum.UserInputType.MouseButton1 then return end
-	local rel = i.Position - TabBar.AbsolutePosition
-	if rel.X < 0 or rel.X > TabBar.AbsoluteSize.X then return end
-	local idx = math.floor((rel.Y - 10) / 44) + 1
-	if idx >= 1 and idx <= 8 then SetTab(idx) end
-end)
--- 引擎卡片：同样按坐标兜底
-CardHolder.InputBegan:Connect(function(i)
-	if i.UserInputType ~= Enum.UserInputType.Touch and i.UserInputType ~= Enum.UserInputType.MouseButton1 then return end
-	local rel = i.Position - CardHolder.AbsolutePosition
-	if rel.X < 0 or rel.X > CardHolder.AbsoluteSize.X then return end
-	local idx = math.floor(rel.Y / 60) + 1
-	if idx >= 1 and idx <= 3 then SetMode(idx) end
-end)
-
 local Pages = new("ScrollingFrame", { Name = "Content", Size = UDim2.new(0, 464, 0, 336), Position = UDim2.new(0, 180, 0, 84),
 	BackgroundTransparency = 1, BorderSizePixel = 0, ScrollBarThickness = 4,
 	ScrollBarImageTransparency = 0.6, ScrollBarImageColor3 = Modes[1].Accent,
@@ -2909,6 +2891,25 @@ step("面板锁", function() applyPanelLock(false) end)
 step("触屏可见", updateTouchVisibility)
 -- 最后再强制切一次，确保只有当前页可见
 SetTab(1)
+-- 手机端触摸兜底（放在这里是因为此刻所有界面对象都已创建完成）
+pcall(function()
+	TabBar.InputBegan:Connect(function(i)
+		if i.UserInputType ~= Enum.UserInputType.Touch and i.UserInputType ~= Enum.UserInputType.MouseButton1 then return end
+		local rel = i.Position - TabBar.AbsolutePosition
+		if rel.X < 0 or rel.X > TabBar.AbsoluteSize.X then return end
+		local idx = math.floor((rel.Y - 10) / 44) + 1
+		if idx >= 1 and idx <= 8 then SetTab(idx) end
+	end)
+end)
+pcall(function()
+	CardHolder.InputBegan:Connect(function(i)
+		if i.UserInputType ~= Enum.UserInputType.Touch and i.UserInputType ~= Enum.UserInputType.MouseButton1 then return end
+		local rel = i.Position - CardHolder.AbsolutePosition
+		if rel.X < 0 or rel.X > CardHolder.AbsoluteSize.X then return end
+		local idx = math.floor(rel.Y / 60) + 1
+		if idx >= 1 and idx <= 3 then SetMode(idx) end
+	end)
+end)
 FlyWin.Visible = false
 UpBtn.Visible, DownBtn.Visible = false, false
 Main.Size = UDim2.new(0, 300, 0, 560)
@@ -2917,4 +2918,4 @@ TweenService:Create(Main, TweenInfo.new(0.45, Enum.EasingStyle.Back, Enum.Easing
 	Size = UDim2.new(0, PANEL_W, 0, PANEL_H), BackgroundTransparency = 0.05 }):Play()
 TweenService:Create(Main, TweenInfo.new(0.45, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
 	Position = UDim2.new(0.5, -PANEL_W / 2, 0.5, -PANEL_H / 2) }):Play()
-print("[HON SPEED HUB] v5.5 已加载 · 完整文件约 2921 行 · 若你的脚本远大于此行数说明粘贴重复了")
+print("[HON SPEED HUB] v5.6 已加载 · 完整文件约 2922 行 · 若你的脚本远大于此行数说明粘贴重复了")
