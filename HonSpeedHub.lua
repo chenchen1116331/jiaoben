@@ -248,14 +248,14 @@ local Pages = new("ScrollingFrame", { Name = "Content", Size = UDim2.new(0, 464,
 	ScrollBarImageTransparency = 0.6, ScrollBarImageColor3 = Modes[1].Accent,
 	CanvasSize = UDim2.new(0, 0, 0, 520), AutomaticCanvasSize = Enum.AutomaticSize.None, Parent = Main })
 local PAGE_H = { 520, 380, 400, 680, 910, 410, 530, 720 }
-local PageEng = new("Frame", { Size = UDim2.new(1, 0, 0, PAGE_H[1]), BackgroundTransparency = 1, Parent = Pages })
-local PageAssist = new("Frame", { Size = UDim2.new(1, 0, 0, PAGE_H[2]), BackgroundTransparency = 1, Parent = Pages })
-local PageEsp = new("Frame", { Size = UDim2.new(1, 0, 0, PAGE_H[3]), BackgroundTransparency = 1, Parent = Pages })
-local PageTouch = new("Frame", { Size = UDim2.new(1, 0, 0, PAGE_H[4]), BackgroundTransparency = 1, Parent = Pages })
-local PageTool = new("Frame", { Size = UDim2.new(1, 0, 0, PAGE_H[5]), BackgroundTransparency = 1, Parent = Pages })
-local PageFun = new("Frame", { Size = UDim2.new(1, 0, 0, PAGE_H[6]), BackgroundTransparency = 1, Parent = Pages })
-local PageMore = new("Frame", { Size = UDim2.new(1, 0, 0, PAGE_H[7]), BackgroundTransparency = 1, Parent = Pages })
-local PageUtil = new("Frame", { Size = UDim2.new(1, 0, 0, PAGE_H[8]), BackgroundTransparency = 1, Parent = Pages })
+local PageEng = new("Frame", { Size = UDim2.new(1, 0, 0, PAGE_H[1]), BackgroundTransparency = 1, Visible = true, Parent = Pages })
+local PageAssist = new("Frame", { Size = UDim2.new(1, 0, 0, PAGE_H[2]), BackgroundTransparency = 1, Visible = false, Parent = Pages })
+local PageEsp = new("Frame", { Size = UDim2.new(1, 0, 0, PAGE_H[3]), BackgroundTransparency = 1, Visible = false, Parent = Pages })
+local PageTouch = new("Frame", { Size = UDim2.new(1, 0, 0, PAGE_H[4]), BackgroundTransparency = 1, Visible = false, Parent = Pages })
+local PageTool = new("Frame", { Size = UDim2.new(1, 0, 0, PAGE_H[5]), BackgroundTransparency = 1, Visible = false, Parent = Pages })
+local PageFun = new("Frame", { Size = UDim2.new(1, 0, 0, PAGE_H[6]), BackgroundTransparency = 1, Visible = false, Parent = Pages })
+local PageMore = new("Frame", { Size = UDim2.new(1, 0, 0, PAGE_H[7]), BackgroundTransparency = 1, Visible = false, Parent = Pages })
+local PageUtil = new("Frame", { Size = UDim2.new(1, 0, 0, PAGE_H[8]), BackgroundTransparency = 1, Visible = false, Parent = Pages })
 local function makeSlider(parent, title, y, min, max, default, suffix, onChange, lockable, onLockChange, editable)
 	local wrap = new("Frame", { Size = UDim2.new(1, 0, 0, 46), Position = UDim2.new(0, 0, 0, y), BackgroundTransparency = 1, Parent = parent })
 	label({ Text = title, Font = Enum.Font.GothamBold, TextSize = 12, TextColor3 = Color3.fromRGB(196, 204, 224),
@@ -1234,7 +1234,7 @@ function setHideUI(on)
 		end
 	end
 	pcall(function()
-		StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, not on)
+		pcall(function() StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, not on) end)
 	end)
 end
 LockShield = new("TextButton", { Text = "", AutoButtonColor = false,
@@ -1768,15 +1768,25 @@ UiResetBtn.MouseButton1Click:Connect(function()
 end)
 function SetTab(i)
 	CurTab = i
-	PageEng.Visible, PageAssist.Visible, PageEsp.Visible, PageTouch.Visible, PageTool.Visible, PageFun.Visible, PageMore.Visible, PageUtil.Visible =
-		(i == 1), (i == 2), (i == 3), (i == 4), (i == 5), (i == 6), (i == 7), (i == 8)
-	Pages.CanvasSize = UDim2.new(0, 0, 0, PAGE_H[i] or 520)
-	Pages.ScrollBarImageColor3 = Mode().Accent
-	for j, t in ipairs(TabBtns) do
-		local on = (j == i)
-		TweenService:Create(t.Btn, TWEEN_FAST, { TextColor3 = on and Color3.fromRGB(238, 243, 255) or Color3.fromRGB(140, 149, 172) }):Play()
-		TweenService:Create(t.Underline, TWEEN_FAST, { BackgroundTransparency = on and 0 or 1 }):Play()
-	end
+	-- 先切页面（这一步绝不能失败，否则所有页面会同时显示、叠在一起）
+	pcall(function()
+		PageEng.Visible, PageAssist.Visible, PageEsp.Visible, PageTouch.Visible, PageTool.Visible, PageFun.Visible, PageMore.Visible, PageUtil.Visible =
+			(i == 1), (i == 2), (i == 3), (i == 4), (i == 5), (i == 6), (i == 7), (i == 8)
+	end)
+	pcall(function() Pages.CanvasSize = UDim2.new(0, 0, 0, PAGE_H[i] or 520) end)
+	pcall(function() Pages.ScrollBarImageColor3 = Mode().Accent end)
+	-- 再刷新侧栏高亮（这里出错也不影响切页）
+	pcall(function()
+		for j, t in ipairs(TabBtns) do
+			if t and t.Btn then
+				local on = (j == i)
+				TweenService:Create(t.Btn, TWEEN_FAST, { TextColor3 = on and Color3.fromRGB(238, 243, 255) or Color3.fromRGB(140, 149, 172) }):Play()
+				if t.Underline then
+					TweenService:Create(t.Underline, TWEEN_FAST, { BackgroundTransparency = on and 0 or 1 }):Play()
+				end
+			end
+		end
+	end)
 end
 function SetMode(i)
 	State.ModeIndex = i
@@ -2836,14 +2846,20 @@ if KEY_SYSTEM and not Authed then
 	Main.Visible = false
 	Mini.Visible = false
 end
-buildSearchIndex()
-tspawn(uiRestore)
-SpeedSlider.SetLocked(false)
-JumpSlider.SetLocked(false)
+local function step(name, fn)
+	local ok, err = pcall(fn)
+	if not ok then warn("[HON] 初始化步骤失败: " .. name .. " -> " .. tostring(err)) end
+end
+step("搜索索引", buildSearchIndex)
+step("恢复UI布局", function() tspawn(uiRestore) end)
+step("速度锁", function() SpeedSlider.SetLocked(false) end)
+step("跳跃锁", function() JumpSlider.SetLocked(false) end)
+step("切换页面", function() SetTab(1) end)
+step("切换引擎", function() SetMode(1) end)
+step("面板锁", function() applyPanelLock(false) end)
+step("触屏可见", updateTouchVisibility)
+-- 最后再强制切一次，确保只有当前页可见
 SetTab(1)
-SetMode(1)
-applyPanelLock(false)
-updateTouchVisibility()
 FlyWin.Visible = false
 UpBtn.Visible, DownBtn.Visible = false, false
 Main.Size = UDim2.new(0, 300, 0, 560)
@@ -2852,4 +2868,4 @@ TweenService:Create(Main, TweenInfo.new(0.45, Enum.EasingStyle.Back, Enum.Easing
 	Size = UDim2.new(0, PANEL_W, 0, PANEL_H), BackgroundTransparency = 0.05 }):Play()
 TweenService:Create(Main, TweenInfo.new(0.45, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
 	Position = UDim2.new(0.5, -PANEL_W / 2, 0.5, -PANEL_H / 2) }):Play()
-print("[HON SPEED HUB] v5.4 已加载 · 完整文件约 2856 行 · 若你的脚本远大于此行数说明粘贴重复了")
+print("[HON SPEED HUB] v5.4 已加载 · 完整文件约 2872 行 · 若你的脚本远大于此行数说明粘贴重复了")
