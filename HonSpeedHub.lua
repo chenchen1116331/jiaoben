@@ -7,9 +7,9 @@
 --    1) 用【紧凑版】HonSpeedHub_紧凑版.lua，体积最小，最不容易被截断
 --    2) Studio 里右键父级 -> Insert from File -> 直接选 .lua 文件（不过剪贴板）
 --    3) 全选删除后重新粘贴，粘完核对：末尾必须能看到版本自检那行 print
---  加载成功后输出窗口会打印：[HON SPEED HUB] v5.3 已加载
+--  加载成功后输出窗口会打印：[HON SPEED HUB] v5.4 已加载
 -- =============================================================
---  HON SPEED HUB  v5.3  ·  Roblox 通用功能合集
+--  HON SPEED HUB  v5.4  ·  Roblox 通用功能合集
 --
 --  [引擎]  W 引擎 / V 引擎 / CF 引擎（普通 CF + 瞬移 CF）
 --  [辅助]  跳跃力 · 无限跳 · 穿墙 · 反挂机 · 速度HUD · 飞行小窗 · 触屏数字键
@@ -36,12 +36,12 @@
 
 
 -- ============================ 卡密系统 ============================
---  KEY_SYSTEM = false  -> 关闭卡密，打开即用（给评委演示建议关掉）
+--  KEY_SYSTEM = false  -> 已关闭卡密，打开即用（想开就改成 true）
 --  VALID_KEYS          -> 可以发出去的卡密，随便加随便改
 --  MASTER_KEY          -> 万能卡密，只有你自己知道
 -- =============================================================
-local KEY_SYSTEM  = true
-local KEY_REMEMBER = true            -- 验证一次后本机记住，以后进游戏不用再输
+local KEY_SYSTEM  = false
+local KEY_REMEMBER = false            -- 验证一次后本机记住，以后进游戏不用再输
 local MASTER_KEY  = "chenchen1116"
 local VALID_KEYS  = {
 	["chenchen1116"] = true,
@@ -49,7 +49,12 @@ local VALID_KEYS  = {
 	-- ["别的卡密"] = true,
 }
 
-print("[HON SPEED HUB] 载入中… 若看不到下一行的『已加载』，说明文件在中途中断")
+print("[HON SPEED HUB] 载入中 · v5.4 · 若只看到这一行说明文件在中途中断")
+-- 兼容层：部分执行器没有 task 库，直接用会崩；也没有 wait/spawn 的环境再兜底
+local twait  = (type(task) == "table" and task.wait)  or wait  or function() end
+local tspawn = (type(task) == "table" and task.spawn) or spawn or function(f, ...) return f(...) end
+if type(twait) ~= "function" then twait = function() end end
+if type(tspawn) ~= "function" then tspawn = function(f, ...) return f(...) end end
 local Players          = game:GetService("Players")
 local TweenService     = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
@@ -57,17 +62,40 @@ local RunService       = game:GetService("RunService")
 local Workspace        = game:GetService("Workspace")
 local VirtualUser      = game:GetService("VirtualUser")
 local VirtualInput     = game:GetService("VirtualInputManager")
--- 兼容层：部分执行器（含较老的忍者注入器）没有 task 库，直接用会崩
-local twait  = (type(task) == "table" and task.wait)  or wait
-local tspawn = (type(task) == "table" and task.spawn) or spawn
-
 local Lighting         = game:GetService("Lighting")
 local StarterGui       = game:GetService("StarterGui")
 local TeleportService  = game:GetService("TeleportService")
 
-local LP  = Players.LocalPlayer
-local Cam = Workspace.CurrentCamera
-local PG  = LP:WaitForChild("PlayerGui")
+-- !! 关键保护 !!
+-- 很多手机执行器（含忍者注入器）会在游戏还没加载完时就注入脚本，
+-- 此时 Players.LocalPlayer / Workspace.CurrentCamera 都还是 nil，
+-- 直接对其调用方法就会报「尝试调用 nil 值」。这里先等它们就绪。
+local sWait = (type(task) == "table" and task.wait) or wait or function() end
+local LP, Cam, PG = Players.LocalPlayer, Workspace.CurrentCamera, nil
+local readyStart = tick()
+while (not LP or not Cam) and (tick() - readyStart) < 20 do
+	if not LP  then LP  = Players.LocalPlayer end
+	if not Cam then Cam = Workspace.CurrentCamera end
+	if LP and Cam then break end
+	sWait(0.2)
+end
+if LP then
+	PG = LP:FindFirstChild("PlayerGui")
+	if not PG then
+		pcall(function() PG = LP:WaitForChild("PlayerGui", 8) end)
+	end
+end
+if not Cam then
+	pcall(function() Cam = Workspace:FindFirstChildOfClass("Camera") or Workspace.CurrentCamera end)
+end
+if not PG then
+	warn("[HON SPEED HUB] 获取 PlayerGui 失败：请等游戏完全加载进服务器后再注入一次")
+	return
+end
+if not Cam then
+	warn("[HON SPEED HUB] 获取 Camera 失败：请重新注入")
+	return
+end
 
 -- 幂等保护：若之前已加载过（或脚本被重复粘贴了一份），先清掉旧的界面
 for _, g in ipairs(PG:GetChildren()) do
@@ -235,7 +263,7 @@ label({ Text = "HON SPEED HUB", Font = Enum.Font.GothamBold, TextSize = 21,
 	TextColor3 = Color3.fromRGB(238, 243, 255),
 	Position = UDim2.new(0, 36, 0, 16), Size = UDim2.new(0, 200, 0, 24),
 	TextXAlignment = Enum.TextXAlignment.Left }, Header)
-label({ Text = "Universal Hub  ·  W / V / CF  ·  v5.3", Font = Enum.Font.Gotham, TextSize = 11,
+label({ Text = "Universal Hub  ·  W / V / CF  ·  v5.4", Font = Enum.Font.Gotham, TextSize = 11,
 	TextColor3 = Color3.fromRGB(140, 149, 172),
 	Position = UDim2.new(0, 36, 0, 42), Size = UDim2.new(0, 240, 0, 16),
 	TextXAlignment = Enum.TextXAlignment.Left }, Header)
@@ -3257,4 +3285,4 @@ TweenService:Create(Main, TweenInfo.new(0.45, Enum.EasingStyle.Quint, Enum.Easin
 	Position = UDim2.new(0.5, -PANEL_W / 2, 0.5, -PANEL_H / 2) }):Play()
 
 -- 版本自检：输出窗口看到这一行才说明加载的是完整正确的版本
-print("[HON SPEED HUB] v5.3 已加载 · 完整文件约 3186 行 · 若你的脚本远大于此行数说明粘贴重复了")
+print("[HON SPEED HUB] v5.4 已加载 · 完整文件约 3263 行 · 若你的脚本远大于此行数说明粘贴重复了")
