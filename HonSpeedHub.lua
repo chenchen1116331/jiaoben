@@ -4,7 +4,7 @@ local MASTER_KEY  = "chenchen1116"
 local VALID_KEYS  = {
 	["chenchen1116"] = true,
 }
-print("[HON SPEED HUB] 载入中 · v5.20 · 若只看到这一行说明文件在中途中断")
+print("[HON SPEED HUB] 载入中 · v5.21 · 若只看到这一行说明文件在中途中断")
 local twait  = (type(task) == "table" and task.wait)  or wait  or function() end
 local tspawn = (type(task) == "table" and task.spawn) or spawn or function(f, ...) return f(...) end
 if type(twait) ~= "function" then twait = function() end end
@@ -210,7 +210,7 @@ label({ Text = "HON SPEED HUB", Font = Enum.Font.GothamBold, TextSize = 21,
 	TextColor3 = Color3.fromRGB(238, 243, 255),
 	Position = UDim2.new(0, 36, 0, 16), Size = UDim2.new(0, 200, 0, 24),
 	TextXAlignment = Enum.TextXAlignment.Left }, Header)
-label({ Text = "Universal Hub  ·  W / V / CF  ·  v5.20", Font = Enum.Font.Gotham, TextSize = 11,
+label({ Text = "Universal Hub  ·  W / V / CF  ·  v5.21", Font = Enum.Font.Gotham, TextSize = 11,
 	TextColor3 = Color3.fromRGB(140, 149, 172),
 	Position = UDim2.new(0, 36, 0, 42), Size = UDim2.new(0, 240, 0, 16),
 	TextXAlignment = Enum.TextXAlignment.Left }, Header)
@@ -246,7 +246,13 @@ iconBtn("–", -68, Color3.fromRGB(190, 198, 220), function() playCloseAnim(func
 iconBtn("×", -34, Color3.fromRGB(255, 108, 118), function() playCloseAnim() end)
 -- ---------- 更新公告 ----------
 CHANGELOG = {
-	{ v = "v5.20", t = {
+	{ v = "v5.21", t = {
+		"紧急修复 · makeToggle 内部自引用导致每次 Set() 抛错（连锁引发页面/小窗打不开）",
+		"修复 · 关不掉：关闭流程改为无论如何都会收起面板并还原状态",
+		"修复 · 启动动画：移除与神威冲突的旧弹出动画，改为神威之后衔接弹出",
+		"修复 · 侧栏只认前 8 页：改为动态全部页 + 画布放大，10 个标签都能点",
+		"新增 · 看门狗：5 秒后若界面意外消失会自动恢复，防止整个 UI 不见",
+	}},	{ v = "v5.21", t = {
 		"改 · 移动 UI：屏幕上点哪个就能拖哪个（数字键/方向键各自独立拖动）",
 		"新增 · 自由视角开关：角色定在原地，镜头到处飞",
 		"改 · 环绕 TA：开启后弹面板选人（取消会自动关掉开关）",
@@ -256,7 +262,7 @@ CHANGELOG = {
 		"改 · 全部关闭：先弹确认框并说明会关掉哪些东西",
 		"新增 · 传送页：查看玩家（选中即可看他）+ 恢复自己视角",
 		"改 · 存档点：保存成功/失败都有明确提示",
-	}},	{ v = "v5.20", t = {
+	}},	{ v = "v5.21", t = {
 		"新增 · 装扮页：6 种大翅膀（天使/堕天/恶魔/光/火/机械）+ 5 种头顶光环",
 		"新增 · 蔚蓝档案式光环（悬浮旋转，可调大小与角度）",
 		"新增 · 隐藏身上方块：一键清除配件/框选/名牌等附加物",
@@ -266,14 +272,14 @@ CHANGELOG = {
 		"修复 · 血量显示与功能列表被 HUD 覆盖不显示",
 		"新增 · 空壳检查器：自动揪出「开关没用」的字段",
 	}},
-	{ v = "v5.20", t = {
+	{ v = "v5.21", t = {
 		"新增 · 公告界面（本页）· 设置页入口",
 		"新增 · 头顶光环（蔚蓝档案式）· 分身独立面板",
 		"修复 · 飞行 / FOV / 连跳 / 拖尾 / 跳舞 / 骑头 失效",
 		"修复 · 黑洞与倒立控件重叠 · 存档点提示",
 		"重构 · 混淆版：字符串全加密 + 诱饵逻辑，抗反混淆",
 	}},
-	{ v = "v5.20", t = {
+	{ v = "v5.21", t = {
 		"修复 · 特效永远不停（时长单位错误）",
 		"修复 · 放出动画不显示漩涡",
 		"回退 · 漩涡恢复平面版（更好看的那版）",
@@ -361,10 +367,10 @@ function showNotice()
 end
 
 Mini.MouseButton1Click:Connect(function() Mini.Visible = false; playOpenAnim() end)
-local TabBar = new("ScrollingFrame", { Name = "Sidebar", Size = UDim2.new(0, 168, 0, 348), Position = UDim2.new(0, 0, 0, 66),
+local TabBar = new("ScrollingFrame", { Name = "Sidebar", Size = UDim2.new(0, 168, 0, 356), Position = UDim2.new(0, 0, 0, 66),
 	BackgroundTransparency = 1, BorderSizePixel = 0, ScrollBarThickness = 3,
 	ScrollBarImageTransparency = 0.7, ScrollBarImageColor3 = Modes[1].Accent,
-	CanvasSize = UDim2.new(0, 0, 0, 372), AutomaticCanvasSize = Enum.AutomaticSize.Y,
+	CanvasSize = UDim2.new(0, 0, 0, 470), AutomaticCanvasSize = Enum.AutomaticSize.Y,
 	ScrollingDirection = Enum.ScrollingDirection.Y, Parent = Main })
 local SideLine = new("Frame", { Size = UDim2.new(0, 1, 1, 0), Position = UDim2.new(0, 167, 0, 0),
 	BackgroundColor3 = Color3.fromRGB(255, 255, 255), BackgroundTransparency = 0.93, BorderSizePixel = 0, Parent = Main })
@@ -547,14 +553,15 @@ local function makeToggle(parent, y, title, sub, initial, onChange, keep)
 		BackgroundColor3 = Color3.fromRGB(250, 252, 255), BorderSizePixel = 0, Parent = sw })
 	corner(kb, 9)
 	local on = initial
+	local lastVal = initial
 	local function paint(v)
 		TweenService:Create(sw, TWEEN_FAST, { BackgroundColor3 = v and Mode().Accent or Color3.fromRGB(70, 74, 90) }):Play()
 		TweenService:Create(kb, TWEEN_FAST, { Position = v and UDim2.new(1, -21, 0.5, -9) or UDim2.new(0, 3, 0.5, -9) }):Play()
 	end
-	sw.MouseButton1Click:Connect(function() on = not on; paint(on); onChange(on) end)
+	sw.MouseButton1Click:Connect(function() on = not on; lastVal = on; paint(on); onChange(on) end)
 	local api = {
 		Row = row, Stroke = stroke, Title = t1, Sub = t2, Switch = sw,
-		Set = function(v, silent) on = v; api._last = v; paint(on); if not silent then onChange(on) end end,
+		Set = function(v, silent) on = v; lastVal = v; paint(on); if not silent then onChange(on) end end,
 		Refresh = function() if on then paint(true) end end,
 		Dim = function(dim)
 			TweenService:Create(row, TWEEN_SOFT, { BackgroundTransparency = dim and 0.75 or 0.35 }):Play()
@@ -563,7 +570,7 @@ local function makeToggle(parent, y, title, sub, initial, onChange, keep)
 			TweenService:Create(stroke, TWEEN_SOFT, { Transparency = dim and 0.95 or 0.85 }):Play()
 		end,
 	}
-	api._last = initial
+	api._last = lastVal
 	api._keep = keep
 	api._title = title
 	table.insert(ToggleRegistry, api)
@@ -2438,40 +2445,47 @@ end)
 
 function playOpenAnim()
 	Main.Visible = false
-	playKamui("in")
-	if not pcall(shatterPanel) then Main.Visible = true; return end
+	pcall(playKamui, "in")
+	pcall(shatterPanel)
 	KamuiShatter = true
 	tspawn(function()
-		twait(2.35)
+		twait(1.6)
 		KamuiShatter = false
-		hideShards()
+		pcall(hideShards)
 		Main.Visible = true
-		if MainScale then MainScale.Scale = 1 end
-		Main.Rotation = 0
-		if OrigMainSize then Main.Size = OrigMainSize end
+		pcall(function()
+			if MainScale then MainScale.Scale = 1 end
+			Main.Rotation = 0
+			if OrigMainSize then Main.Size = OrigMainSize end
+			Main.BackgroundTransparency = 1
+			TweenService:Create(Main, TweenInfo.new(0.45, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+				Size = UDim2.new(0, PANEL_W, 0, PANEL_H), BackgroundTransparency = 0.05 }):Play()
+		end)
 	end)
 end
 
 function playCloseAnim(after)
-	playKamui("out")
-	local ok = pcall(shatterPanel)
-	if not ok then
-		if after then after() end
-		return
-	end
+	pcall(playKamui, "out")
+	pcall(shatterPanel)
 	KamuiShatter = true
-	-- 先被空间横向拉扯扭曲一下，再交给碎片撕裂
 	pcall(function()
 		local ti0 = TweenInfo.new(0.18, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
 		TweenService:Create(Main, ti0, { Rotation = 10 }):Play()
 		TweenService:Create(Main, ti0, { Size = UDim2.new(0, Main.AbsoluteSize.X * 1.16, 0, Main.AbsoluteSize.Y * 0.8) }):Play()
 	end)
 	tspawn(function()
-		twait(0.15)
+		twait(0.2)
+		-- 不管中间出什么错，面板一定要收掉，并且状态要还原
 		Main.Visible = false
-		Main.Rotation = 0
-		if OrigMainSize then Main.Size = OrigMainSize end
-		if after then after() end
+		KamuiShatter = false
+		pcall(hideShards)
+		pcall(function()
+			Main.Rotation = 0
+			if OrigMainSize then Main.Size = OrigMainSize end
+			Main.BackgroundTransparency = 0.05
+			if MainScale then MainScale.Scale = 1 end
+		end)
+		if after then pcall(after) end
 	end)
 end
 
@@ -4591,7 +4605,7 @@ pcall(function()
 		local rel = i.Position - TabBar.AbsolutePosition + TabBar.CanvasPosition
 		if rel.X < 0 or rel.X > TabBar.AbsoluteSize.X then return end
 		local idx = math.floor((rel.Y - 10) / 44) + 1
-		if idx >= 1 and idx <= 8 then SetTab(idx) end
+		if idx >= 1 and idx <= #TabBtns then pcall(SetTab, idx) end
 	end)
 end)
 pcall(function()
@@ -4605,10 +4619,19 @@ pcall(function()
 end)
 FlyWin.Visible = false
 UpBtn.Visible, DownBtn.Visible = false, false
-Main.Size = UDim2.new(0, 300, 0, 560)
-Main.BackgroundTransparency = 1
-TweenService:Create(Main, TweenInfo.new(0.45, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-	Size = UDim2.new(0, PANEL_W, 0, PANEL_H), BackgroundTransparency = 0.05 }):Play()
-TweenService:Create(Main, TweenInfo.new(0.45, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
-	Position = UDim2.new(0.5, -PANEL_W / 2, 0.5, -PANEL_H / 2) }):Play()
-print("[HON SPEED HUB] v5.20 已加载 · 完整文件约 4615 行 · 若你的脚本远大于此行数说明粘贴重复了")
+if OrigMainSize then Main.Size = OrigMainSize end
+Main.BackgroundTransparency = 0.05
+-- 看门狗：万一开场/关闭动画出错导致界面消失，这里兜底把它找回来
+tspawn(function()
+	twait(5)
+	if Main and not Main.Visible and Mini and not Mini.Visible then
+		pcall(function()
+			Main.Visible = true
+			Main.Rotation = 0
+			if OrigMainSize then Main.Size = OrigMainSize end
+			Main.BackgroundTransparency = 0.05
+			if MainScale then MainScale.Scale = 1 end
+		end)
+	end
+end)
+print("[HON SPEED HUB] v5.21 已加载 · 完整文件约 4638 行 · 若你的脚本远大于此行数说明粘贴重复了")
