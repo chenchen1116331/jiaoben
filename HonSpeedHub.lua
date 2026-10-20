@@ -4,7 +4,7 @@ local MASTER_KEY  = "chenchen1116"
 local VALID_KEYS  = {
 	["chenchen1116"] = true,
 }
-print("[HON SPEED HUB] 载入中 · v5.8 · 若只看到这一行说明文件在中途中断")
+print("[HON SPEED HUB] 载入中 · v5.16 · 若只看到这一行说明文件在中途中断")
 local twait  = (type(task) == "table" and task.wait)  or wait  or function() end
 local tspawn = (type(task) == "table" and task.spawn) or spawn or function(f, ...) return f(...) end
 if type(twait) ~= "function" then twait = function() end end
@@ -94,11 +94,15 @@ local State = {
 	InstantInteract = false, EspDepth = true,
 	ClickTP = false, AntiVoid = false, FakeChar = false, BodyTransp = 0, Fullbright = false,
 	Spin = false, Rainbow = false, Bounce = false, Orbit = false, LowFx = false,
-	Dance = false, Halo = false, Follow = false, Face = false, FovValue = 0,
+	Dance = false, Halo = false, Follow = false, Face = false, FovValue = 0, WatchTarget = nil,
 	Freeze = false, HidePlayers = false, HideUI = false, AutoJump = false, CoordHud = false,
 	TPLoop = false, TPInterval = 0, TPOffsetY = 3,
 	MoveGameUI = false, UILayoutLocked = false,
 	Stealth = false, StealthHideGame = true,
+	BlackHole = false, BlackHoleForce = 60, HeroFly = false, Car = false,
+	EngineOutline = true, Trail = false, CloneArmy = false, OrbitFx = false,
+	HeadRide = false, Shake = false, SpinCam = false, Magnet = false,
+	ThirdPerson = false, NoFall = false, ShowHP = false, ShowFunList = false,
 	AntiKB = false, AntiStun = false, Freecam = false,
 	SafePos = nil,
 }
@@ -175,7 +179,7 @@ local AllToggles, AllSliders = {}, {}
 local function themed(o) table.insert(AllToggles, o) end
 local Gui = new("ScreenGui", {
 	Name = "HonSpeedHub", ResetOnSpawn = false, IgnoreGuiInset = true,
-	ZIndexBehavior = Enum.ZIndexBehavior.Global, DisplayOrder = 999, Parent = PG,
+	ZIndexBehavior = Enum.ZIndexBehavior.Global, DisplayOrder = 2147483647, Parent = PG,
 })
 local PANEL_W, PANEL_H = 660, 470
 new("UIScale", { Scale = math.min(1, (Cam.ViewportSize.Y - 30) / PANEL_H, (Cam.ViewportSize.X - 20) / PANEL_W), Parent = Gui })
@@ -205,10 +209,14 @@ label({ Text = "HON SPEED HUB", Font = Enum.Font.GothamBold, TextSize = 21,
 	TextColor3 = Color3.fromRGB(238, 243, 255),
 	Position = UDim2.new(0, 36, 0, 16), Size = UDim2.new(0, 200, 0, 24),
 	TextXAlignment = Enum.TextXAlignment.Left }, Header)
-label({ Text = "Universal Hub  ·  W / V / CF  ·  v5.8", Font = Enum.Font.Gotham, TextSize = 11,
+label({ Text = "Universal Hub  ·  W / V / CF  ·  v5.16", Font = Enum.Font.Gotham, TextSize = 11,
 	TextColor3 = Color3.fromRGB(140, 149, 172),
 	Position = UDim2.new(0, 36, 0, 42), Size = UDim2.new(0, 240, 0, 16),
 	TextXAlignment = Enum.TextXAlignment.Left }, Header)
+InfoLabel = label({ Text = "", Font = Enum.Font.Gotham, TextSize = 9,
+	TextColor3 = Color3.fromRGB(105, 113, 134), Position = UDim2.new(0, 20, 0, 54),
+	Size = UDim2.new(1, -120, 0, 14), TextXAlignment = Enum.TextXAlignment.Left,
+	TextTruncate = Enum.TextTruncate.AtEnd, BackgroundTransparency = 1 }, Header)
 local Mini = new("TextButton", {
 	Text = "HON", Font = Enum.Font.GothamBold, TextSize = 14,
 	TextColor3 = Color3.fromRGB(230, 236, 250),
@@ -232,17 +240,20 @@ local LockBtn = new("TextButton", { Text = "", AutoButtonColor = false, Backgrou
 	Position = UDim2.new(1, -102, 0, 20), Size = UDim2.new(0, 28, 0, 28), Parent = Header })
 corner(LockBtn, 8)
 local LockIcon = lockIcon(LockBtn, UDim2.new(0.5, -8, 0.5, -8), Color3.fromRGB(150, 158, 180))
-iconBtn("–", -68, Color3.fromRGB(190, 198, 220), function() Main.Visible, Mini.Visible = false, true end)
-iconBtn("×", -34, Color3.fromRGB(255, 108, 118), function() Main.Visible, Mini.Visible = false, false end)
-Mini.MouseButton1Click:Connect(function() Mini.Visible, Main.Visible = false, true end)
-local TabBar = new("Frame", { Name = "Sidebar", Size = UDim2.new(0, 168, 1, -74), Position = UDim2.new(0, 0, 0, 74),
-	BackgroundTransparency = 1, BorderSizePixel = 0, Parent = Main })
-local SideLine = new("Frame", { Size = UDim2.new(0, 1, 1, 0), Position = UDim2.new(1, -1, 0, 0),
-	BackgroundColor3 = Color3.fromRGB(255, 255, 255), BackgroundTransparency = 0.93, BorderSizePixel = 0, Parent = TabBar })
+iconBtn("–", -68, Color3.fromRGB(190, 198, 220), function() playCloseAnim(function() Mini.Visible = true end) end)
+iconBtn("×", -34, Color3.fromRGB(255, 108, 118), function() playCloseAnim() end)
+Mini.MouseButton1Click:Connect(function() Mini.Visible = false; playOpenAnim() end)
+local TabBar = new("ScrollingFrame", { Name = "Sidebar", Size = UDim2.new(0, 168, 0, 348), Position = UDim2.new(0, 0, 0, 66),
+	BackgroundTransparency = 1, BorderSizePixel = 0, ScrollBarThickness = 3,
+	ScrollBarImageTransparency = 0.7, ScrollBarImageColor3 = Modes[1].Accent,
+	CanvasSize = UDim2.new(0, 0, 0, 372), AutomaticCanvasSize = Enum.AutomaticSize.Y,
+	ScrollingDirection = Enum.ScrollingDirection.Y, Parent = Main })
+local SideLine = new("Frame", { Size = UDim2.new(0, 1, 1, 0), Position = UDim2.new(0, 167, 0, 0),
+	BackgroundColor3 = Color3.fromRGB(255, 255, 255), BackgroundTransparency = 0.93, BorderSizePixel = 0, Parent = Main })
 local TabBtns = {}
 local CurTab = 1
 do
-	local names = { "引擎", "辅助", "视觉", "触屏", "工具", "娱乐", "更多", "实用" }
+	local names = { "引擎", "辅助", "视觉", "触屏", "工具", "娱乐", "更多", "实用", "传送" }
 	for i, n in ipairs(names) do
 		local b = new("TextButton", { Text = n, Font = Enum.Font.GothamBold, TextSize = 13,
 			TextColor3 = Color3.fromRGB(140, 149, 172), BackgroundTransparency = 1,
@@ -257,7 +268,12 @@ do
 		end)
 		b.MouseLeave:Connect(function()
 			if i ~= CurTab then
-				TweenService:Create(b, TWEEN_FAST, { BackgroundTransparency = 0.94 }):Play()
+				TweenService:Create(b, TWEEN_FAST, { BackgroundTransparency = 1 }):Play()
+			end
+		end)
+		b.InputEnded:Connect(function()
+			if i ~= CurTab then
+				TweenService:Create(b, TWEEN_FAST, { BackgroundTransparency = 1 }):Play()
 			end
 		end)
 		bindClick(b, "标签" .. n, function() SetTab(i) end)
@@ -265,7 +281,7 @@ do
 end
 local PageHost = new("Frame", { Name = "Content", Size = UDim2.new(0, 464, 0, 336), Position = UDim2.new(0, 180, 0, 84),
 	BackgroundTransparency = 1, BorderSizePixel = 0, ClipsDescendants = true, Parent = Main })
-local PAGE_H = { 520, 380, 400, 680, 910, 410, 530, 720 }
+local PAGE_H = { 520, 380, 400, 680, 910, 1240, 530, 720, 860 }
 PageList = {}
 local function mkPage(i, visible)
 	return new("ScrollingFrame", { Name = "Page" .. tostring(i),
@@ -286,7 +302,8 @@ local PageTool = mkPage(5, false)
 local PageFun = mkPage(6, false)
 local PageMore = mkPage(7, false)
 local PageUtil = mkPage(8, false)
-PageList = { PageEng, PageAssist, PageEsp, PageTouch, PageTool, PageFun, PageMore, PageUtil }
+local PageTp = mkPage(9, false)
+PageList = { PageEng, PageAssist, PageEsp, PageTouch, PageTool, PageFun, PageMore, PageUtil, PageTp }
 local function makeSlider(parent, title, y, min, max, default, suffix, onChange, lockable, onLockChange, editable)
 	local wrap = new("Frame", { Size = UDim2.new(1, 0, 0, 46), Position = UDim2.new(0, 0, 0, y), BackgroundTransparency = 1, Parent = parent })
 	label({ Text = title, Font = Enum.Font.GothamBold, TextSize = 12, TextColor3 = Color3.fromRGB(196, 204, 224),
@@ -433,7 +450,7 @@ end
 local SearchBox = new("TextBox", { PlaceholderText = "搜索功能…", Text = "", Font = Enum.Font.Gotham, TextSize = 11,
 	TextColor3 = Color3.fromRGB(226, 233, 248), PlaceholderColor3 = Color3.fromRGB(105, 113, 134),
 	BackgroundColor3 = Color3.fromRGB(255, 255, 255), BackgroundTransparency = 0.92, BorderSizePixel = 0,
-	ClearTextOnFocus = false, Position = UDim2.new(0, 12, 0, 320), Size = UDim2.new(1, -24, 0, 30), Parent = TabBar })
+	ClearTextOnFocus = false, Position = UDim2.new(0, 8, 0, 420), Size = UDim2.new(0, 152, 0, 28), Parent = Main })
 corner(SearchBox, 8)
 label({ Text = "驱 动 引 擎", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Color3.fromRGB(120, 129, 152), Size = UDim2.new(1, 0, 0, 18),
@@ -469,6 +486,13 @@ local InertiaToggle = makeToggle(PageEng, 360, "惯性滑行", "仅 V 引擎生�
 local SlideToggle   = makeToggle(PageEng, 408, "防穿墙 / 沿墙滑动", "仅 CF 引擎生效", true, function(v) State.WallSlide = v end)
 local TeleportToggle = makeToggle(PageEng, 456, "瞬移闪现 TP", "仅 CF · 蓄力后整段位移", false, function(v)
 	State.CFTeleport = v
+local OutlineTgl = makeToggle(PageEng, 504, "引擎描边 OUTLINE", "角色轮廓跟着引擎颜色", true, function(v)
+	State.EngineOutline = v
+	if Highlight and Highlight.Parent then
+		Highlight.Enabled = v
+		if v then Highlight.OutlineColor = Mode().Accent end
+	end
+end)
 	CFAccum = 0
 end)
 label({ Text = "辅 助 功 能", Font = Enum.Font.GothamBold, TextSize = 11,
@@ -637,17 +661,20 @@ local FreecamTgl = makeToggle(PageTool, 446, "自由视角 FREECAM", "WASD 飞�
 end)
 label({ Text = "传 送 TELEPORT", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Color3.fromRGB(120, 129, 152), Size = UDim2.new(1, 0, 0, 16),
-	Position = UDim2.new(0, 2, 0, 494), TextXAlignment = Enum.TextXAlignment.Left }, PageTool)
+	Position = UDim2.new(0, 2, 0, 0), TextXAlignment = Enum.TextXAlignment.Left }, PageTp)
+label({ Text = "传 送 TELEPORT", Font = Enum.Font.GothamBold, TextSize = 11,
+	TextColor3 = Color3.fromRGB(120, 129, 152), Size = UDim2.new(1, 0, 0, 18),
+	Position = UDim2.new(0, 2, 0, 0), TextXAlignment = Enum.TextXAlignment.Left }, PageTp)
 local TPTarget = nil
 local TargetBtn = new("TextButton", { Text = "选择目标 ▾  （玩家 / NPC）", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Mode().Accent, BackgroundColor3 = Color3.fromRGB(255, 255, 255), BackgroundTransparency = 0.9,
 	BorderSizePixel = 0, AutoButtonColor = false,
-	Size = UDim2.new(1, 0, 0, 36), Position = UDim2.new(0, 0, 0, 516), Parent = PageTool })
+	Size = UDim2.new(1, 0, 0, 36), Position = UDim2.new(0, 0, 0, 152), Parent = PageTp })
 corner(TargetBtn, 10)
 table.insert(ToolBtns, TargetBtn)
-local TPListWrap = new("Frame", { Size = UDim2.new(1, 0, 0, 150), Position = UDim2.new(0, 0, 0, 558),
+local TPListWrap = new("Frame", { Size = UDim2.new(1, 0, 0, 150), Position = UDim2.new(0, 0, 0, 194),
 	BackgroundColor3 = Color3.fromRGB(20, 23, 33), BackgroundTransparency = 0.25,
-	BorderSizePixel = 0, Visible = false, ClipsDescendants = true, Parent = PageTool })
+	BorderSizePixel = 0, Visible = false, ClipsDescendants = true, Parent = PageTp })
 corner(TPListWrap, 10)
 new("UIStroke", { Color = Modes[1].Accent, Transparency = 0.75, Thickness = 1, Parent = TPListWrap })
 local TPList = new("ScrollingFrame", { Size = UDim2.new(1, -8, 1, -8), Position = UDim2.new(0, 4, 0, 4),
@@ -717,7 +744,7 @@ end
 local TPOnceBtn = new("TextButton", { Text = "传送到目标 TP ONCE", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Mode().Accent, BackgroundColor3 = Color3.fromRGB(255, 255, 255), BackgroundTransparency = 0.9,
 	BorderSizePixel = 0, AutoButtonColor = false,
-	Size = UDim2.new(1, 0, 0, 36), Position = UDim2.new(0, 0, 0, 714), Parent = PageTool })
+	Size = UDim2.new(1, 0, 0, 36), Position = UDim2.new(0, 0, 0, 350), Parent = PageTp })
 corner(TPOnceBtn, 10)
 table.insert(ToolBtns, TPOnceBtn)
 TPOnceBtn.MouseButton1Click:Connect(function()
@@ -729,7 +756,7 @@ TPOnceBtn.MouseButton1Click:Connect(function()
 		notify("未选择目标或目标已失效", Color3.fromRGB(255, 108, 118))
 	end
 end)
-local TPLoopTgl = makeToggle(PageTool, 756, "循环传送 LOOP TP", "持续锁定目标（离开即停）", false, function(v)
+local TPLoopTgl = makeToggle(PageTp, 392, "循环传送 LOOP TP", "持续锁定目标（离开即停）", false, function(v)
 	State.TPLoop = v
 	if v and not TPTarget and notify then
 		notify("请先选择目标", Color3.fromRGB(255, 108, 118))
@@ -737,10 +764,10 @@ local TPLoopTgl = makeToggle(PageTool, 756, "循环传送 LOOP TP", "持续锁�
 		TPLoopTgl.Set(false, true)
 	end
 end)
-local TPSpeedSlider = makeSlider(PageTool, "循环间隔 (0=每帧)", 804, 0, 20, 0, " 秒", function(v)
+local TPSpeedSlider = makeSlider(PageTp, "循环间隔 (0=每帧)", 440, 0, 20, 0, " 秒", function(v)
 	State.TPInterval = v / 10
 end, false)
-local TPOffSlider = makeSlider(PageTool, "高度偏移", 856, 0, 30, 3, " m", function(v)
+local TPOffSlider = makeSlider(PageTp, "高度偏移", 492, 0, 30, 3, " m", function(v)
 	State.TPOffsetY = v
 end, false)
 function getTargetPlayer(name)
@@ -993,8 +1020,77 @@ LaunchBtn.MouseButton1Click:Connect(function()
 	end
 end)
 local OrbitTgl = makeToggle(PageFun, 256, "绕 TA 转圈 ORBIT", "围绕 NAME 里的玩家公转", false, function(v) State.Orbit = v end)
-local LowFxTgl = makeToggle(PageFun, 304, "FPS 加速 LOW FX", "关阴影/粒子/降画质", false, function(v) setLowFx(v) end)
-local FlipBtn = new("TextButton", { Text = "倒立 FLIP", Font = Enum.Font.GothamBold, TextSize = 11,
+local BlackHoleTgl = makeToggle(PageFun, 304, "黑洞 BLACK HOLE", "在前方生成黑洞，吸住周围一切", false, function(v)
+	setBlackHole(v)
+end)
+local BlackHoleSlider = makeSlider(PageFun, "黑洞吸力", 352, 10, 200, 60, " ", function(v)
+	State.BlackHoleForce = v
+end, false)
+FlingBtn = new("TextButton", { Text = "甩飞所有人 LAUNCH ALL", Font = Enum.Font.GothamBold, TextSize = 11,
+	TextColor3 = Mode().Accent, BackgroundColor3 = Color3.fromRGB(255, 255, 255), BackgroundTransparency = 0.9,
+	BorderSizePixel = 0, AutoButtonColor = false,
+	Size = UDim2.new(0.5, -4, 0, 36), Position = UDim2.new(0, 0, 0, 404), Parent = PageFun })
+corner(FlingBtn, 10)
+table.insert(FunBtns, FlingBtn)
+bindClick(FlingBtn, "甩飞", function() flingAll() end)
+DashBtn = new("TextButton", { Text = "闪电冲刺 LIGHTNING", Font = Enum.Font.GothamBold, TextSize = 11,
+	TextColor3 = Mode().Accent, BackgroundColor3 = Color3.fromRGB(255, 255, 255), BackgroundTransparency = 0.9,
+	BorderSizePixel = 0, AutoButtonColor = false,
+	Size = UDim2.new(0.5, -4, 0, 36), Position = UDim2.new(0.5, 4, 0, 404), Parent = PageFun })
+corner(DashBtn, 10)
+table.insert(FunBtns, DashBtn)
+bindClick(DashBtn, "闪电冲刺", function() lightningDash() end)
+HeroFlyTgl = makeToggle(PageFun, 448, "无敌少侠飞行 HERO FLY", "超人姿势 · 高速 · 可升降", false, function(v)
+	setHeroFly(v)
+end)
+CarTgl = makeToggle(PageFun, 496, "FE 变车 BECOME CAR", "角色变成车（别人也看得见）", false, function(v)
+	setCar(v)
+end)
+ThirdTgl = makeToggle(PageFun, 544, "强制第三人称", "锁定第三人称视角", false, function(v)
+	setThirdPerson(v)
+end)
+NoFallTgl = makeToggle(PageFun, 592, "防摔落伤害", "落地不扣血", false, function(v)
+	State.NoFall = v
+end)
+HpTgl = makeToggle(PageFun, 640, "自身血量显示", "HUD 上显示当前血量", false, function(v)
+	State.ShowHP = v
+end)
+FunListTgl = makeToggle(PageFun, 688, "功能列表显示", "HUD 列出当前开启的功能", false, function(v)
+	State.ShowFunList = v
+end)
+TrailTgl = makeToggle(PageFun, 736, "彩虹拖尾 TRAIL", "角色身后拉出彩色光带", false, function(v)
+	State.Trail = v
+	setTrail(v)
+end)
+CloneTgl = makeToggle(PageFun, 784, "分身军团 CLONE ARMY", "生成 5 个自己环绕跟随", false, function(v)
+	State.CloneArmy = v
+	setCloneArmy(v)
+end)
+OrbitFxTgl = makeToggle(PageFun, 832, "粒子环绕 ORBIT FX", "角色周围粒子球旋转", false, function(v)
+	State.OrbitFx = v
+	setOrbitFx(v)
+end)
+RideTgl = makeToggle(PageFun, 880, "骑到头上 HEAD RIDE", "坐到最近玩家头顶", false, function(v)
+	State.HeadRide = v
+end)
+ShakeTgl = makeToggle(PageFun, 928, "屏幕震动 SHAKE", "镜头持续抖动（恶搞）", false, function(v)
+	State.Shake = v
+end)
+SpinCamTgl = makeToggle(PageFun, 976, "视角自转 SPIN CAM", "镜头绕着自己旋转", false, function(v)
+	State.SpinCam = v
+end)
+MagnetTgl = makeToggle(PageFun, 1024, "物品吸附 MAGNET", "把附近可拾取物吸过来", false, function(v)
+	State.Magnet = v
+end)
+DanceAllBtn = new("TextButton", { Text = "让所有人跳舞 DANCE PARTY", Font = Enum.Font.GothamBold, TextSize = 11,
+	TextColor3 = Mode().Accent, BackgroundColor3 = Color3.fromRGB(255, 255, 255), BackgroundTransparency = 0.9,
+	BorderSizePixel = 0, AutoButtonColor = false,
+	Size = UDim2.new(1, 0, 0, 36), Position = UDim2.new(0, 0, 0, 1072), Parent = PageFun })
+corner(DanceAllBtn, 10)
+table.insert(FunBtns, DanceAllBtn)
+bindClick(DanceAllBtn, "全员跳舞", function() danceAll() end)
+LowFxTgl = makeToggle(PageFun, 304, "FPS 加速 LOW FX", "关阴影/粒子/降画质", false, function(v) setLowFx(v) end)
+FlipBtn = new("TextButton", { Text = "倒立 FLIP", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Mode().Accent, BackgroundColor3 = Color3.fromRGB(255, 255, 255), BackgroundTransparency = 0.9,
 	BorderSizePixel = 0, AutoButtonColor = false,
 	Size = UDim2.new(1, 0, 0, 36), Position = UDim2.new(0, 0, 0, 352), Parent = PageFun })
@@ -1033,11 +1129,11 @@ function setLowFx(on)
 		FxBackup = nil
 	end
 end
-local MoreBtns = {}
+MoreBtns = {}
 label({ Text = "更 多 玩 法", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Color3.fromRGB(120, 129, 152), Size = UDim2.new(1, 0, 0, 18),
 	Position = UDim2.new(0, 2, 0, 0), TextXAlignment = Enum.TextXAlignment.Left }, PageMore)
-local DanceTgl = makeToggle(PageMore, 24, "自创跳舞 DANCE", "骨骼正弦摆动，不依赖动画 ID", false, function(v)
+DanceTgl = makeToggle(PageMore, 24, "自创跳舞 DANCE", "骨骼正弦摆动，不依赖动画 ID", false, function(v)
 	State.Dance = v
 	local c = LP.Character
 	local an = c and c:FindFirstChild("Animate")
@@ -1048,19 +1144,31 @@ local DanceTgl = makeToggle(PageMore, 24, "自创跳舞 DANCE", "骨骼正弦摆
 		end
 	end
 end)
-local HeightSlider = makeSlider(PageMore, "身高 HEIGHT", 72, 0.3, 5, 1, " x", function(v)
+HeightSlider = makeSlider(PageMore, "身高 HEIGHT", 72, 0.3, 5, 1, " x", function(v)
 	setBodyScale(v, nil, nil)
 end, false)
-local HeadSlider = makeSlider(PageMore, "头比例 HEAD", 124, 0.3, 5, 1, " x", function(v)
+HeadSlider = makeSlider(PageMore, "头比例 HEAD", 124, 0.3, 5, 1, " x", function(v)
 	setBodyScale(nil, nil, v)
 end, false)
-local HaloTgl = makeToggle(PageMore, 178, "头顶光环 HALO", "跟着头转的霓虹光环", false, function(v)
+HaloTgl = makeToggle(PageMore, 178, "头顶光环 HALO", "跟着头转的霓虹光环", false, function(v)
 	State.Halo = v
 	if not v then HaloPart = nil end
 end)
-local FollowTgl = makeToggle(PageMore, 226, "自动跟随 FOLLOW", "自动走向 NAME 里的玩家", false, function(v) State.Follow = v end)
-local FaceTgl   = makeToggle(PageMore, 274, "始终注视 FACING", "角色一直面朝 NAME 玩家", false, function(v) State.Face = v end)
-local FeignBtn = new("TextButton", { Text = "装死躺平 FEIGN", Font = Enum.Font.GothamBold, TextSize = 11,
+FollowTgl = makeToggle(PageMore, 226, "自动跟随 FOLLOW", "开启后弹出面板选要跟的人", false, function(v)
+	State.Follow = v
+	if v then openPlayerPicker("选择要跟随的玩家", function(pl)
+		State.WatchTarget = pl
+		if notify then notify("已锁定：" .. (pl.DisplayName or pl.Name)) end
+	end) end
+end)
+FaceTgl   = makeToggle(PageMore, 274, "始终注视 FACING", "开启后弹出面板选要看的人", false, function(v)
+	State.Face = v
+	if v then openPlayerPicker("选择要注视的玩家", function(pl)
+		State.WatchTarget = pl
+		if notify then notify("已锁定：" .. (pl.DisplayName or pl.Name)) end
+	end) end
+end)
+FeignBtn = new("TextButton", { Text = "装死躺平 FEIGN", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Mode().Accent, BackgroundColor3 = Color3.fromRGB(255, 255, 255), BackgroundTransparency = 0.9,
 	BorderSizePixel = 0, AutoButtonColor = false,
 	Size = UDim2.new(1, 0, 0, 36), Position = UDim2.new(0, 0, 0, 322), Parent = PageMore })
@@ -1072,16 +1180,16 @@ FeignBtn.MouseButton1Click:Connect(function()
 		if Humanoid then Humanoid.PlatformStand = true end
 	end
 end)
-local ClockSlider = makeSlider(PageMore, "昼夜 CLOCK", 366, 0, 24, math.floor(Lighting.ClockTime), " h", function(v)
+ClockSlider = makeSlider(PageMore, "昼夜 CLOCK", 366, 0, 24, math.floor(Lighting.ClockTime), " h", function(v)
 	Lighting.ClockTime = v
 end, false)
-local FovSlider = makeSlider(PageMore, "视野 FOV", 420, 30, 120, 70, " °", function(v)
+FovSlider = makeSlider(PageMore, "视野 FOV", 420, 30, 120, 70, " °", function(v)
 	State.FovValue = v
-	if not State.Enabled then Cam.FieldOfView = v end
+	if v > 0 then Cam.FieldOfView = v end
 end, false)
-local FX_LIST = { "OFF", "BLOOM", "CYBER", "NOIR" }
-local fxIndex = 1
-local FxBtn = new("TextButton", { Text = "画面特效：OFF", Font = Enum.Font.GothamBold, TextSize = 11,
+FX_LIST = { "OFF", "BLOOM", "CYBER", "NOIR" }
+fxIndex = 1
+FxBtn = new("TextButton", { Text = "画面特效：OFF", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Mode().Accent, BackgroundColor3 = Color3.fromRGB(255, 255, 255), BackgroundTransparency = 0.9,
 	BorderSizePixel = 0, AutoButtonColor = false,
 	Size = UDim2.new(1, 0, 0, 36), Position = UDim2.new(0, 0, 0, 474), Parent = PageMore })
@@ -1099,7 +1207,7 @@ function setBodyScale(h, w, head)
 		end
 	end
 end
-local FxInstances = {}
+FxInstances = {}
 function applyScreenFx()
 	fxIndex = (fxIndex % #FX_LIST) + 1
 	for _, v in ipairs(FxInstances) do
@@ -1159,7 +1267,7 @@ RunService.Heartbeat:Connect(function()
 			if not (HaloPart and HaloPart.Parent) then
 				HaloPart = Instance.new("Part")
 				HaloPart.Name = "HonHalo"
-				HaloPart.Size = Vector3.new(3.2, 0.25, 3.2)
+				HaloPart.Size = Vector3.new(3.0, 0.16, 3.0)
 				HaloPart.Shape = Enum.PartType.Cylinder
 				HaloPart.Material = Enum.Material.Neon
 				HaloPart.BrickColor = BrickColor.new("Bright yellow")
@@ -1168,24 +1276,24 @@ RunService.Heartbeat:Connect(function()
 				HaloPart.Parent = Workspace
 			end
 			local a = tick() * 2
-			HaloPart.CFrame = CFrame.new(head.Position + Vector3.new(0, 2.6, 0)) * CFrame.Angles(0, a, math.rad(75))
+			HaloPart.CFrame = CFrame.new(head.Position + Vector3.new(0, 2.6, 0)) * CFrame.Angles(0, a, 0)
 		end
 	elseif HaloPart then
 		if HaloPart.Parent then HaloPart:Destroy() end
 		HaloPart = nil
 	end
 end)
-local UtilBtns = {}
+UtilBtns = {}
 label({ Text = "实 用 工 具", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Color3.fromRGB(120, 129, 152), Size = UDim2.new(1, 0, 0, 18),
 	Position = UDim2.new(0, 2, 0, 0), TextXAlignment = Enum.TextXAlignment.Left }, PageUtil)
 label({ Text = "隐 身 录 屏", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Color3.fromRGB(120, 129, 152), Size = UDim2.new(1, 0, 0, 16),
 	Position = UDim2.new(0, 2, 0, 494), TextXAlignment = Enum.TextXAlignment.Left }, PageUtil)
-local StealthTgl = makeToggle(PageUtil, 516, "隐身录屏 STEALTH", "隐藏全部界面 · 功能后台照常跑", false, function(v)
+StealthTgl = makeToggle(PageUtil, 516, "隐身录屏 STEALTH", "隐藏全部界面 · 功能后台照常跑", false, function(v)
 	setStealth(v)
 end)
-local StealthGameTgl = makeToggle(PageUtil, 564, "连游戏 UI 一起藏", "含 Roblox 核心 UI · 顶栏 · 内置界面", true, function(v)
+StealthGameTgl = makeToggle(PageUtil, 564, "连游戏 UI 一起藏", "含 Roblox 核心 UI · 顶栏 · 内置界面", true, function(v)
 	State.StealthHideGame = v
 	if State.Stealth then
 		if v then stealthHideGame() else stealthShowGame() end
@@ -1195,10 +1303,10 @@ label({ Text = "开启后右上角出现一个 REC 悬浮窗：点一下恢复�
 	Font = Enum.Font.Gotham, TextSize = 10, TextColor3 = Color3.fromRGB(132, 141, 163),
 	Position = UDim2.new(0, 2, 0, 616), Size = UDim2.new(1, -4, 0, 56),
 	TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top }, PageUtil)
-local WaypointLabel = label({ Text = "存档点：未设置", Font = Enum.Font.Gotham, TextSize = 10,
+WaypointLabel = label({ Text = "存档点：未设置", Font = Enum.Font.Gotham, TextSize = 10,
 	TextColor3 = Color3.fromRGB(132, 141, 163), Size = UDim2.new(1, -4, 0, 20),
 	Position = UDim2.new(0, 2, 0, 680), TextXAlignment = Enum.TextXAlignment.Left }, PageUtil)
-local function utilBtn(text, y, onClick)
+function utilBtn(text, y, onClick)
 	local b = new("TextButton", { Text = text, Font = Enum.Font.GothamBold, TextSize = 11,
 		TextColor3 = Mode().Accent, BackgroundColor3 = Color3.fromRGB(255, 255, 255), BackgroundTransparency = 0.9,
 		BorderSizePixel = 0, AutoButtonColor = false,
@@ -1217,18 +1325,18 @@ end)
 utilBtn("立即重生 RESPAWN", 68, function()
 	if Humanoid and Humanoid.Parent then Humanoid.Health = 0 end
 end)
-local FreezeTgl = makeToggle(PageUtil, 112, "冻结自己 FREEZE", "锚定本体，推不动也掉不下去", false, function(v)
+FreezeTgl = makeToggle(PageUtil, 112, "冻结自己 FREEZE", "锚定本体，推不动也掉不下去", false, function(v)
 	State.Freeze = v
 	if HRP and HRP.Parent and not v then HRP.Anchored = false end
 end)
-local SaveBtn = utilBtn("保存存档点 SAVE", 160, function()
+SaveBtn = utilBtn("保存存档点 SAVE", 160, function()
 	if HRP and HRP.Parent then
 		State.Waypoint = HRP.Position
 		WaypointLabel.Text = string.format("存档点：%d, %d, %d",
 			math.floor(State.Waypoint.X), math.floor(State.Waypoint.Y), math.floor(State.Waypoint.Z))
 	end
 end)
-local GoBtn = utilBtn("回到存档点 GO", 160, function()
+GoBtn = utilBtn("回到存档点 GO", 160, function()
 	if State.Waypoint and HRP and HRP.Parent then
 		HRP.CFrame = CFrame.new(State.Waypoint + Vector3.new(0, 3, 0))
 	end
@@ -1236,7 +1344,7 @@ end)
 SaveBtn.Size = UDim2.new(0.5, -4, 0, 36)
 GoBtn.Size = UDim2.new(0.5, -4, 0, 36)
 GoBtn.Position = UDim2.new(0.5, 4, 0, 160)
-local HidePlrTgl = makeToggle(PageUtil, 204, "隐藏其他玩家", "别人变透明，不再挡视线", false, function(v)
+HidePlrTgl = makeToggle(PageUtil, 204, "隐藏其他玩家", "别人变透明，不再挡视线", false, function(v)
 	State.HidePlayers = v
 	if not v then
 		for _, q in ipairs(HiddenParts) do
@@ -1247,7 +1355,15 @@ local HidePlrTgl = makeToggle(PageUtil, 204, "隐藏其他玩家", "别人变透
 end)
 HideUiTgl = makeToggle(PageUtil, 252, "隐藏全部 UI", "录屏 / 截图用", false, function(v) setHideUI(v) end)
 AutoJumpTgl = makeToggle(PageUtil, 300, "自动连跳 AUTO JUMP", "一直保持弹跳前进", false, function(v) State.AutoJump = v end)
-CoordTgl = makeToggle(PageUtil, 348, "坐标显示 COORD", "HUD 上实时显示 XYZ", false, function(v) State.CoordHud = v end)
+CoordTgl = makeToggle(PageUtil, 348, "坐标显示 COORD", "自动开启 HUD 并在上面显示 XYZ", false, function(v)
+	State.CoordHud = v
+	if v then
+		State.HUD = true
+		if HudFrame then HudFrame.Visible = true end
+		if HudTgl then HudTgl.Set(true, true) end
+		if notify then notify("坐标显示已开启（已自动打开速度 HUD）") end
+	end
+end)
 ZoomSlider = makeSlider(PageUtil, "镜头距离 ZOOM", 396, 1, 120, 20, " m", function(v)
 	LP.CameraMaxZoomDistance = v
 	LP.CameraMinZoomDistance = v
@@ -1284,9 +1400,10 @@ corner(StatusFrame, 12)
 Status = label({ Text = "就绪", Font = Enum.Font.Gotham, TextSize = 11, TextColor3 = Color3.fromRGB(150, 159, 182),
 	Position = UDim2.new(0, 12, 0, 0), Size = UDim2.new(1, -24, 1, 0),
 	TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Center, RichText = true }, StatusFrame)
-label({ Text = "M 切引擎 · F2 开关\nL 锁面板 · E/Q 飞行\n, . 切页 · RightCtrl 显隐",
+label({ Text = "M 切引擎 · F2 开关 · L 锁面板 · E/Q 飞行 · , . 切页 · RightCtrl 显隐",
 	Font = Enum.Font.Gotham, TextSize = 9, TextColor3 = Color3.fromRGB(105, 113, 134),
-	Position = UDim2.new(0, 0, 1, -58), Size = UDim2.new(0, 168, 0, 52),
+	Position = UDim2.new(0, 0, 1, -13), Size = UDim2.new(1, 0, 0, 12),
+	TextXAlignment = Enum.TextXAlignment.Center,
 	TextXAlignment = Enum.TextXAlignment.Center, TextWrapped = true }, Main)
 HudFrame = new("Frame", { Size = UDim2.new(0, 172, 0, 40), Position = UDim2.new(0.5, -86, 1, -104),
 	BackgroundColor3 = Color3.fromRGB(13, 15, 23), BackgroundTransparency = 0.25,
@@ -1818,7 +1935,9 @@ function SetTab(i)
 		for j, t in ipairs(TabBtns) do
 			if t and t.Btn then
 				local on = (j == i)
-				TweenService:Create(t.Btn, TWEEN_FAST, { TextColor3 = on and Color3.fromRGB(238, 243, 255) or Color3.fromRGB(140, 149, 172) }):Play()
+				TweenService:Create(t.Btn, TWEEN_FAST, {
+					TextColor3 = on and Color3.fromRGB(238, 243, 255) or Color3.fromRGB(140, 149, 172),
+					BackgroundTransparency = on and 0.86 or 1 }):Play()
 				if t.Underline then
 					TweenService:Create(t.Underline, TWEEN_FAST, { BackgroundTransparency = on and 0 or 1 }):Play()
 				end
@@ -1877,6 +1996,250 @@ function SetMode(i)
 	TeleportToggle.Dim(m.Id ~= "CF")
 	cur, CFAccum = 0, 0
 end
+-- ---------- 神威 · 空间扭曲 ----------
+-- 还原「空间被拧成漩涡」：把一整片空间网格（同心环 + 径向线）按等角(对数)螺旋
+-- r = a·e^(b·theta) 扭曲 —— 径向线弯成螺旋、同心环按「内快外慢」差异旋转产生剪切，
+-- 越靠中心卷得越紧，最后被中心的黑洞奇点吞噬。
+-- 螺旋段不是散点：每条臂由一串首尾相接的短线段沿切线方向拼成，因此是连续曲线。
+KAMUI_A, KAMUI_B = 5, 0.30
+KamuiRoot, KamuiCore, KamuiGlow, KamuiDisc = nil, nil, nil, nil
+KamuiSegs, KamuiRings = {}, {}
+KamuiOn, KamuiT, KamuiDur, KamuiDir = false, 0, 2.8, 1
+
+function buildKamui()
+	if KamuiRoot then return end
+	KamuiRoot = new("Frame", { Name = "HonKamui", Size = UDim2.new(0, 360, 0, 360),
+		AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 0, 0.5, 0),
+		BackgroundTransparency = 1, BorderSizePixel = 0, Visible = false, Parent = Gui })
+	-- 奇点辉光
+	KamuiGlow = new("Frame", { Size = UDim2.new(0, 130, 0, 130), AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.new(0.5, 0, 0.5, 0), BackgroundColor3 = Color3.fromRGB(130, 165, 255),
+		BackgroundTransparency = 0.8, BorderSizePixel = 0, Parent = KamuiRoot })
+	corner(KamuiGlow, 65)
+	-- 吸积盘
+	KamuiDisc = new("Frame", { Size = UDim2.new(0, 78, 0, 78), AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.new(0.5, 0, 0.5, 0), BackgroundTransparency = 1,
+		BorderSizePixel = 0, Parent = KamuiRoot })
+	corner(KamuiDisc, 39)
+	new("UIStroke", { Color = Color3.fromRGB(230, 242, 255), Thickness = 3, Transparency = 0.08, Parent = KamuiDisc })
+	-- 黑洞奇点
+	KamuiCore = new("Frame", { Size = UDim2.new(0, 34, 0, 34), AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.new(0.5, 0, 0.5, 0), BackgroundColor3 = Color3.fromRGB(1, 1, 4),
+		BackgroundTransparency = 0, BorderSizePixel = 0, Parent = KamuiRoot })
+	corner(KamuiCore, 17)
+	-- 同心空间环：内快外慢 → 差异旋转 = 剪切扭曲
+	for i = 1, 4 do
+		local d = 104 + i * 46
+		local r = new("Frame", { Size = UDim2.new(0, d, 0, d), AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.new(0.5, 0, 0.5, 0), BackgroundTransparency = 1,
+			BorderSizePixel = 0, Parent = KamuiRoot })
+		corner(r, d / 2)
+		local st = new("UIStroke", { Color = Color3.fromRGB(165, 190, 240), Thickness = 2, Transparency = 0.62, Parent = r })
+		table.insert(KamuiRings, { Ring = r, Stroke = st, D = d, Spd = 4.4 - i * 0.64 })
+	end
+	-- 等角螺旋：7 条臂 × 24 段，段沿切线方向首尾相接 → 连续螺旋曲线
+	local psi = math.deg(math.atan(1 / KAMUI_B))
+	local th0 = math.log(9 / KAMUI_A) / KAMUI_B
+	local th1 = math.log(140 / KAMUI_A) / KAMUI_B
+	local dth = (th1 - th0) / 13
+	for i = 1, 5 do
+		local base = (i - 1) * (360 / 5)
+		for j = 0, 12 do
+			local th = th0 + j * dth
+			local r = KAMUI_A * math.exp(KAMUI_B * th)
+			local len = r * dth * math.sqrt(1 + KAMUI_B * KAMUI_B) * 1.5
+			local w = 2 + (r / 140) * 3
+			local seg = new("Frame", { Size = UDim2.new(0, len, 0, w),
+				AnchorPoint = Vector2.new(0.5, 0.5), BackgroundColor3 = Color3.fromRGB(180, 205, 248),
+				BackgroundTransparency = 0.28, BorderSizePixel = 0, Parent = KamuiRoot })
+			corner(seg, w / 2)
+			table.insert(KamuiSegs, { Seg = seg, R = r, A0 = base + math.deg(th),
+				Rot = psi, Spd = 3.9 - (r / 140) * 2.5 })
+		end
+	end
+end
+
+-- ---------- 面板撕裂：把面板切成 3×6 共 18 块，每块被空间扭曲扯向奇点 ----------
+KamuiShards, KamuiShatter = {}, false
+OrigMainSize = nil
+function buildShards()
+	if #KamuiShards > 0 then return end
+	for i = 1, 18 do
+		local f = new("Frame", { Name = "HonShard", Size = UDim2.new(0, 0, 0, 0),
+			Position = UDim2.new(0, 0, 0, 0), BackgroundColor3 = Color3.fromRGB(16, 19, 28),
+			BackgroundTransparency = 1, BorderSizePixel = 0, Visible = false, Parent = Gui })
+		corner(f, 5)
+		local st = new("UIStroke", { Color = Color3.fromRGB(120, 160, 255), Thickness = 1.5, Transparency = 1, Parent = f })
+		table.insert(KamuiShards, { F = f, S = st, OX = 0, OY = 0, OW = 0, OH = 0, CX = 0, CY = 0, R0 = 0 })
+	end
+end
+
+function shatterPanel()
+	buildShards()
+	if not OrigMainSize then OrigMainSize = Main.Size end
+	local mp, ms = Main.AbsolutePosition, Main.AbsoluteSize
+	if ms.X < 10 or ms.Y < 10 then return false end
+	local cxp, cyp = 0, 0
+	if KamuiRoot then
+		cxp = KamuiRoot.AbsolutePosition.X + KamuiRoot.AbsoluteSize.X / 2
+		cyp = KamuiRoot.AbsolutePosition.Y + KamuiRoot.AbsoluteSize.Y / 2
+	else
+		cxp = mp.X + ms.X / 2
+		cyp = mp.Y + ms.Y / 2
+	end
+	local cols, rows = 3, 6
+	local cw, ch = ms.X / cols, ms.Y / rows
+	local acc = Mode().Accent
+	local base = Main.BackgroundColor3
+	for i, d in ipairs(KamuiShards) do
+		local c = (i - 1) % cols
+		local r = math.floor((i - 1) / cols)
+		d.OX = mp.X + c * cw
+		d.OY = mp.Y + r * ch
+		d.OW = cw
+		d.OH = ch
+		d.CX = cxp
+		d.CY = cyp
+		d.R0 = ((i % 2 == 0) and 1 or -1) * (140 + (i * 37) % 220)
+		d.F.BackgroundColor3 = ((i % 4) == 0) and acc or base
+		d.F.BackgroundTransparency = 0.06
+		d.S.Color = acc
+		d.S.Transparency = 0.15
+	end
+	return true
+end
+
+function hideShards()
+	for _, d in ipairs(KamuiShards) do d.F.Visible = false end
+end
+
+function playKamui(mode)
+	buildKamui()
+	KamuiDir = (mode == "out") and -1 or 1
+	KamuiT = 0
+	KamuiOn = true
+	KamuiRoot.Visible = true
+end
+
+pcall(function() RunService:UnbindFromRenderStep("HonKamui") end)
+RunService:BindToRenderStep("HonKamui", 9999, function(dt)
+	if not KamuiOn or not KamuiRoot then return end
+	KamuiT = KamuiT + dt
+	local raw = KamuiT / KamuiDur
+	if raw >= 1 then
+		KamuiOn = false
+		KamuiRoot.Visible = false
+		KamuiShatter = false
+		hideShards()
+		return
+	end
+	local k = raw < 0.5 and (2 * raw * raw) or (1 - math.pow(-2 * raw + 2, 2) / 2)
+	local out = KamuiDir > 0
+	local sc = out and (0.06 + 0.94 * k) or (1 - 0.94 * k)
+	local vis = out and (raw < 0.18 and (raw / 0.18) or (raw > 0.78 and (1 - (raw - 0.78) / 0.22) or 1))
+		or (1 - raw * 0.9)
+	local acc = Mode().Accent
+	local phase = KamuiT * 2.6
+	local wind = k * 2.2
+	-- 螺旋段：差异旋转 + 持续卷紧
+	for _, g in ipairs(KamuiSegs) do
+		local ang = g.A0 + (phase + wind * 3.4) * g.Spd * KamuiDir
+		local rr = g.R * sc
+		local rd = math.rad(ang)
+		g.Seg.Position = UDim2.new(0.5, math.cos(rd) * rr, 0.5, math.sin(rd) * rr)
+		g.Seg.Rotation = ang + g.Rot
+		g.Seg.BackgroundTransparency = 1 - vis * 0.72
+		g.Seg.BackgroundColor3 = acc
+	end
+	-- 同心环：内快外慢
+	for _, q in ipairs(KamuiRings) do
+		local d = q.D * sc
+		q.Ring.Size = UDim2.new(0, d, 0, d)
+		q.Ring.Rotation = (phase + wind * 2) * q.Spd * KamuiDir
+		q.Stroke.Transparency = 1 - vis * 0.45
+		q.Stroke.Color = acc
+	end
+	-- 奇点：放出时由大收缩为点，吸入时膨胀吞噬
+	local cs = out and (150 - 116 * k) or (34 + 150 * k)
+	KamuiCore.Size = UDim2.new(0, cs, 0, cs)
+	pcall(function() corner(KamuiCore, cs / 2) end)
+	KamuiCore.BackgroundTransparency = 1 - vis
+	local ds = 78 * (out and (0.4 + 0.6 * k) or (1 + 0.9 * k))
+	KamuiDisc.Size = UDim2.new(0, ds, 0, ds)
+	KamuiDisc.BackgroundTransparency = 1
+	local gs = 130 * (out and (0.2 + 0.8 * k) or (1 + 0.5 * k))
+	KamuiGlow.Size = UDim2.new(0, gs, 0, gs)
+	KamuiGlow.BackgroundTransparency = 1 - vis * 0.22
+	KamuiGlow.BackgroundColor3 = acc
+	-- 撕裂碎片：1 = 完整拼在面板原位，0 = 被扯进奇点
+	if KamuiShatter and #KamuiShards > 0 then
+		local u
+		if out then
+			u = math.min(1, math.max(0, (raw - 0.10) / 0.78))
+		else
+			u = 1 - math.min(1, math.max(0, (raw - 0.06) / 0.80))
+		end
+		local q = u * u * (3 - 2 * u)
+		local fcy = 20
+		for _, d in ipairs(KamuiShards) do
+			local vx, vy = d.OX - d.CX, d.OY - (d.CY + fcy)
+			local rad = math.sqrt(vx * vx + vy * vy)
+			local ang = math.atan2(vy, vx)
+			local spin = (1 - q) * 2.6 * (1 + (1 - q) * 1.6) * KamuiDir
+			local rr = rad * math.pow(q, 1.25)
+			local nx = d.CX + math.cos(ang + spin) * rr
+			local ny = d.CY + fcy + math.sin(ang + spin) * rr * 0.92
+			local w = d.OW * (0.03 + 0.97 * q)
+			local h = d.OH * (0.03 + 0.97 * q)
+			d.F.Visible = true
+			d.F.Position = UDim2.new(0, nx, 0, ny)
+			d.F.Size = UDim2.new(0, w, 0, h)
+			d.F.Rotation = d.R0 * (1 - q) * (out and -1 or 1)
+			d.F.BackgroundTransparency = 0.06 + (1 - q) * 0.82
+			d.S.Transparency = 0.15 + (1 - q) * 0.82
+		end
+	end
+end)
+
+function playOpenAnim()
+	Main.Visible = false
+	playKamui("in")
+	if not pcall(shatterPanel) then Main.Visible = true; return end
+	KamuiShatter = true
+	tspawn(function()
+		twait(2.35)
+		KamuiShatter = false
+		hideShards()
+		Main.Visible = true
+		if MainScale then MainScale.Scale = 1 end
+		Main.Rotation = 0
+		if OrigMainSize then Main.Size = OrigMainSize end
+	end)
+end
+
+function playCloseAnim(after)
+	playKamui("out")
+	local ok = pcall(shatterPanel)
+	if not ok then
+		if after then after() end
+		return
+	end
+	KamuiShatter = true
+	-- 先被空间横向拉扯扭曲一下，再交给碎片撕裂
+	pcall(function()
+		local ti0 = TweenInfo.new(0.18, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
+		TweenService:Create(Main, ti0, { Rotation = 10 }):Play()
+		TweenService:Create(Main, ti0, { Size = UDim2.new(0, Main.AbsoluteSize.X * 1.16, 0, Main.AbsoluteSize.Y * 0.8) }):Play()
+	end)
+	tspawn(function()
+		twait(0.15)
+		Main.Visible = false
+		Main.Rotation = 0
+		if OrigMainSize then Main.Size = OrigMainSize end
+		if after then after() end
+	end)
+end
+
 function applyPanelLock(v)
 	State.PanelLocked = v
 	LockShield.Visible = v
@@ -1954,6 +2317,14 @@ function keyDir()
 	end
 	if d.Magnitude < 0.05 then return nil end
 	return horiz(d)
+end
+function flyDir()
+	-- 飞行时 PlatformStand=true，Humanoid.MoveDirection 失效，
+	-- 而虚拟方向键的 Humanoid:Move 在飞行时也被跳过，所以这里直接读 PadDir
+	if PadActive and (PadDir.x ~= 0 or PadDir.y ~= 0) then
+		return padWorld()
+	end
+	return keyDir()
 end
 function moveDir()
 	local pd = padWorld()
@@ -2368,7 +2739,8 @@ RunService.Heartbeat:Connect(function(dt)
 		wasAirborne = (Humanoid.FloorMaterial == Enum.Material.Air)
 	end
 	if State.Orbit then
-		local p = getTargetPlayer(TPInput and TPInput.NAME and TPInput.NAME.Text or "")
+		local p = State.WatchTarget
+		if not (p and p.Parent) then p = getTargetPlayer(TPInput and TPInput.NAME and TPInput.NAME.Text or "") end
 		local thrp = p and p.Character and p.Character:FindFirstChild("HumanoidRootPart")
 		if thrp then
 			local a = tick() * 1.3
@@ -2376,7 +2748,8 @@ RunService.Heartbeat:Connect(function(dt)
 		end
 	end
 	if State.Follow or State.Face then
-		local p = getTargetPlayer(TPInput and TPInput.NAME and TPInput.NAME.Text or "")
+		local p = State.WatchTarget
+		if not (p and p.Parent) then p = getTargetPlayer(TPInput and TPInput.NAME and TPInput.NAME.Text or "") end
 		local thrp = p and p.Character and p.Character:FindFirstChild("HumanoidRootPart")
 		if thrp then
 			if State.Follow and (thrp.Position - HRP.Position).Magnitude > 6 then
@@ -2462,7 +2835,7 @@ RunService.Heartbeat:Connect(function(dt)
 	if State.Fly then
 		if Humanoid.PlatformStand ~= true then Humanoid.PlatformStand = true end
 		if not FlyAtt or not FlyAtt.Parent then buildFlyParts() end
-		local dir = keyDir()
+		local dir = flyDir()
 		local v = Vector3.zero
 		if dir then v = dir * State.FlySpeed end
 		local vert = 0
@@ -2481,7 +2854,7 @@ RunService.Heartbeat:Connect(function(dt)
 		if FlyVel then FlyVel.VectorVelocity = v end
 		if FlyOrient then FlyOrient.CFrame = Cam.CFrame end
 		if Highlight and Highlight.Parent then
-			Highlight.Enabled = true
+			Highlight.Enabled = State.EngineOutline
 			Highlight.OutlineColor = m.Accent
 			Highlight.OutlineTransparency = 0.35
 		end
@@ -2611,7 +2984,7 @@ RunService.Heartbeat:Connect(function(dt)
 	local fovGoal = (State.FovValue > 0) and State.FovValue or (BASE_FOV + ratio * m.FovBoost)
 	Cam.FieldOfView = Cam.FieldOfView + (fovGoal - Cam.FieldOfView) * (1 - math.exp(-dt * 5))
 	if Highlight and Highlight.Parent then
-		Highlight.Enabled = true
+		Highlight.Enabled = State.EngineOutline
 		Highlight.OutlineColor = m.Accent
 		Highlight.OutlineTransparency = 0.5 - ratio * 0.22
 	end
@@ -2671,6 +3044,369 @@ end)
 NotifyHost = new("Frame", { Name = "HonNotify", Size = UDim2.new(0, 250, 0, 400),
 	Position = UDim2.new(1, -266, 0, 60), BackgroundTransparency = 1, Parent = Gui })
 NotifyLayout = new("UIListLayout", { Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder, Parent = NotifyHost })
+-- ---------- 执行器 / 时间 / 首次使用 ----------
+function detectExecutor()
+	local ok, name = pcall(function()
+		if type(rawget(_G, "identifyexecutor")) == "function" then return identifyexecutor() end
+		if type(rawget(_G, "getexecutorname")) == "function" then return getexecutorname() end
+		if type(rawget(_G, "syn")) == "table" then return "Synapse X" end
+		if rawget(_G, "KRNL_LOADED") ~= nil then return "KRNL" end
+		if type(rawget(_G, "Delta")) == "table" then return "Delta" end
+		if type(rawget(_G, "Xeno")) == "table" then return "Xeno" end
+		return nil
+	end)
+	if ok and type(name) == "string" and #name > 0 then return name end
+	return "未识别（执行器未暴露信息）"
+end
+ExecutorName = detectExecutor()
+pcall(function() FirstUse = TeleportService:GetTeleportSetting("HON_FIRST_USE") end)
+if not FirstUse or FirstUse == "" then
+	FirstUse = os.date("%Y-%m-%d %H:%M")
+	pcall(function() TeleportService:SetTeleportSetting("HON_FIRST_USE", FirstUse) end)
+end
+function clockInfo()
+	local h = tonumber(os.date("%H")) or 12
+	local period = (h >= 6 and h < 18) and "白天" or "晚上"
+	return os.date("%H:%M") .. " · " .. period
+end
+
+-- 视野 FOV：独立维持（用户设定优先于引擎自动拉伸，不受主循环任何分支影响）
+pcall(function() RunService:UnbindFromRenderStep("HonFov") end)
+RunService:BindToRenderStep("HonFov", 9996, function()
+	if State.FovValue and State.FovValue > 0 then
+		if math.abs((Cam.FieldOfView or 70) - State.FovValue) > 0.5 then
+			Cam.FieldOfView = State.FovValue
+		end
+	end
+end)
+
+-- ---------- 屏幕选人面板（自动跟随 / 始终注视 / 环绕 用）----------
+PickerFrame, PickerList, PickerTitle = nil, nil, nil
+function openPlayerPicker(title, onPick)
+	if not PickerFrame then
+		PickerFrame = new("Frame", { Name = "HonPicker", Size = UDim2.new(0, 286, 0, 320),
+			Position = UDim2.new(0.5, -143, 0.5, -160),
+			BackgroundColor3 = Color3.fromRGB(14, 16, 24), BackgroundTransparency = 0.04,
+			BorderSizePixel = 0, Visible = false, Parent = Gui })
+		corner(PickerFrame, 16)
+		new("UIStroke", { Color = Modes[1].Accent, Transparency = 0.4, Thickness = 1, Parent = PickerFrame })
+		PickerTitle = label({ Text = "选择玩家", Font = Enum.Font.GothamBold, TextSize = 13,
+			TextColor3 = Color3.fromRGB(238, 243, 255), Position = UDim2.new(0, 14, 0, 12),
+			Size = UDim2.new(1, -60, 0, 20), TextXAlignment = Enum.TextXAlignment.Left }, PickerFrame)
+		local close = new("TextButton", { Text = "×", Font = Enum.Font.GothamBold, TextSize = 16,
+			TextColor3 = Color3.fromRGB(255, 108, 118), BackgroundTransparency = 1, BorderSizePixel = 0,
+			AutoButtonColor = false, Position = UDim2.new(1, -38, 0, 8), Size = UDim2.new(0, 28, 0, 28), Parent = PickerFrame })
+		bindClick(close, "关闭选人", function() PickerFrame.Visible = false end)
+		PickerList = new("ScrollingFrame", { Size = UDim2.new(1, -20, 1, -52), Position = UDim2.new(0, 10, 0, 42),
+			BackgroundTransparency = 1, BorderSizePixel = 0, ScrollBarThickness = 4,
+			ScrollBarImageTransparency = 0.5, CanvasSize = UDim2.new(0, 0, 0, 0),
+			AutomaticCanvasSize = Enum.AutomaticSize.Y, Parent = PickerFrame })
+		new("UIListLayout", { Padding = UDim.new(0, 4), SortOrder = Enum.SortOrder.LayoutOrder, Parent = PickerList })
+	end
+	if PickerTitle then PickerTitle.Text = tostring(title or "选择玩家") end
+	for _, c in ipairs(PickerList:GetChildren()) do
+		if c:IsA("TextButton") then c:Destroy() end
+	end
+	local n = 0
+	for _, pl in ipairs(Players:GetPlayers()) do
+		if pl ~= LP then
+			n = n + 1
+			local b = new("TextButton", { Text = (pl.DisplayName or pl.Name) .. "  (@" .. pl.Name .. ")",
+				Font = Enum.Font.Gotham, TextSize = 12, TextColor3 = Color3.fromRGB(226, 233, 248),
+				BackgroundColor3 = Color3.fromRGB(255, 255, 255), BackgroundTransparency = 0.93,
+				BorderSizePixel = 0, AutoButtonColor = false,
+				Size = UDim2.new(1, -8, 0, 34), Parent = PickerList })
+			corner(b, 8)
+			bindClick(b, "选人" .. pl.Name, function()
+				PickerFrame.Visible = false
+				if onPick then onPick(pl) end
+			end)
+		end
+	end
+	if n == 0 then
+		label({ Text = "当前没有别的玩家", Font = Enum.Font.Gotham, TextSize = 12,
+			TextColor3 = Color3.fromRGB(140, 149, 172), Size = UDim2.new(1, -8, 0, 30),
+			BackgroundTransparency = 1 }, PickerList)
+	end
+	PickerFrame.Visible = true
+end
+
+-- ---------- 黑洞：在前方生成一个吸引周围一切的球体 ----------
+HolePart, HoleCore = nil, nil
+function setBlackHole(on)
+	State.BlackHole = on
+	if not on then
+		if HolePart then pcall(function() HolePart:Destroy() end) end
+		if HoleCore then pcall(function() HoleCore:Destroy() end) end
+		HolePart, HoleCore = nil, nil
+		return
+	end
+	if not (HRP and HRP.Parent) then State.BlackHole = false; return end
+	local pos = HRP.Position + horiz(Cam.CFrame.LookVector) * 18 + Vector3.new(0, 3, 0)
+	HolePart = Instance.new("Part")
+	HolePart.Name = "HonBlackHole"
+	HolePart.Shape = Enum.PartType.Ball
+	HolePart.Size = Vector3.new(10, 10, 10)
+	HolePart.Material = Enum.Material.Neon
+	HolePart.BrickColor = BrickColor.new("Really black")
+	HolePart.Anchored = true
+	HolePart.CanCollide = false
+	HolePart.CFrame = CFrame.new(pos)
+	HolePart.Parent = Workspace
+	HoleCore = Instance.new("Part")
+	HoleCore.Shape = Enum.PartType.Ball
+	HoleCore.Size = Vector3.new(3, 3, 3)
+	HoleCore.Material = Enum.Material.Neon
+	HoleCore.BrickColor = BrickColor.new("Bright violet")
+	HoleCore.Anchored = true
+	HoleCore.CanCollide = false
+	HoleCore.CFrame = CFrame.new(pos)
+	HoleCore.Parent = Workspace
+	if notify then notify("黑洞已生成，周围的东西会被吸过去") end
+end
+
+-- ---------- 甩飞所有玩家 ----------
+function flingAll()
+	local n = 0
+	for _, pl in ipairs(Players:GetPlayers()) do
+		if pl ~= LP and pl.Character then
+			local hrp = pl.Character:FindFirstChild("HumanoidRootPart")
+			if hrp then
+				pcall(function()
+					hrp.AssemblyLinearVelocity = Vector3.new(
+						math.random(-1, 1) * 220, 320, math.random(-1, 1) * 220)
+				end)
+				n = n + 1
+			end
+		end
+	end
+	if notify then notify("已甩飞 " .. n .. " 名玩家") end
+end
+
+-- ---------- 闪电冲刺：瞬间向前冲一段并带雷电特效 ----------
+function lightningDash()
+	if not (HRP and HRP.Parent) then return end
+	pcall(function()
+		local dir = horiz(Cam.CFrame.LookVector)
+		if HRP then HRP.CFrame = HRP.CFrame + dir * 60 end
+		local att = Instance.new("Part")
+		att.Size = Vector3.new(1, 1, 1)
+		att.Anchored = true
+		att.CanCollide = false
+		att.Transparency = 1
+		att.CFrame = HRP.CFrame
+		att.Parent = Workspace
+		local pe = Instance.new("ParticleEmitter")
+		pe.Color = ColorSequence.new(Color3.fromRGB(120, 200, 255))
+		pe.LightEmission = 1
+		pe.Rate = 0
+		pe.Lifetime = NumberRange.new(0.4)
+		pe.Speed = NumberRange.new(40)
+		pe.Parent = att
+		pe:Emit(60)
+		tspawn(function()
+			twait(1.2)
+			if att and att.Parent then att:Destroy() end
+		end)
+	end)
+	if notify then notify("闪电冲刺！") end
+end
+
+-- ---------- 无敌少侠飞行：超人姿势飞行 ----------
+function setHeroFly(on)
+	State.HeroFly = on
+	if on then
+		setFly(true)
+		pcall(function()
+			if Humanoid then Humanoid.PlatformStand = true end
+			if FlyOrient then
+				FlyOrient.CFrame = Cam.CFrame * CFrame.Angles(math.rad(-70), 0, 0)
+			end
+		end)
+	else
+		setFly(false)
+	end
+end
+
+-- ---------- FE 变车：角色变成车（客户端可见，本体同步）----------
+CarModel = nil
+function setCar(on)
+	State.Car = on
+	if not on then
+		if CarModel then pcall(function() CarModel:Destroy() end) end
+		CarModel = nil
+		local c = LP.Character
+		if c then
+			for _, q in ipairs(c:GetDescendants()) do
+				if q:IsA("BasePart") then pcall(function() q.Transparency = 0 end) end
+			end
+		end
+		return
+	end
+	if not (HRP and HRP.Parent) then State.Car = false; return end
+	pcall(function()
+		local c = LP.Character
+		for _, q in ipairs(c:GetDescendants()) do
+			if q:IsA("BasePart") and q.Name ~= "HumanoidRootPart" then
+				q.Transparency = 1
+			end
+		end
+		CarModel = Instance.new("Model")
+		CarModel.Name = "HonCar"
+		local body = Instance.new("Part")
+		body.Size = Vector3.new(4, 2, 8)
+		body.Material = Enum.Material.SmoothPlastic
+		body.BrickColor = BrickColor.new("Bright red")
+		body.Anchored = true
+		body.CanCollide = false
+		body.Parent = CarModel
+		local roof = Instance.new("Part")
+		roof.Size = Vector3.new(3.4, 1.6, 4)
+		roof.Material = Enum.Material.SmoothPlastic
+		roof.BrickColor = BrickColor.new("Bright blue")
+		roof.Anchored = true
+		roof.CanCollide = false
+		roof.Parent = CarModel
+		for i = 0, 1 do
+			for j = 0, 1 do
+				local w = Instance.new("Part")
+				w.Shape = Enum.PartType.Cylinder
+				w.Size = Vector3.new(1.6, 1, 1.6)
+				w.Material = Enum.Material.SmoothPlastic
+				w.BrickColor = BrickColor.new("Really black")
+				w.Anchored = true
+				w.CanCollide = false
+				w.Parent = CarModel
+			end
+		end
+		CarModel.Parent = Workspace
+	end)
+end
+
+-- ---------- 强制第三人称 ----------
+function setThirdPerson(on)
+	State.ThirdPerson = on
+	pcall(function()
+		if on then
+			if Humanoid then Humanoid.CameraOffset = Vector3.new(0, 1.5, 0) end
+			LP.CameraMode = Enum.CameraMode.Classic
+			LP.CameraMaxZoomDistance = 25
+			LP.CameraMinZoomDistance = 12
+		else
+			if Humanoid then Humanoid.CameraOffset = Vector3.new(0, 0, 0) end
+			LP.CameraMinZoomDistance = 0.5
+			LP.CameraMaxZoomDistance = 400
+		end
+	end)
+end
+
+-- ---------- 彩虹拖尾：角色上下两个挂点拉出彩色光带 ----------
+TrailObj, TrailA0, TrailA1 = nil, nil, nil
+function setTrail(on)
+	if not on then
+		if TrailObj then pcall(function() TrailObj:Destroy() end) end
+		if TrailA0 then pcall(function() TrailA0:Destroy() end) end
+		if TrailA1 then pcall(function() TrailA1:Destroy() end) end
+		TrailObj, TrailA0, TrailA1 = nil, nil, nil
+		return
+	end
+	if not (HRP and HRP.Parent) then State.Trail = false; return end
+	pcall(function()
+		TrailA0 = Instance.new("Attachment")
+		TrailA0.Position = Vector3.new(0, -2.2, 0)
+		TrailA0.Parent = HRP
+		TrailA1 = Instance.new("Attachment")
+		TrailA1.Position = Vector3.new(0, 2.2, 0)
+		TrailA1.Parent = HRP
+		TrailObj = Instance.new("Trail")
+		TrailObj.Attachment0 = TrailA0
+		TrailObj.Attachment1 = TrailA1
+		TrailObj.Color = ColorSequence.new(Color3.fromRGB(255, 60, 60), Color3.fromRGB(80, 220, 255))
+		TrailObj.Lifetime = 0.7
+		TrailObj.MinLength = 0.1
+		TrailObj.LightEmission = 1
+		TrailObj.WidthScale = NumberSequence.new(1.4)
+		TrailObj.Parent = HRP
+	end)
+end
+
+-- ---------- 分身军团：克隆自己，围成一圈跟随 ----------
+Clones = {}
+function setCloneArmy(on)
+	if not on then
+		for _, c in ipairs(Clones) do pcall(function() c:Destroy() end) end
+		Clones = {}
+		return
+	end
+	local c = LP.Character
+	if not (c and HRP and HRP.Parent) then State.CloneArmy = false; return end
+	for i = 1, 5 do
+		pcall(function()
+			local cl = c:Clone()
+			cl.Name = "HonClone" .. tostring(i)
+			cl.Parent = Workspace
+			for _, d in ipairs(cl:GetDescendants()) do
+				if d:IsA("Script") or d:IsA("LocalScript") then d:Destroy() end
+				if d:IsA("BasePart") then d.Transparency = 0.5; d.CanCollide = false; d.CastShadow = false end
+			end
+			local chr = cl:FindFirstChild("HumanoidRootPart")
+			if chr then chr.Anchored = true end
+			local hum = cl:FindFirstChildOfClass("Humanoid")
+			if hum then hum.Health = math.huge; hum.WalkSpeed = 0; hum.JumpPower = 0 end
+			table.insert(Clones, cl)
+		end)
+	end
+	if notify then notify("分身军团：已生成 " .. #Clones .. " 个分身") end
+end
+
+-- ---------- 粒子环绕：角色身边一颗旋转的发光粒子球 ----------
+OrbitPart = nil
+function setOrbitFx(on)
+	if not on then
+		if OrbitPart then pcall(function() OrbitPart:Destroy() end) end
+		OrbitPart = nil
+		return
+	end
+	pcall(function()
+		OrbitPart = Instance.new("Part")
+		OrbitPart.Name = "HonOrbitFx"
+		OrbitPart.Size = Vector3.new(0.6, 0.6, 0.6)
+		OrbitPart.Anchored = true
+		OrbitPart.CanCollide = false
+		OrbitPart.Transparency = 1
+		OrbitPart.Parent = Workspace
+		local pe = Instance.new("ParticleEmitter")
+		pe.Color = ColorSequence.new(Mode().Accent)
+		pe.LightEmission = 1
+		pe.LightInfluence = 0
+		pe.Rate = 220
+		pe.Lifetime = NumberRange.new(0.7)
+		pe.Speed = NumberRange.new(7)
+		pe.Size = NumberSequence.new(0.5)
+		pe.Parent = OrbitPart
+	end)
+end
+
+-- ---------- 让所有人跳舞 ----------
+function danceAll()
+	local n = 0
+	for _, pl in ipairs(Players:GetPlayers()) do
+		local ch = pl.Character
+		local hum = ch and ch:FindFirstChildOfClass("Humanoid")
+		if hum then
+			pcall(function()
+				local anim = Instance.new("Animation")
+				anim.AnimationId = "rbxassetid://507776043"
+				local track = hum:LoadAnimation(anim)
+				track.Looped = true
+				track:Play()
+			end)
+			n = n + 1
+		end
+	end
+	if notify then notify("已让 " .. n .. " 人开始跳舞") end
+end
+
 function notify(msg, col)
 	if not msg then return end
 	local t = new("Frame", { Size = UDim2.new(1, 0, 0, 42), LayoutOrder = tick(),
@@ -2775,11 +3511,14 @@ end
 function stealthHideGame()
 	StealthHiddenGui = {}
 	for _, g in ipairs(PG:GetChildren()) do
+		-- 除了我们自己的，全部收起来（包括注入器在 Roblox 内建的界面）
 		if g:IsA("ScreenGui") and g ~= Gui and g.Enabled then
 			g.Enabled = false
 			table.insert(StealthHiddenGui, g)
 		end
 	end
+	-- 有些注入器把图标做成 CoreGui 里的东西，这里也一并尝试隐藏
+	pcall(function() StarterGui:SetCore("TopbarEnabled", false) end)
 	pcall(function() StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, false) end)
 	pcall(function() StarterGui:SetCore("TopbarEnabled", false) end)
 end
@@ -2891,7 +3630,148 @@ if KEY_SYSTEM and not Authed then
 	Main.Visible = false
 	Mini.Visible = false
 end
-local function step(name, fn)
+-- ---------- 新功能的每帧驱动（黑洞 / 变车 / 防摔落 / HUD 附加信息）----------
+pcall(function() RunService:UnbindFromRenderStep("HonFunLoop") end)
+RunService:BindToRenderStep("HonFunLoop", 9995, function(dt)
+	if State.BlackHole and HoleCore and HoleCore.Parent then
+		local c = HoleCore.Position
+		local f = State.BlackHoleForce or 60
+		for _, pl in ipairs(Players:GetPlayers()) do
+			local ch = pl.Character
+			local h = ch and ch:FindFirstChild("HumanoidRootPart")
+			if h then
+				local d = c - h.Position
+				local m = d.Magnitude
+				if m > 3 and m < 90 then
+					pcall(function() h.AssemblyLinearVelocity = d.Unit * (f * (1 - m / 90) + 12) end)
+				end
+			end
+		end
+		pcall(function()
+			HoleCore.CFrame = HoleCore.CFrame * CFrame.Angles(0, dt * 3, 0)
+			local sz = 3 + math.sin(tick() * 4) * 0.35
+			HoleCore.Size = Vector3.new(sz, sz, sz)
+		end)
+	end
+	if State.Car and CarModel and CarModel.Parent and HRP and HRP.Parent then
+		pcall(function()
+			local parts = CarModel:GetChildren()
+			if #parts >= 6 then
+				parts[1].CFrame = HRP.CFrame * CFrame.new(0, 0.2, 0)
+				parts[2].CFrame = HRP.CFrame * CFrame.new(0, 1.7, -0.6)
+				parts[3].CFrame = HRP.CFrame * CFrame.new(-1.9, -0.8, 2.6) * CFrame.Angles(0, 0, math.rad(90))
+				parts[4].CFrame = HRP.CFrame * CFrame.new(1.9, -0.8, 2.6) * CFrame.Angles(0, 0, math.rad(90))
+				parts[5].CFrame = HRP.CFrame * CFrame.new(-1.9, -0.8, -2.6) * CFrame.Angles(0, 0, math.rad(90))
+				parts[6].CFrame = HRP.CFrame * CFrame.new(1.9, -0.8, -2.6) * CFrame.Angles(0, 0, math.rad(90))
+			end
+		end)
+	end
+	if State.NoFall and HRP and HRP.Parent then
+		pcall(function()
+			local v = HRP.AssemblyLinearVelocity
+			if v.Y < -90 then
+				HRP.AssemblyLinearVelocity = Vector3.new(v.X, -30, v.Z)
+			end
+		end)
+	end
+	if State.CloneArmy and #Clones > 0 and HRP and HRP.Parent then
+		pcall(function()
+			for i, cl in ipairs(Clones) do
+				local cr = cl:FindFirstChild("HumanoidRootPart")
+				if cr then
+					local a = tick() * 1.4 + (i / #Clones) * math.pi * 2
+					cr.CFrame = CFrame.new(HRP.Position + Vector3.new(math.cos(a) * 6.5, 0, math.sin(a) * 6.5)) * CFrame.Angles(0, -a, 0)
+				end
+			end
+		end)
+	end
+	if State.OrbitFx and OrbitPart and OrbitPart.Parent and HRP and HRP.Parent then
+		pcall(function()
+			local a = tick() * 3
+			OrbitPart.CFrame = CFrame.new(HRP.Position + Vector3.new(math.cos(a) * 3.4, 1.2 + math.sin(a * 2) * 0.5, math.sin(a) * 3.4))
+		end)
+	end
+	if State.HeadRide and HRP and HRP.Parent then
+		pcall(function()
+			local best, bd = nil, math.huge
+			for _, pl in ipairs(Players:GetPlayers()) do
+				if pl ~= LP and pl.Character then
+					local hd = pl.Character:FindFirstChild("Head")
+					if hd then
+						local d = (hd.Position - HRP.Position).Magnitude
+						if d < bd then bd = d; best = hd end
+					end
+				end
+			end
+			if best and bd < 60 then
+				HRP.CFrame = best.CFrame * CFrame.new(0, 2.4, 0)
+				if Humanoid then Humanoid.PlatformStand = false end
+			end
+		end)
+	end
+	if State.SpinCam and HRP and HRP.Parent then
+		pcall(function()
+			local a = tick() * 1.1
+			local pos = HRP.Position
+			Cam.CFrame = CFrame.new(pos + Vector3.new(math.cos(a) * 14, 7, math.sin(a) * 14), pos)
+		end)
+	elseif State.Shake then
+		pcall(function()
+			Cam.CFrame = Cam.CFrame * CFrame.new((math.random() - 0.5) * 0.9, (math.random() - 0.5) * 0.9, 0)
+		end)
+	end
+	if State.Magnet and HRP and HRP.Parent then
+		MagnetTimer = (MagnetTimer or 0) + dt
+		if MagnetTimer > 0.5 then
+			MagnetTimer = 0
+			pcall(function()
+				local cnt = 0
+				for _, obj in ipairs(Workspace:GetDescendants()) do
+					if cnt >= 25 then break end
+					local isItem = obj:IsA("Tool") or obj:FindFirstChildOfClass("ClickDetector") or obj:FindFirstChildOfClass("ProximityPrompt")
+					if isItem then
+						local part = obj:IsA("BasePart") and obj or obj:FindFirstChildWhichIsA("BasePart")
+						if part then
+							local d = (part.Position - HRP.Position).Magnitude
+							if d > 4 and d < 45 then
+								part.CFrame = CFrame.new(part.Position + (HRP.Position - part.Position).Unit * 5)
+								cnt = cnt + 1
+							end
+						end
+					end
+				end
+			end)
+		end
+	end
+	if HudSub and HudSub.Parent and (State.ShowHP or State.ShowFunList) then
+		local extra = ""
+		if State.ShowHP and Humanoid and Humanoid.Parent then
+			extra = extra .. "  HP" .. math.floor(Humanoid.Health)
+		end
+		if State.ShowFunList then
+			local on = {}
+			if State.Fly then table.insert(on, "FLY") end
+			if State.Noclip then table.insert(on, "NCLIP") end
+			if State.InfJump then table.insert(on, "JUMP") end
+			if State.EspPlayer then table.insert(on, "ESP") end
+			if State.Spin then table.insert(on, "SPIN") end
+			if State.Rainbow then table.insert(on, "RGB") end
+			if State.BlackHole then table.insert(on, "HOLE") end
+			if State.Car then table.insert(on, "CAR") end
+			if #on > 0 then extra = extra .. "  " .. table.concat(on, "/") end
+		end
+		if extra ~= "" then
+			pcall(function()
+				local base = HudSub.Text
+				local cut = base:find("  HP")
+				if cut then base = base:sub(1, cut - 1) end
+				HudSub.Text = base .. extra
+			end)
+		end
+	end
+end)
+
+function step(name, fn)
 	local ok, err = pcall(fn)
 	if not ok then warn("[HON] 初始化步骤失败: " .. name .. " -> " .. tostring(err)) end
 end
@@ -2905,11 +3785,23 @@ step("面板锁", function() applyPanelLock(false) end)
 step("触屏可见", updateTouchVisibility)
 -- 最后再强制切一次，确保只有当前页可见
 SetTab(1)
+-- 开场：神威空间扭曲展开
+pcall(function() playOpenAnim() end)
+if InfoLabel then
+	InfoLabel.Text = clockInfo() .. "  ·  " .. tostring(ExecutorName) .. "  ·  首次 " .. tostring(FirstUse)
+end
+tspawn(function()
+	while true do
+		twait(1)
+		if not (InfoLabel and InfoLabel.Parent) then break end
+		InfoLabel.Text = clockInfo() .. "  ·  " .. tostring(ExecutorName) .. "  ·  首次 " .. tostring(FirstUse)
+	end
+end)
 -- 手机端触摸兜底（放在这里是因为此刻所有界面对象都已创建完成）
 pcall(function()
 	TabBar.InputBegan:Connect(function(i)
 		if i.UserInputType ~= Enum.UserInputType.Touch and i.UserInputType ~= Enum.UserInputType.MouseButton1 then return end
-		local rel = i.Position - TabBar.AbsolutePosition
+		local rel = i.Position - TabBar.AbsolutePosition + TabBar.CanvasPosition
 		if rel.X < 0 or rel.X > TabBar.AbsoluteSize.X then return end
 		local idx = math.floor((rel.Y - 10) / 44) + 1
 		if idx >= 1 and idx <= 8 then SetTab(idx) end
@@ -2932,4 +3824,4 @@ TweenService:Create(Main, TweenInfo.new(0.45, Enum.EasingStyle.Back, Enum.Easing
 	Size = UDim2.new(0, PANEL_W, 0, PANEL_H), BackgroundTransparency = 0.05 }):Play()
 TweenService:Create(Main, TweenInfo.new(0.45, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
 	Position = UDim2.new(0.5, -PANEL_W / 2, 0.5, -PANEL_H / 2) }):Play()
-print("[HON SPEED HUB] v5.8 已加载 · 完整文件约 2936 行 · 若你的脚本远大于此行数说明粘贴重复了")
+print("[HON SPEED HUB] v5.16 已加载 · 完整文件约 3828 行 · 若你的脚本远大于此行数说明粘贴重复了")
