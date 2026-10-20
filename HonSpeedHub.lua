@@ -4,7 +4,7 @@ local MASTER_KEY  = "chenchen1116"
 local VALID_KEYS  = {
 	["chenchen1116"] = true,
 }
-print("[HON SPEED HUB] 载入中 · v5.21 · 若只看到这一行说明文件在中途中断")
+print("[HON SPEED HUB] 载入中 · v5.22 · 若只看到这一行说明文件在中途中断")
 local twait  = (type(task) == "table" and task.wait)  or wait  or function() end
 local tspawn = (type(task) == "table" and task.spawn) or spawn or function(f, ...) return f(...) end
 if type(twait) ~= "function" then twait = function() end end
@@ -210,7 +210,7 @@ label({ Text = "HON SPEED HUB", Font = Enum.Font.GothamBold, TextSize = 21,
 	TextColor3 = Color3.fromRGB(238, 243, 255),
 	Position = UDim2.new(0, 36, 0, 16), Size = UDim2.new(0, 200, 0, 24),
 	TextXAlignment = Enum.TextXAlignment.Left }, Header)
-label({ Text = "Universal Hub  ·  W / V / CF  ·  v5.21", Font = Enum.Font.Gotham, TextSize = 11,
+label({ Text = "Universal Hub  ·  W / V / CF  ·  v5.22", Font = Enum.Font.Gotham, TextSize = 11,
 	TextColor3 = Color3.fromRGB(140, 149, 172),
 	Position = UDim2.new(0, 36, 0, 42), Size = UDim2.new(0, 240, 0, 16),
 	TextXAlignment = Enum.TextXAlignment.Left }, Header)
@@ -246,13 +246,18 @@ iconBtn("–", -68, Color3.fromRGB(190, 198, 220), function() playCloseAnim(func
 iconBtn("×", -34, Color3.fromRGB(255, 108, 118), function() playCloseAnim() end)
 -- ---------- 更新公告 ----------
 CHANGELOG = {
-	{ v = "v5.21", t = {
+	{ v = "v5.22", t = {
+		"紧急修复 · 白屏崩溃：FunBtns 表在第 679 行被使用却在第 1159 行才定义，导致 table.insert(nil) 报错、初始化中断",
+		"修复 · 表定义顺序全部前移，新增「表检查器」构建闸门（table.insert 目标必须先定义）",
+		"修复 · 收起面板后状态还原，关闭/重开不再残留",
+	}},
+	{ v = "v5.22", t = {
 		"紧急修复 · makeToggle 内部自引用导致每次 Set() 抛错（连锁引发页面/小窗打不开）",
 		"修复 · 关不掉：关闭流程改为无论如何都会收起面板并还原状态",
 		"修复 · 启动动画：移除与神威冲突的旧弹出动画，改为神威之后衔接弹出",
 		"修复 · 侧栏只认前 8 页：改为动态全部页 + 画布放大，10 个标签都能点",
 		"新增 · 看门狗：5 秒后若界面意外消失会自动恢复，防止整个 UI 不见",
-	}},	{ v = "v5.21", t = {
+	}},	{ v = "v5.22", t = {
 		"改 · 移动 UI：屏幕上点哪个就能拖哪个（数字键/方向键各自独立拖动）",
 		"新增 · 自由视角开关：角色定在原地，镜头到处飞",
 		"改 · 环绕 TA：开启后弹面板选人（取消会自动关掉开关）",
@@ -262,7 +267,7 @@ CHANGELOG = {
 		"改 · 全部关闭：先弹确认框并说明会关掉哪些东西",
 		"新增 · 传送页：查看玩家（选中即可看他）+ 恢复自己视角",
 		"改 · 存档点：保存成功/失败都有明确提示",
-	}},	{ v = "v5.21", t = {
+	}},	{ v = "v5.22", t = {
 		"新增 · 装扮页：6 种大翅膀（天使/堕天/恶魔/光/火/机械）+ 5 种头顶光环",
 		"新增 · 蔚蓝档案式光环（悬浮旋转，可调大小与角度）",
 		"新增 · 隐藏身上方块：一键清除配件/框选/名牌等附加物",
@@ -272,14 +277,14 @@ CHANGELOG = {
 		"修复 · 血量显示与功能列表被 HUD 覆盖不显示",
 		"新增 · 空壳检查器：自动揪出「开关没用」的字段",
 	}},
-	{ v = "v5.21", t = {
+	{ v = "v5.22", t = {
 		"新增 · 公告界面（本页）· 设置页入口",
 		"新增 · 头顶光环（蔚蓝档案式）· 分身独立面板",
 		"修复 · 飞行 / FOV / 连跳 / 拖尾 / 跳舞 / 骑头 失效",
 		"修复 · 黑洞与倒立控件重叠 · 存档点提示",
 		"重构 · 混淆版：字符串全加密 + 诱饵逻辑，抗反混淆",
 	}},
-	{ v = "v5.21", t = {
+	{ v = "v5.22", t = {
 		"修复 · 特效永远不停（时长单位错误）",
 		"修复 · 放出动画不显示漩涡",
 		"回退 · 漩涡恢复平面版（更好看的那版）",
@@ -375,6 +380,7 @@ local TabBar = new("ScrollingFrame", { Name = "Sidebar", Size = UDim2.new(0, 168
 local SideLine = new("Frame", { Size = UDim2.new(0, 1, 1, 0), Position = UDim2.new(0, 167, 0, 0),
 	BackgroundColor3 = Color3.fromRGB(255, 255, 255), BackgroundTransparency = 0.93, BorderSizePixel = 0, Parent = Main })
 local TabBtns = {}
+local FunBtns = {}
 local CurTab = 1
 do
 	local names = { "引擎", "辅助", "视觉", "触屏", "工具", "娱乐", "更多", "实用", "传送", "装扮" }
@@ -1156,7 +1162,6 @@ UserInputService.InputBegan:Connect(function(input, processed)
 		HRP.CFrame = CFrame.new(res.Position + Vector3.new(0, 3, 0))
 	end
 end)
-local FunBtns = {}
 label({ Text = "娱 乐 功 能", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Color3.fromRGB(120, 129, 152), Size = UDim2.new(1, 0, 0, 18),
 	Position = UDim2.new(0, 2, 0, 0), TextXAlignment = Enum.TextXAlignment.Left }, PageFun)
@@ -4634,4 +4639,4 @@ tspawn(function()
 		end)
 	end
 end)
-print("[HON SPEED HUB] v5.21 已加载 · 完整文件约 4638 行 · 若你的脚本远大于此行数说明粘贴重复了")
+print("[HON SPEED HUB] v5.22 已加载 · 完整文件约 4643 行 · 若你的脚本远大于此行数说明粘贴重复了")
