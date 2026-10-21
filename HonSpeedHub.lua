@@ -4,7 +4,7 @@ local MASTER_KEY  = "chenchen1116"
 local VALID_KEYS  = {
 	["chenchen1116"] = true,
 }
-print("[HON SPEED HUB] 载入中 · v5.27 · 若只看到这一行说明文件在中途中断")
+print("[HON SPEED HUB] 载入中 · v5.29 · 若只看到这一行说明文件在中途中断")
 local twait  = (type(task) == "table" and task.wait)  or wait  or function() end
 local tspawn = (type(task) == "table" and task.spawn) or spawn or function(f, ...) return f(...) end
 if type(twait) ~= "function" then twait = function() end end
@@ -95,7 +95,7 @@ local State = {
 	InstantInteract = false, EspDepth = true,
 	ClickTP = false, AntiVoid = false, FakeChar = false, BodyTransp = 0, Fullbright = false, LowGravity = false, GravityValue = 40,
 	Spin = false, Rainbow = false, Bounce = false, Orbit = false, LowFx = false,
-	Dance = false, Halo = false, Follow = false, Face = false, FovValue = 0, WatchTarget = nil,
+	Dance = false, Halo = false, Follow = false, Face = false, FovValue = 0, WatchTarget = nil, Radar = false, GfxShadow = false, GfxFog = false, GfxParticle = false, GfxDecal = false,
 	Freeze = false, HidePlayers = false, HideUI = false, AutoJump = false, CoordHud = false,
 	TPLoop = false, TPInterval = 0, TPOffsetY = 3,
 	MoveGameUI = false, UILayoutLocked = false,
@@ -210,7 +210,7 @@ label({ Text = "HON SPEED HUB", Font = Enum.Font.GothamBold, TextSize = 21,
 	TextColor3 = Color3.fromRGB(238, 243, 255),
 	Position = UDim2.new(0, 36, 0, 16), Size = UDim2.new(0, 200, 0, 24),
 	TextXAlignment = Enum.TextXAlignment.Left }, Header)
-label({ Text = "Universal Hub  ·  W / V / CF  ·  v5.27", Font = Enum.Font.Gotham, TextSize = 11,
+label({ Text = "Universal Hub  ·  W / V / CF  ·  v5.29", Font = Enum.Font.Gotham, TextSize = 11,
 	TextColor3 = Color3.fromRGB(140, 149, 172),
 	Position = UDim2.new(0, 36, 0, 42), Size = UDim2.new(0, 240, 0, 16),
 	TextXAlignment = Enum.TextXAlignment.Left }, Header)
@@ -243,10 +243,37 @@ corner(LockBtn, 8)
 local LockIcon = lockIcon(LockBtn, UDim2.new(0.5, -8, 0.5, -8), Color3.fromRGB(150, 158, 180))
 iconBtn("!", -136, Mode().Accent, function() showNotice() end)
 iconBtn("–", -68, Color3.fromRGB(190, 198, 220), function() playCloseAnim(function() Mini.Visible = true end) end)
-iconBtn("×", -34, Color3.fromRGB(255, 108, 118), function() playCloseAnim() end)
+iconBtn("×", -34, Color3.fromRGB(255, 108, 118), function()
+	askConfirm("彻底关闭脚本？", "会关掉所有功能、清掉翅膀/分身/黑洞等生成物、销毁界面并停止全部循环。\n（只想收起的话请点左边的 –）", "确认关闭", function()
+		unloadScript()
+	end)
+end)
 -- ---------- 更新公告 ----------
 CHANGELOG = {
-	{ v = "v5.27", t = {
+	{ v = "v5.30", t = {
+		"改 · × = 彻底关闭脚本（弹确认后关全部功能并卸载）；– = 收起面板（功能继续跑）",
+	}},
+	{ v = "v5.29", t = {
+		"重要 · 收起面板（– / ×）不再关闭功能，功能继续在后台跑",
+		"新增 · 设置页「彻底关闭脚本 UNLOAD」：关全部功能 + 清翅膀/分身/黑洞等生成物 + 停所有循环 + 销毁界面（带二次确认）",
+		"修复 · closeAllFeatures 函数定义此前被误删导致调用无效，已补回",
+		"加固 · 14 条循环全部加关停检查，卸载后彻底停止",
+	}},
+	{ v = "v5.29", t = {
+		"改 · 关闭脚本时自动关闭全部功能（不只是隐藏面板）",
+		"改 · 启动/删除动画 4 种样式真正生效（神威漩涡 / 淡入淡出 / 缩放弹出 / 不要动画），之前选了没反应",
+		"改 · 已开启功能显示：挪到屏幕右上角，竖排编号 1. 2. 3.",
+		"改 · 黑洞不再吸自己，只吸 NPC / 物品",
+		"改 · 装死躺平改成切换：点一下装死，再点一下起身",
+		"删 · 头顶光环、隐藏游戏 UI（按你说的删掉）",
+		"新增 · 画质修改独立页（关阴影/关雾/关粒子/隐藏贴花/亮度/饱和度/一键恢复）",
+		"新增 · 雷达（屏幕左下角）：2D 全显 与 仅人物NPC 两种模式",
+		"新增 · 闪电冲刺持续加速版：越跑越快，可随时关",
+		"改 · 分身现在能上楼梯（贴地射线跟随）",
+		"改 · 侧栏滑动时不切换页面（滑动只滚动，点击才切）",
+		"改 · 跳舞包含 NPC；工具页也加了重力与防布娃娃",
+	}},
+	{ v = "v5.29", t = {
 		"新增 · 设置页（第 11 页）：4 种 UI 样式 · 面板缩放 · 启动/删除动画样式 · 字体大小 · 背景图与透明度",
 		"新增 · 面板背景图：用你给的那张 IMG_3683 当面板背景，可开关 + 启动时自动加载",
 		"新增 · 恢复角色外观按钮（修被画质/材质改动染色的角色）",
@@ -254,11 +281,11 @@ CHANGELOG = {
 		"新增 · 防布娃娃（夜脚本同款）：不会被打倒/摔倒",
 		"新增 · 换个服务器（随机重进）",
 	}},
-	{ v = "v5.27", t = {
+	{ v = "v5.29", t = {
 		"重做 · 神威动画严格对齐预览：14 条螺旋卷入线 + 16 个沿螺旋内流的碎屑粒子 + 7 圈空间环 + 黑洞奇点，时长 3 秒，参数逐项一致",
 		"修复 · 移动键拖动：之前挂错了不存在的变量（NumBtns→TouchBtns），现在数字键/方向键都能在屏幕上直接拖",
 	}},
-	{ v = "v5.27", t = {
+	{ v = "v5.29", t = {
 		"重做 · 翅膀：每侧 3 层 × 9 片共 54 片羽翼，按翼形轮廓排布（中间长两端短）+ 波浪式扇动，新增「EVA 暴走翼」",
 		"修复 · 头顶光环默认改成水平（Torus 默认竖直），并加降级方案：不支持就用 24 段拼环，保证一定出现",
 		"修复 · 误删的彩虹拖尾 / 分身军团 / 粒子环绕 / 全员跳舞 四个函数已补回",
@@ -266,26 +293,26 @@ CHANGELOG = {
 		"修复 · 顶部横排总是显示「1 加速」：引擎默认开着不算已开功能",
 		"修复 · 功能列表显示被 HUD 覆盖的判定问题",
 	}},
-	{ v = "v5.27", t = {
+	{ v = "v5.29", t = {
 		"修复 · 头顶光环是竖着的：Roblox 的 Torus 默认竖直，默认角度改为 90°（水平悬浮），并做得更细",
 		"修复 · 视野 FOV：拖动滑条立即生效，不用等平滑过渡",
 	}},
-	{ v = "v5.27", t = {
+	{ v = "v5.29", t = {
 		"修复 · 黑洞吸力滑条与「倒立 FLIP」重叠（都在 y=352），倒立已下移到独立位置",
 		"新增 · 布局检查器构建闸门：自动扫描所有页面控件 y 区间，重叠直接拦下",
 	}},
-	{ v = "v5.27", t = {
+	{ v = "v5.29", t = {
 		"紧急修复 · 白屏崩溃：FunBtns 表在第 679 行被使用却在第 1159 行才定义，导致 table.insert(nil) 报错、初始化中断",
 		"修复 · 表定义顺序全部前移，新增「表检查器」构建闸门（table.insert 目标必须先定义）",
 		"修复 · 收起面板后状态还原，关闭/重开不再残留",
 	}},
-	{ v = "v5.27", t = {
+	{ v = "v5.29", t = {
 		"紧急修复 · makeToggle 内部自引用导致每次 Set() 抛错（连锁引发页面/小窗打不开）",
 		"修复 · 关不掉：关闭流程改为无论如何都会收起面板并还原状态",
 		"修复 · 启动动画：移除与神威冲突的旧弹出动画，改为神威之后衔接弹出",
 		"修复 · 侧栏只认前 8 页：改为动态全部页 + 画布放大，10 个标签都能点",
 		"新增 · 看门狗：5 秒后若界面意外消失会自动恢复，防止整个 UI 不见",
-	}},	{ v = "v5.27", t = {
+	}},	{ v = "v5.29", t = {
 		"改 · 移动 UI：屏幕上点哪个就能拖哪个（数字键/方向键各自独立拖动）",
 		"新增 · 自由视角开关：角色定在原地，镜头到处飞",
 		"改 · 环绕 TA：开启后弹面板选人（取消会自动关掉开关）",
@@ -295,7 +322,7 @@ CHANGELOG = {
 		"改 · 全部关闭：先弹确认框并说明会关掉哪些东西",
 		"新增 · 传送页：查看玩家（选中即可看他）+ 恢复自己视角",
 		"改 · 存档点：保存成功/失败都有明确提示",
-	}},	{ v = "v5.27", t = {
+	}},	{ v = "v5.29", t = {
 		"新增 · 装扮页：6 种大翅膀（天使/堕天/恶魔/光/火/机械）+ 5 种头顶光环",
 		"新增 · 蔚蓝档案式光环（悬浮旋转，可调大小与角度）",
 		"新增 · 隐藏身上方块：一键清除配件/框选/名牌等附加物",
@@ -305,14 +332,14 @@ CHANGELOG = {
 		"修复 · 血量显示与功能列表被 HUD 覆盖不显示",
 		"新增 · 空壳检查器：自动揪出「开关没用」的字段",
 	}},
-	{ v = "v5.27", t = {
+	{ v = "v5.29", t = {
 		"新增 · 公告界面（本页）· 设置页入口",
 		"新增 · 头顶光环（蔚蓝档案式）· 分身独立面板",
 		"修复 · 飞行 / FOV / 连跳 / 拖尾 / 跳舞 / 骑头 失效",
 		"修复 · 黑洞与倒立控件重叠 · 存档点提示",
 		"重构 · 混淆版：字符串全加密 + 诱饵逻辑，抗反混淆",
 	}},
-	{ v = "v5.27", t = {
+	{ v = "v5.29", t = {
 		"修复 · 特效永远不停（时长单位错误）",
 		"修复 · 放出动画不显示漩涡",
 		"回退 · 漩涡恢复平面版（更好看的那版）",
@@ -411,7 +438,7 @@ local TabBtns = {}
 local FunBtns = {}
 local CurTab = 1
 do
-	local names = { "引擎", "辅助", "视觉", "触屏", "工具", "娱乐", "更多", "实用", "传送", "装扮", "设置" }
+	local names = { "引擎", "辅助", "视觉", "触屏", "工具", "娱乐", "更多", "实用", "传送", "装扮", "设置", "画质" }
 	for i, n in ipairs(names) do
 		local b = new("TextButton", { Text = n, Font = Enum.Font.GothamBold, TextSize = 13,
 			TextColor3 = Color3.fromRGB(140, 149, 172), BackgroundTransparency = 1,
@@ -439,7 +466,7 @@ do
 end
 local PageHost = new("Frame", { Name = "Content", Size = UDim2.new(0, 464, 0, 336), Position = UDim2.new(0, 180, 0, 84),
 	BackgroundTransparency = 1, BorderSizePixel = 0, ClipsDescendants = true, Parent = Main })
-local PAGE_H = { 520, 380, 620, 680, 910, 1300, 530, 720, 960, 720, 900 }
+local PAGE_H = { 620, 380, 660, 680, 1000, 1300, 560, 760, 1000, 760, 1000, 720 }
 PageList = {}
 local function mkPage(i, visible)
 	return new("ScrollingFrame", { Name = "Page" .. tostring(i),
@@ -463,7 +490,8 @@ local PageUtil = mkPage(8, false)
 local PageTp = mkPage(9, false)
 local PageDeco = mkPage(10, false)
 local PageSet = mkPage(11, false)
-PageList = { PageEng, PageAssist, PageEsp, PageTouch, PageTool, PageFun, PageMore, PageUtil, PageTp, PageDeco, PageSet }
+local PageGfx = mkPage(12, false)
+PageList = { PageEng, PageAssist, PageEsp, PageTouch, PageTool, PageFun, PageMore, PageUtil, PageTp, PageDeco, PageSet, PageGfx }
 local function makeSlider(parent, title, y, min, max, default, suffix, onChange, lockable, onLockChange, editable)
 	local wrap = new("Frame", { Size = UDim2.new(1, 0, 0, 46), Position = UDim2.new(0, 0, 0, y), BackgroundTransparency = 1, Parent = parent })
 	label({ Text = title, Font = Enum.Font.GothamBold, TextSize = 12, TextColor3 = Color3.fromRGB(196, 204, 224),
@@ -704,23 +732,38 @@ end)
 local InstantTgl   = makeToggle(PageEsp, 168, "秒交互", "HoldDuration=0 · 距离 30", false, function(v)
 	State.InstantInteract = v; applyInstantInteract(v)
 end)
-local EspDepthTgl  = makeToggle(PageEsp, 216, "穿墙显示", "ESP 无视遮挡", true, function(v)
+local RadarTgl = makeToggle(PageEsp, 352, "雷达 RADAR", "屏幕左下角 · 显示周围目标", false, function(v)
+	State.Radar = v
+	if not v and RadarFrame then RadarFrame.Visible = false end
+end)
+local RadarModeBtn = new("TextButton", { Text = "雷达模式：2D 全显 ▾", Font = Enum.Font.GothamBold, TextSize = 11,
+	TextColor3 = Mode().Accent, BackgroundColor3 = Color3.fromRGB(255, 255, 255), BackgroundTransparency = 0.9,
+	BorderSizePixel = 0, AutoButtonColor = false,
+	Size = UDim2.new(1, 0, 0, 32), Position = UDim2.new(0, 0, 0, 392), Parent = PageEsp })
+corner(RadarModeBtn, 8)
+table.insert(FunBtns, RadarModeBtn)
+bindClick(RadarModeBtn, "雷达模式", function()
+	RadarMode = (RadarMode % 2) + 1
+	RadarModeBtn.Text = (RadarMode == 1) and "雷达模式：2D 全显 ▾" or "雷达模式：仅人物 / NPC ▾"
+	if notify then notify((RadarMode == 1) and "雷达：2D 全显（人+建筑+可互动物）" or "雷达：仅人物 / NPC") end
+end)
+local EspDepthTgl  = makeToggle(PageEsp, 216, "穿墙显示", "ESP 无视遮挡（任何厚度都能看到）", true, function(v)
 	State.EspDepth = v; refreshEspDepth()
 end)
 local TranspSlider = makeSlider(PageEsp, "身体透明度", 300, 0, 100, 0, " %", function(v)
 	State.BodyTransp = v / 100
 end, false)
-local FreecamTgl = makeToggle(PageEsp, 470, "自由视角 FREE CAM", "角色定在原地 · 镜头随便飞", false, function(v)
+local FreecamTgl = makeToggle(PageEsp, 518, "自由视角 FREE CAM", "角色定在原地 · 镜头随便飞", false, function(v)
 	if type(setFreecam) == "function" then setFreecam(v) end
 end)
-local BlockTgl = makeToggle(PageEsp, 380, "隐藏身上方块 NO BLOCK", "配件 / 框选 / 名牌等附加物一起藏", false, function(v)
+local BlockTgl = makeToggle(PageEsp, 432, "隐藏身上方块 NO BLOCK", "配件 / 框选 / 名牌等附加物一起藏", false, function(v)
 	State.HideBlock = v
 	if v then hideBodyBlocks(true) end
 end)
 local BlockBtn = new("TextButton", { Text = "立即清除身上方块", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Mode().Accent, BackgroundColor3 = Color3.fromRGB(255, 255, 255), BackgroundTransparency = 0.9,
 	BorderSizePixel = 0, AutoButtonColor = false,
-	Size = UDim2.new(1, 0, 0, 34), Position = UDim2.new(0, 0, 0, 424), Parent = PageEsp })
+	Size = UDim2.new(1, 0, 0, 34), Position = UDim2.new(0, 0, 0, 476), Parent = PageEsp })
 corner(BlockBtn, 10)
 table.insert(FunBtns, BlockBtn)
 bindClick(BlockBtn, "清除方块", function()
@@ -741,6 +784,14 @@ end)
 local PadTgl = makeToggle(PageTouch, 72, "虚拟方向键", "8 向 WASD · 长按中心拖动整块", false, function(v)
 	State.PadKeys = v
 	updateTouchVisibility()
+end)
+local ToolGravTgl = makeToggle(PageTool, 640, "反重力 LOW GRAVITY", "和辅助页那个是同一个开关", false, function(v)
+	State.LowGravity = v
+	pcall(function() Workspace.Gravity = v and (State.GravityValue or 40) or 196.2 end)
+	if notify then notify(v and "重力已降低" or "重力已恢复") end
+end)
+local ToolRagTgl = makeToggle(PageTool, 688, "防布娃娃 ANTI RAGDOLL", "不会被打倒 / 摔倒", false, function(v)
+	State.AntiRagdoll = v
 end)
 local PadSizeSlider = makeSlider(PageTouch, "方向键大小", 120, 50, 200, 100, " %", function(v)
 	State.PadSize = v
@@ -1046,6 +1097,7 @@ function rejoinServer()
 end
 local lastTransp = -1
 RunService.Stepped:Connect(function()
+	if HON_SHUTDOWN then return end
 	local c = LP.Character
 	if not c then return end
 	local t = 0
@@ -1120,6 +1172,7 @@ function setFakeChar(on)
 end
 pcall(function() RunService:UnbindFromRenderStep("HonFakeSync") end)
 RunService:BindToRenderStep("HonFakeSync", 1999, function()
+	if HON_SHUTDOWN then return end
 	if not State.FakeChar then return end
 	if not (FakeClone and FakeClone.Parent) or not (HRP and HRP.Parent) then return end
 	local fhrp = FakeClone:FindFirstChild("HumanoidRootPart")
@@ -1171,6 +1224,7 @@ function setFreecam(on)
 end
 pcall(function() RunService:UnbindFromRenderStep("HonFreecam") end)
 RunService:BindToRenderStep("HonFreecam", 10000, function(dt)
+	if HON_SHUTDOWN then return end
 	if not State.Freecam then return end
 	if Cam.CameraType ~= Enum.CameraType.Scriptable then Cam.CameraType = Enum.CameraType.Scriptable end
 	local rot = CFrame.fromEulerAnglesYXZ(fcPitch, fcYaw, 0)
@@ -1521,6 +1575,7 @@ function applyScreenFx()
 end
 pcall(function() RunService:UnbindFromRenderStep("HonDance") end)
 RunService:BindToRenderStep("HonDance", 9999, function()
+	if HON_SHUTDOWN then return end
 	if not State.Dance then return end
 	local c = LP.Character
 	if not c then return end
@@ -1539,6 +1594,7 @@ RunService:BindToRenderStep("HonDance", 9999, function()
 	end
 end)
 RunService.Heartbeat:Connect(function()
+	if HON_SHUTDOWN then return end
 	if State.Halo then
 		local c = LP.Character
 		local head = c and c:FindFirstChild("Head")
@@ -1572,12 +1628,7 @@ label({ Text = "隐 身 录 屏", Font = Enum.Font.GothamBold, TextSize = 11,
 StealthTgl = makeToggle(PageUtil, 516, "隐身录屏 STEALTH", "隐藏界面 + 暂停其他功能（加速保留）", false, function(v)
 	setStealth(v)
 end, true)
-StealthGameTgl = makeToggle(PageUtil, 564, "连游戏 UI 一起藏", "含 Roblox 核心 UI · 顶栏 · 内置界面", true, function(v)
-	State.StealthHideGame = v
-	if State.Stealth then
-		if v then stealthHideGame() else stealthShowGame() end
-	end
-end)
+
 label({ Text = "开启后右上角出现一个 REC 悬浮窗：点一下恢复全部界面，再点一下重新隐藏。\n隐藏期间加速 / 飞行 / ESP 全部继续生效。\n注：注入器若是独立原生窗口，脚本无法控制它，请用它自己的快捷键。",
 	Font = Enum.Font.Gotham, TextSize = 10, TextColor3 = Color3.fromRGB(132, 141, 163),
 	Position = UDim2.new(0, 2, 0, 616), Size = UDim2.new(1, -4, 0, 56),
@@ -1689,7 +1740,7 @@ label({ Text = "M 切引擎 · F2 开关 · L 锁面板 · E/Q 飞行 · , . 切
 	Position = UDim2.new(0, 0, 1, -13), Size = UDim2.new(1, 0, 0, 12),
 	TextXAlignment = Enum.TextXAlignment.Center,
 	TextXAlignment = Enum.TextXAlignment.Center, TextWrapped = true }, Main)
-HudFrame = new("Frame", { Size = UDim2.new(0, 172, 0, 40), Position = UDim2.new(0.5, -86, 1, -104),
+HudFrame = new("Frame", { Size = UDim2.new(0, 172, 0, 40), Position = UDim2.new(0.5, -110, 0, 8),
 	BackgroundColor3 = Color3.fromRGB(13, 15, 23), BackgroundTransparency = 0.25,
 	BorderSizePixel = 0, Visible = false, Parent = Gui })
 corner(HudFrame, 12)
@@ -2020,6 +2071,7 @@ function uiClear(t)
 end
 pcall(function() RunService:UnbindFromRenderStep("HonUILayout") end)
 RunService:BindToRenderStep("HonUILayout", 9997, function()
+	if HON_SHUTDOWN then return end
 	for _, t in ipairs(UiTargets) do
 		if t.Off.x ~= 0 or t.Off.y ~= 0 then uiApply(t) end
 	end
@@ -2358,6 +2410,7 @@ end
 
 pcall(function() RunService:UnbindFromRenderStep("HonKamui") end)
 RunService:BindToRenderStep("HonKamui", 9999, function(dt)
+	if HON_SHUTDOWN then return end
 	if not KamuiOn or not KamuiRoot then return end
 	KamuiT = KamuiT + dt
 	local raw = KamuiT / KamuiDur
@@ -2474,6 +2527,35 @@ RunService:BindToRenderStep("HonKamui", 9999, function(dt)
 end)
 
 function playOpenAnim()
+	local st = AnimStyleIdx or 1
+	if st == 4 then
+		Main.Visible = true
+		pcall(function()
+			if MainScale then MainScale.Scale = 1 end
+			if OrigMainSize then Main.Size = OrigMainSize end
+			Main.BackgroundTransparency = 0.05
+		end)
+		return
+	end
+	if st == 2 then
+		Main.Visible = true
+		pcall(function()
+			Main.BackgroundTransparency = 1
+			if MainScale then MainScale.Scale = 1 end
+			TweenService:Create(Main, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+				{ BackgroundTransparency = 0.05 }):Play()
+		end)
+		return
+	end
+	if st == 3 then
+		Main.Visible = true
+		pcall(function()
+			if MainScale then MainScale.Scale = 0.4 end
+			TweenService:Create(MainScale, TweenInfo.new(0.45, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+				{ Scale = 1 }):Play()
+		end)
+		return
+	end
 	Main.Visible = false
 	pcall(playKamui, "in")
 	pcall(shatterPanel)
@@ -2488,13 +2570,79 @@ function playOpenAnim()
 			Main.Rotation = 0
 			if OrigMainSize then Main.Size = OrigMainSize end
 			Main.BackgroundTransparency = 1
-			TweenService:Create(Main, TweenInfo.new(0.45, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-				Size = UDim2.new(0, PANEL_W, 0, PANEL_H), BackgroundTransparency = 0.05 }):Play()
+			TweenService:Create(Main, TweenInfo.new(0.45, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+				{ Size = UDim2.new(0, PANEL_W, 0, PANEL_H), BackgroundTransparency = 0.05 }):Play()
 		end)
 	end)
 end
 
+function closeAllFeatures()
+	for _, t in ipairs(ToggleRegistry) do
+		if t._last and not t._keep then pcall(function() t.Set(false, false) end) end
+	end
+	if notify then notify("已关闭全部功能") end
+end
+
+HON_SHUTDOWN = false
+function unloadScript()
+	if HON_SHUTDOWN then return end
+	HON_SHUTDOWN = true
+	pcall(closeAllFeatures)
+	pcall(function() if type(clearWings) == "function" then clearWings() end end)
+	pcall(function() if type(setCloneArmy) == "function" then setCloneArmy(false) end end)
+	pcall(function() if type(setBlackHole) == "function" then setBlackHole(false) end end)
+	pcall(function() if type(setTrail) == "function" then setTrail(false) end end)
+	pcall(function() if type(setOrbitFx) == "function" then setOrbitFx(false) end end)
+	pcall(function() if type(setCar) == "function" then setCar(false) end end)
+	pcall(function() if type(setHalo) == "function" then setHalo(0) end end)
+	pcall(function() if type(setHeroFly) == "function" then setHeroFly(false) end end)
+	pcall(function() if type(setFreecam) == "function" then setFreecam(false) end end)
+	pcall(function() if KamuiRoot then KamuiRoot.Visible = false end end)
+	pcall(function() Workspace.Gravity = 196.2 end)
+	for _, nm in ipairs({ "HonFunLoop", "HonFlyJump", "HonFov", "HonKamui", "HonFreecam",
+		"HonUILayout", "HonPadMove", "HonFakeSync", "HonDance" }) do
+		pcall(function() RunService:UnbindFromRenderStep(nm) end)
+	end
+	pcall(function() if Gui then Gui.Enabled = false end end)
+	pcall(function() if Gui then Gui:Destroy() end end)
+	print("[HON SPEED HUB] 已彻底关闭")
+end
+
 function playCloseAnim(after)
+	local st = AnimStyleIdx or 1
+	if st == 4 then
+		Main.Visible = false
+		if after then pcall(after) end
+		return
+	end
+	if st == 2 then
+		pcall(function()
+			TweenService:Create(Main, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
+				{ BackgroundTransparency = 1 }):Play()
+		end)
+		tspawn(function()
+			twait(0.32)
+			Main.Visible = false
+			Main.BackgroundTransparency = 0.05
+			if after then pcall(after) end
+		end)
+		return
+	end
+	if st == 3 then
+		pcall(function()
+			if MainScale then
+				TweenService:Create(MainScale, TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.In),
+					{ Scale = 0.4 }):Play()
+			end
+		end)
+		tspawn(function()
+			twait(0.32)
+			Main.Visible = false
+			if MainScale then MainScale.Scale = 1 end
+			if after then pcall(after) end
+		end)
+		return
+	end
 	pcall(playKamui, "out")
 	pcall(shatterPanel)
 	KamuiShatter = true
@@ -2505,7 +2653,6 @@ function playCloseAnim(after)
 	end)
 	tspawn(function()
 		twait(0.2)
-		-- 不管中间出什么错，面板一定要收掉，并且状态要还原
 		Main.Visible = false
 		KamuiShatter = false
 		pcall(hideShards)
@@ -2635,6 +2782,7 @@ function setNoclip(on)
 	end
 end
 RunService.Stepped:Connect(function()
+	if HON_SHUTDOWN then return end
 	if not State.Noclip then return end
 	local c = LP.Character
 	if not c then return end
@@ -2647,6 +2795,7 @@ RunService.Stepped:Connect(function()
 end)
 pcall(function() RunService:UnbindFromRenderStep("HonPadMove") end)
 RunService:BindToRenderStep("HonPadMove", 10000, function()
+	if HON_SHUTDOWN then return end
 	if not PadActive then return end
 	if State.Fly then return end
 	if not (Humanoid and Humanoid.Parent and Humanoid.Health > 0) then return end
@@ -2954,6 +3103,7 @@ function selfHeal()
 end
 RayParams = RaycastParams.new()
 RunService.Heartbeat:Connect(function(dt)
+	if HON_SHUTDOWN then return end
 	if not Authed then return end
 	updateEsp(dt)
 	if not refsValid() then
@@ -3373,6 +3523,7 @@ end
 -- 视野 FOV：独立维持（用户设定优先于引擎自动拉伸，不受主循环任何分支影响）
 pcall(function() RunService:UnbindFromRenderStep("HonFov") end)
 RunService:BindToRenderStep("HonFov", 9996, function()
+	if HON_SHUTDOWN then return end
 	if State.FovValue and State.FovValue > 0 then
 		if math.abs((Cam.FieldOfView or 70) - State.FovValue) > 0.5 then
 			Cam.FieldOfView = State.FovValue
@@ -3512,340 +3663,32 @@ function lightningDash()
 	if notify then notify("闪电冲刺！") end
 end
 
--- ---------- 无敌少侠飞行：超人姿势飞行 ----------
-function setHeroFly(on)
-	State.HeroFly = on
-	if on then
-		setFly(true)
-		pcall(function()
-			if Humanoid then Humanoid.PlatformStand = true end
-			if FlyOrient then
-				FlyOrient.CFrame = Cam.CFrame * CFrame.Angles(math.rad(-70), 0, 0)
-			end
-		end)
-	else
-		setFly(false)
-	end
-end
-
--- ---------- FE 变车：角色变成车（客户端可见，本体同步）----------
-CarModel = nil
-function setCar(on)
-	State.Car = on
+-- 闪电冲刺（持续加速版）：开启后越跑越快，关闭立即停
+DashOn, DashSpeed, DashTimer = false, 0, 0
+function setDashRun(on)
+	DashOn = on
 	if not on then
-		if CarModel then pcall(function() CarModel:Destroy() end) end
-		CarModel = nil
-		local c = LP.Character
-		if c then
-			for _, q in ipairs(c:GetDescendants()) do
-				if q:IsA("BasePart") then pcall(function() q.Transparency = 0 end) end
-			end
-		end
+		DashSpeed = 0
+		State.DashRun = false
+		if notify then notify("闪电冲刺已关闭") end
 		return
 	end
-	if not (HRP and HRP.Parent) then State.Car = false; return end
-	pcall(function()
-		local c = LP.Character
-		for _, q in ipairs(c:GetDescendants()) do
-			if q:IsA("BasePart") and q.Name ~= "HumanoidRootPart" then
-				q.Transparency = 1
-			end
-		end
-		CarModel = Instance.new("Model")
-		CarModel.Name = "HonCar"
-		local body = Instance.new("Part")
-		body.Size = Vector3.new(4, 2, 8)
-		body.Material = Enum.Material.SmoothPlastic
-		body.BrickColor = BrickColor.new("Bright red")
-		body.Anchored = true
-		body.CanCollide = false
-		body.Parent = CarModel
-		local roof = Instance.new("Part")
-		roof.Size = Vector3.new(3.4, 1.6, 4)
-		roof.Material = Enum.Material.SmoothPlastic
-		roof.BrickColor = BrickColor.new("Bright blue")
-		roof.Anchored = true
-		roof.CanCollide = false
-		roof.Parent = CarModel
-		for i = 0, 1 do
-			for j = 0, 1 do
-				local w = Instance.new("Part")
-				w.Shape = Enum.PartType.Cylinder
-				w.Size = Vector3.new(1.6, 1, 1.6)
-				w.Material = Enum.Material.SmoothPlastic
-				w.BrickColor = BrickColor.new("Really black")
-				w.Anchored = true
-				w.CanCollide = false
-				w.Parent = CarModel
-			end
-		end
-		CarModel.Parent = Workspace
-	end)
+	State.DashRun = true
+	if notify then notify("闪电冲刺：开始加速（越跑越快）") end
 end
 
--- ---------- 强制第三人称 ----------
-function setThirdPerson(on)
-	State.ThirdPerson = on
-	pcall(function()
-		if on then
-			if Humanoid then Humanoid.CameraOffset = Vector3.new(0, 1.5, 0) end
-			LP.CameraMode = Enum.CameraMode.Classic
-			LP.CameraMaxZoomDistance = 25
-			LP.CameraMinZoomDistance = 12
-		else
-			if Humanoid then Humanoid.CameraOffset = Vector3.new(0, 0, 0) end
-			LP.CameraMinZoomDistance = 0.5
-			LP.CameraMaxZoomDistance = 400
-		end
-	end)
-end
-
--- ---------- 隐藏身上的小方块 / 附加装饰 ----------
--- 身体变透明后，配件 Handle、ESP 的 Adornment 框、贴花、名牌等附加物会露出来变成小方块。
--- 这里扫描角色，把所有「非原生身体部件」一次性隐藏，并可每 0.5 秒持续维持。
-BODY_NATIVE = {
-	Head = true, Torso = true, UpperTorso = true, LowerTorso = true, HumanoidRootPart = true,
-	LeftArm = true, RightArm = true, LeftLeg = true, RightLeg = true,
-	LeftUpperArm = true, RightUpperArm = true, LeftLowerArm = true, RightLowerArm = true,
-	LeftUpperLeg = true, RightUpperLeg = true, LeftLowerLeg = true, RightLowerLeg = true,
-	LeftHand = true, RightHand = true, LeftFoot = true, RightFoot = true,
-}
-BlockTimer = 0
-function hideBodyBlocks(deep)
-	local c = LP.Character
-	if not c then return 0 end
-	local n = 0
-	for _, d in ipairs(c:GetDescendants()) do
-		if d:IsA("BasePart") then
-			if not BODY_NATIVE[d.Name] and d.Transparency < 1 then
-				d.Transparency = 1; n = n + 1
-			end
-		elseif d:IsA("SelectionBox") or d:IsA("BoxHandleAdornment") or d:IsA("CylinderHandleAdornment")
-			or d:IsA("ConeHandleAdornment") or d:IsA("SphereHandleAdornment") or d:IsA("LineHandleAdornment") then
-			if d.Visible ~= false then d.Visible = false; n = n + 1 end
-		elseif d:IsA("BillboardGui") or d:IsA("SurfaceGui") then
-			if d.Enabled ~= false then d.Enabled = false; n = n + 1 end
-		elseif d:IsA("Decal") or d:IsA("Texture") then
-			if d.Transparency < 1 then d.Transparency = 1; n = n + 1 end
-		end
-	end
-	if deep then
-		local ok = pcall(function()
-			for _, d in ipairs(Workspace:GetDescendants()) do
-				if d:IsA("SelectionBox") or d:IsA("BoxHandleAdornment") or d:IsA("CylinderHandleAdornment")
-					or d:IsA("SphereHandleAdornment") or d:IsA("ConeHandleAdornment") or d:IsA("LineHandleAdornment") then
-					local ad = d.Adornee
-					if ad and ad:IsDescendantOf(c) and d.Visible ~= false then
-						d.Visible = false; n = n + 1
-					end
-				end
-			end
-		end)
-	end
-	return n
-end
-
--- ---------- 装扮：翅膀 + 头顶光环（客户端可见，只有你自己看得见）----------
-WING_STYLES = {
-	{ name = "天使白翼", c1 = Color3.fromRGB(252, 253, 255), c2 = Color3.fromRGB(206, 224, 255), neon = false, big = 1.25 },
-	{ name = "EVA 暴走翼", c1 = Color3.fromRGB(255, 92, 40),  c2 = Color3.fromRGB(120, 26, 60),  neon = true,  big = 1.45 },
-	{ name = "堕天黑翼", c1 = Color3.fromRGB(30, 30, 40),    c2 = Color3.fromRGB(140, 26, 36),   neon = false, big = 1.3 },
-	{ name = "恶魔蝠翼", c1 = Color3.fromRGB(44, 20, 56),    c2 = Color3.fromRGB(175, 32, 64),   neon = false, big = 1.3 },
-	{ name = "光之翼",   c1 = Color3.fromRGB(255, 244, 196), c2 = Color3.fromRGB(255, 208, 105), neon = true,  big = 1.35 },
-	{ name = "凤凰火翼", c1 = Color3.fromRGB(255, 138, 42),  c2 = Color3.fromRGB(255, 62, 20),   neon = true,  big = 1.35 },
-	{ name = "机械光翼", c1 = Color3.fromRGB(168, 196, 224), c2 = Color3.fromRGB(92, 208, 255),  neon = true,  big = 1.3 },
-}
-HALO_STYLES = {
-	{ name = "蓝白光环", c = Color3.fromRGB(150, 212, 255) },
-	{ name = "金光环",   c = Color3.fromRGB(255, 216, 120) },
-	{ name = "粉光环",   c = Color3.fromRGB(255, 165, 205) },
-	{ name = "紫光环",   c = Color3.fromRGB(195, 145, 255) },
-	{ name = "彩虹光环", c = nil },
-}
-WingParts, HaloPart, HaloSegs = {}, nil, {}
-WingIdx, HaloIdx = 0, 0
-WingSizeV, HaloSizeV, HaloTiltV = 1, 1, 90
-
-function clearWings()
-	for _, d in ipairs(WingParts) do pcall(function() d.P:Destroy() end) end
-	WingParts = {}
-	WingIdx = 0
-end
-
-function setWing(idx)
-	clearWings()
-	if not idx or idx <= 0 then return end
-	local st = WING_STYLES[idx]
-	if not st then return end
-	if not (HRP and HRP.Parent) then return end
-	WingIdx = idx
-	local mat = st.neon and Enum.Material.Neon or Enum.Material.SmoothPlastic
-	local big = st.big or 1.25
-	-- 每侧 3 层 × 9 片 = 27 片，共 54 片：按翼形轮廓排布（中间长、两端短），形成真正的羽翼
-	for side = -1, 1, 2 do
-		for layer = 0, 2 do
-			for i = 0, 8 do
-				local t = i / 8
-				local L = (2.8 + math.sin(t * math.pi * 0.92) * 8.4) * big
-				local W = (0.85 + math.sin(t * math.pi) * 1.35) * big
-				local ang = math.rad(-16 + t * 98 + (layer - 1) * 8)
-				local pf = Instance.new("Part")
-				pf.Name = "HonWing"
-				pf.Size = Vector3.new(W * 0.2, L, W)
-				pf.Material = mat
-				pf.Color = (layer == 1) and st.c1 or st.c2
-				pf.Anchored = true
-				pf.CanCollide = false
-				pf.CastShadow = false
-				pf.Transparency = st.neon and 0.12 or 0
-				pf.Parent = Workspace
-				local ox = side * (0.9 + t * 7.4) * big
-				local oy = 1.5 + math.sin(t * math.pi * 0.92) * 1.5 * big - layer * 0.45
-				local oz = -0.35 - t * 0.9 + (layer - 1) * 0.6
-				local off = CFrame.new(ox, oy, oz)
-					* CFrame.Angles(0, 0, side * -ang)
-					* CFrame.Angles(math.rad(-7 + layer * 3.5), 0, 0)
-				table.insert(WingParts, { P = pf, Off = off, Side = side, F = t,
-					L = L, W = W, Layer = layer })
-			end
-		end
-	end
-	if notify then notify("已装备：" .. st.name) end
-end
-
-function setHalo(idx)
-	if HaloPart then pcall(function() HaloPart:Destroy() end); HaloPart = nil end
-	for _, q in ipairs(HaloSegs) do pcall(function() q.P:Destroy() end) end
-	HaloSegs = {}
-	HaloIdx = idx or 0
-	if HaloIdx <= 0 then return end
-	local st = HALO_STYLES[HaloIdx]
-	if not st then return end
-	local col = st.c or Color3.fromRGB(255, 255, 255)
-	local ok = pcall(function()
-		HaloPart = Instance.new("Part")
-		HaloPart.Name = "HonHalo"
-		HaloPart.Shape = Enum.PartType.Torus
-		HaloPart.Size = Vector3.new(3.0, 0.2, 3.0)
-		HaloPart.Material = Enum.Material.Neon
-		HaloPart.Color = col
-		HaloPart.Anchored = true
-		HaloPart.CanCollide = false
-		HaloPart.CastShadow = false
-		HaloPart.Parent = Workspace
-	end)
-	if (not ok) or (not HaloPart) then
-		pcall(function()
-			for i = 0, 23 do
-				local sg = Instance.new("Part")
-				sg.Name = "HonHaloSeg"
-				sg.Size = Vector3.new(0.44, 0.18, 0.44)
-				sg.Material = Enum.Material.Neon
-				sg.Color = col
-				sg.Anchored = true
-				sg.CanCollide = false
-				sg.CastShadow = false
-				sg.Parent = Workspace
-				table.insert(HaloSegs, { P = sg, A = (i / 24) * math.pi * 2 })
-			end
-		end)
-	end
-	if notify then notify("已装备：" .. st.name) end
-end
-
--- ---------- 彩虹拖尾 ----------
-TrailObj, TrailA0, TrailA1 = nil, nil, nil
-function setTrail(on)
-	if not on then
-		if TrailObj then pcall(function() TrailObj:Destroy() end) end
-		if TrailA0 then pcall(function() TrailA0:Destroy() end) end
-		if TrailA1 then pcall(function() TrailA1:Destroy() end) end
-		TrailObj, TrailA0, TrailA1 = nil, nil, nil
-		return
-	end
-	if not (HRP and HRP.Parent) then return end
-	pcall(function()
-		TrailA0 = Instance.new("Attachment")
-		TrailA0.Position = Vector3.new(0, -2.2, 0)
-		TrailA0.Parent = HRP
-		TrailA1 = Instance.new("Attachment")
-		TrailA1.Position = Vector3.new(0, 2.2, 0)
-		TrailA1.Parent = HRP
-		TrailObj = Instance.new("Trail")
-		TrailObj.Attachment0 = TrailA0
-		TrailObj.Attachment1 = TrailA1
-		TrailObj.Color = ColorSequence.new(Color3.fromRGB(255, 60, 60), Color3.fromRGB(80, 220, 255))
-		TrailObj.Lifetime = 0.7
-		TrailObj.MinLength = 0.1
-		TrailObj.LightEmission = 1
-		TrailObj.WidthScale = NumberSequence.new(1.4)
-		TrailObj.Parent = HRP
-	end)
-end
-
--- ---------- 分身军团 ----------
-function setCloneArmy(on)
-	if type(Clones) ~= "table" then Clones = {} end
-	if not on then
-		for _, c in ipairs(Clones) do pcall(function() c:Destroy() end) end
-		Clones = {}
-		return
-	end
-	local c = LP.Character
-	if not (c and HRP and HRP.Parent) then return end
-	for i = 1, 5 do
-		pcall(function()
-			local cl = c:Clone()
-			cl.Name = "HonClone" .. tostring(i)
-			cl.Parent = Workspace
-			for _, d in ipairs(cl:GetDescendants()) do
-				if d:IsA("Script") or d:IsA("LocalScript") then d:Destroy() end
-				if d:IsA("BasePart") then d.Transparency = 0.5; d.CanCollide = false; d.CastShadow = false end
-			end
-			local chr = cl:FindFirstChild("HumanoidRootPart")
-			if chr then chr.Anchored = true end
-			local hum = cl:FindFirstChildOfClass("Humanoid")
-			if hum then hum.Health = math.huge; hum.WalkSpeed = 0; hum.JumpPower = 0 end
-			table.insert(Clones, cl)
-		end)
-	end
-	if notify then notify("分身军团：已生成 " .. #Clones .. " 个分身") end
-end
-
--- ---------- 粒子环绕 ----------
-OrbitPart = nil
-function setOrbitFx(on)
-	if not on then
-		if OrbitPart then pcall(function() OrbitPart:Destroy() end) end
-		OrbitPart = nil
-		return
-	end
-	pcall(function()
-		OrbitPart = Instance.new("Part")
-		OrbitPart.Name = "HonOrbitFx"
-		OrbitPart.Size = Vector3.new(0.6, 0.6, 0.6)
-		OrbitPart.Anchored = true
-		OrbitPart.CanCollide = false
-		OrbitPart.Transparency = 1
-		OrbitPart.Parent = Workspace
-		local pe = Instance.new("ParticleEmitter")
-		pe.Color = ColorSequence.new(Mode().Accent)
-		pe.LightEmission = 1
-		pe.LightInfluence = 0
-		pe.Rate = 220
-		pe.Lifetime = NumberRange.new(0.7)
-		pe.Speed = NumberRange.new(7)
-		pe.Size = NumberSequence.new(0.5)
-		pe.Parent = OrbitPart
-	end)
-end
-
--- ---------- 全员跳舞（多个官方动画轮换，单个失效也能跳）----------
-DANCE_IDS = { "rbxassetid://507776043", "rbxassetid://507771019", "rbxassetid://507770453", "rbxassetid://507770239" }
 function danceAll()
 	local n, idx = 0, 0
-	for _, pl in ipairs(Players:GetPlayers()) do
-		local ch = pl.Character
+	local targets = {}
+	for _, pl in ipairs(Players:GetPlayers()) do table.insert(targets, pl.Character) end
+	pcall(function()
+		for _, o in ipairs(Workspace:GetDescendants()) do
+			if o:IsA("Model") and o:FindFirstChildOfClass("Humanoid") and not Players:GetPlayerFromCharacter(o) then
+				table.insert(targets, o)
+			end
+		end
+	end)
+	for _, ch in ipairs(targets) do
 		local hum = ch and ch:FindFirstChildOfClass("Humanoid")
 		if hum then
 			idx = idx + 1
@@ -3887,34 +3730,8 @@ corner(NoWingBtn, 8)
 table.insert(FunBtns, NoWingBtn)
 bindClick(NoWingBtn, "收起翅膀", function() clearWings() end)
 
-label({ Text = "头 顶 光 环 HALO（蔚蓝档案式）", Font = Enum.Font.GothamBold, TextSize = 11,
-	TextColor3 = Color3.fromRGB(120, 129, 152), Size = UDim2.new(1, 0, 0, 18),
-	Position = UDim2.new(0, 2, 0, 230), TextXAlignment = Enum.TextXAlignment.Left }, PageDeco)
-for i, st in ipairs(HALO_STYLES) do
-	local col = (i - 1) % 2
-	local row = math.floor((i - 1) / 2)
-	local b = new("TextButton", { Text = st.name, Font = Enum.Font.GothamBold, TextSize = 11,
-		TextColor3 = st.c or Color3.fromRGB(255, 255, 255), BackgroundColor3 = Color3.fromRGB(255, 255, 255),
-		BackgroundTransparency = 0.9, BorderSizePixel = 0, AutoButtonColor = false,
-		Size = UDim2.new(0.5, -4, 0, 34),
-		Position = UDim2.new(col == 0 and 0 or 0.5, col == 0 and 0 or 4, 0, 254 + row * 40),
-		Parent = PageDeco })
-	corner(b, 8)
-	table.insert(FunBtns, b)
-	bindClick(b, st.name, function() setHalo(i) end)
-end
-local NoHaloBtn = new("TextButton", { Text = "收起光环", Font = Enum.Font.GothamBold, TextSize = 11,
-	TextColor3 = Color3.fromRGB(255, 108, 118), BackgroundColor3 = Color3.fromRGB(255, 255, 255),
-	BackgroundTransparency = 0.9, BorderSizePixel = 0, AutoButtonColor = false,
-	Size = UDim2.new(1, 0, 0, 32), Position = UDim2.new(0, 0, 0, 374), Parent = PageDeco })
-corner(NoHaloBtn, 8)
-table.insert(FunBtns, NoHaloBtn)
-bindClick(NoHaloBtn, "收起光环", function() setHalo(0) end)
-
 makeSlider(PageDeco, "翅膀大小", 420, 40, 220, 100, " %", function(v) WingSizeV = v / 100 end, false)
-makeSlider(PageDeco, "光环大小", 476, 40, 220, 100, " %", function(v) HaloSizeV = v / 100 end, false)
-makeSlider(PageDeco, "光环角度", 532, 0, 90, 90, " °", function(v) HaloTiltV = v end, false)
-label({ Text = "默认 90° 就是平躺在头顶（蔚蓝档案那种）；想立起来就调小", Font = Enum.Font.Gotham, TextSize = 10,
+label({ Text = "翅膀：点一下装备，再点「收起翅膀」卸下；大小可滑", Font = Enum.Font.Gotham, TextSize = 10,
 	TextColor3 = Color3.fromRGB(120, 129, 152), Position = UDim2.new(0, 2, 0, 588),
 	Size = UDim2.new(1, -4, 0, 26), TextWrapped = true,
 	TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top }, PageDeco)
@@ -3923,6 +3740,7 @@ label({ Text = "默认 90° 就是平躺在头顶（蔚蓝档案那种）；想�
 -- 之前这两项写在引擎主循环里，一旦「启用引擎」关闭就整段不执行 → 表现为「开了没用」。
 -- 现在独立成一条渲染循环，不受引擎开关影响。
 RunService:BindToRenderStep("HonFlyJump", 9994, function(dt)
+	if HON_SHUTDOWN then return end
 	if not (HRP and HRP.Parent) then return end
 	if State.Fly then
 		if not (FlyVel and FlyVel.Parent) then pcall(buildFlyParts) end
@@ -3954,6 +3772,12 @@ RunService:BindToRenderStep("HonFlyJump", 9994, function(dt)
 		if Humanoid.FloorMaterial ~= Enum.Material.Air and not State.Fly then
 			Humanoid.Jump = true
 		end
+	end
+	if DashOn and HRP and HRP.Parent then
+		DashSpeed = math.min(DashSpeed + dt * 55, 260)
+		local md = (Humanoid and Humanoid.Parent) and Humanoid.MoveDirection or Vector3.zero
+		local dir = md.Magnitude > 0.05 and Vector3.new(md.X, 0, md.Z).Unit or horiz(Cam.CFrame.LookVector)
+		pcall(function() HRP.AssemblyLinearVelocity = dir * DashSpeed + Vector3.new(0, HRP.AssemblyLinearVelocity.Y, 0) end)
 	end
 end)
 
@@ -4091,14 +3915,15 @@ end
 TopBarFrame, TopBarLabel, TopBarTimer = nil, nil, 0
 function updateTopBar()
 	if not TopBarFrame then
-		TopBarFrame = new("Frame", { Name = "HonTopBar", Size = UDim2.new(0, 560, 0, 28),
-			Position = UDim2.new(0.5, -280, 0, 6), BackgroundColor3 = Color3.fromRGB(13, 15, 23),
-			BackgroundTransparency = 0.28, BorderSizePixel = 0, Visible = false, Parent = Gui })
+		TopBarFrame = new("Frame", { Name = "HonTopBar", Size = UDim2.new(0, 172, 0, 120),
+			Position = UDim2.new(1, -184, 0, 8), BackgroundColor3 = Color3.fromRGB(13, 15, 23),
+			BackgroundTransparency = 0.3, BorderSizePixel = 0, Visible = false, Parent = Gui })
 		corner(TopBarFrame, 10)
 		new("UIStroke", { Color = Mode().Accent, Transparency = 0.7, Thickness = 1, Parent = TopBarFrame })
 		TopBarLabel = label({ Text = "", Font = Enum.Font.GothamBold, TextSize = 11,
-			TextColor3 = Mode().Accent, BackgroundTransparency = 1, Size = UDim2.new(1, -16, 0, 24),
-			Position = UDim2.new(0, 8, 0, 2), TextXAlignment = Enum.TextXAlignment.Left }, TopBarFrame)
+			TextColor3 = Mode().Accent, BackgroundTransparency = 1, Size = UDim2.new(1, -14, 0, 110),
+			Position = UDim2.new(0, 8, 0, 5), TextXAlignment = Enum.TextXAlignment.Left,
+			TextYAlignment = Enum.TextYAlignment.Top }, TopBarFrame)
 	end
 	local list = {}
 	if State.Fly then table.insert(list, "飞行") end
@@ -4116,10 +3941,13 @@ function updateTopBar()
 	if State.Rainbow then table.insert(list, "彩虹") end
 	if State.Spin then table.insert(list, "自转") end
 	if State.Freecam then table.insert(list, "自由视角") end
+	if State.LowGravity then table.insert(list, "反重力") end
+	if State.AntiRagdoll then table.insert(list, "防布娃娃") end
 	if #list > 0 then
 		local parts = {}
-		for i, nm in ipairs(list) do parts[i] = tostring(i) .. " " .. nm end
-		TopBarLabel.Text = table.concat(parts, "   ")
+		for i, nm in ipairs(list) do parts[i] = tostring(i) .. ". " .. nm end
+		TopBarLabel.Text = table.concat(parts, "\n")
+		TopBarFrame.Size = UDim2.new(0, 172, 0, math.min(18 * #list + 12, 300))
 		TopBarFrame.Visible = true
 	else
 		TopBarFrame.Visible = false
@@ -4311,6 +4139,17 @@ local RagTgl = makeToggle(PageSet, 534, "防布娃娃 ANTI RAGDOLL", "不会被�
 	State.AntiRagdoll = v
 end, true)
 
+local KillBtn = new("TextButton", { Text = "彻底关闭脚本 UNLOAD", Font = Enum.Font.GothamBold, TextSize = 12,
+	TextColor3 = Color3.fromRGB(255, 108, 118), BackgroundColor3 = Color3.fromRGB(255, 80, 90),
+	BackgroundTransparency = 0.82, BorderSizePixel = 0, AutoButtonColor = false,
+	Size = UDim2.new(1, 0, 0, 38), Position = UDim2.new(0, 0, 0, 622), Parent = PageSet })
+corner(KillBtn, 8)
+table.insert(FunBtns, KillBtn)
+bindClick(KillBtn, "关闭脚本", function()
+	askConfirm("彻底关闭脚本？", "会关掉所有功能、清掉翅膀/分身/黑洞等生成物、销毁界面并停止全部循环。\n（只是收起面板请点右上角 – 或 ×，功能会继续跑）", "确认关闭", function()
+		unloadScript()
+	end)
+end)
 local SvBtn = new("TextButton", { Text = "换个服务器（随机重进）", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Mode().Accent, BackgroundColor3 = Color3.fromRGB(255, 255, 255),
 	BackgroundTransparency = 0.9, BorderSizePixel = 0, AutoButtonColor = false,
@@ -4348,6 +4187,154 @@ function fixCharacterLook()
 		end
 	end)
 	if notify then notify("角色外观已恢复（材质/颜色重置）") end
+end
+
+-- ---------- 画质修改（独立页，原「材质修改」关掉搬到这里）----------
+GfxFx = nil
+function gfxLight()
+	if not Lighting then Lighting = game:GetService("Lighting") end
+	return Lighting
+end
+function setGfxShadows(on)
+	pcall(function() gfxLight().GlobalShadows = not on end)
+end
+function setGfxFog(on)
+	pcall(function()
+		if on then gfxLight().FogEnd = 100000; gfxLight().FogStart = 0
+		else gfxLight().FogEnd = 500; gfxLight().FogStart = 0 end
+	end)
+end
+function setGfxParticles(on)
+	pcall(function()
+		for _, o in ipairs(Workspace:GetDescendants()) do
+			if o:IsA("ParticleEmitter") or o:IsA("Trail") or o:IsA("Beam")
+				or o:IsA("Smoke") or o:IsA("Fire") or o:IsA("Sparkles") then
+				o.Enabled = not on
+			end
+		end
+	end)
+end
+function setGfxDecal(on)
+	pcall(function()
+		for _, o in ipairs(Workspace:GetDescendants()) do
+			if o:IsA("Decal") or o:IsA("Texture") then o.Transparency = on and 1 or 0 end
+		end
+	end)
+end
+function setGfxBright(v)
+	pcall(function()
+		if not GfxFx then
+			GfxFx = Instance.new("ColorCorrectionEffect")
+			GfxFx.Parent = gfxLight()
+		end
+		GfxFx.Brightness = (v - 100) / 200
+	end)
+end
+function setGfxSat(v)
+	pcall(function()
+		if not GfxFx then
+			GfxFx = Instance.new("ColorCorrectionEffect")
+			GfxFx.Parent = gfxLight()
+		end
+		GfxFx.Saturation = (v - 100) / 100
+	end)
+end
+
+label({ Text = "画 质 修 改 GRAPHICS", Font = Enum.Font.GothamBold, TextSize = 11,
+	TextColor3 = Color3.fromRGB(120, 129, 152), Size = UDim2.new(1, 0, 0, 18),
+	Position = UDim2.new(0, 2, 0, 0), TextXAlignment = Enum.TextXAlignment.Left }, PageGfx)
+local G1 = makeToggle(PageGfx, 24,  "关闭阴影", "关掉全局阴影，帧数明显提升", false, function(v) State.GfxShadow = v; setGfxShadows(v) end)
+local G2 = makeToggle(PageGfx, 72,  "关闭雾气", "视野更清楚", false, function(v) State.GfxFog = v; setGfxFog(v) end)
+local G3 = makeToggle(PageGfx, 120, "关闭粒子特效", "烟/火/拖尾/光束全关", false, function(v) State.GfxParticle = v; setGfxParticles(v) end)
+local G4 = makeToggle(PageGfx, 168, "隐藏贴花/纹理", "墙面图案去掉，更干净", false, function(v) State.GfxDecal = v; setGfxDecal(v) end)
+makeSlider(PageGfx, "亮度", 226, 0, 200, 100, " %", function(v) setGfxBright(v) end, false)
+makeSlider(PageGfx, "饱和度", 282, 0, 200, 100, " %", function(v) setGfxSat(v) end, false)
+local GfxResetBtn = new("TextButton", { Text = "恢复默认画质", Font = Enum.Font.GothamBold, TextSize = 11,
+	TextColor3 = Color3.fromRGB(150, 220, 255), BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+	BackgroundTransparency = 0.9, BorderSizePixel = 0, AutoButtonColor = false,
+	Size = UDim2.new(1, 0, 0, 34), Position = UDim2.new(0, 0, 0, 340), Parent = PageGfx })
+corner(GfxResetBtn, 8)
+table.insert(FunBtns, GfxResetBtn)
+bindClick(GfxResetBtn, "恢复画质", function()
+	setGfxShadows(false); setGfxFog(false); setGfxParticles(false); setGfxDecal(false)
+	setGfxBright(100); setGfxSat(100)
+	if notify then notify("画质已恢复默认") end
+end)
+
+-- ---------- 雷达 ----------
+RadarFrame, RadarSelf = nil, nil
+RadarDots, RadarMode, RadarTimer, RadarNpcCache = {}, 1, 0, {}
+function buildRadar()
+	if RadarFrame then return end
+	RadarFrame = new("Frame", { Name = "HonRadar", Size = UDim2.new(0, 168, 0, 168),
+		Position = UDim2.new(0, 16, 1, -184), BackgroundColor3 = Color3.fromRGB(10, 14, 20),
+		BackgroundTransparency = 0.35, BorderSizePixel = 0, Visible = false, Parent = Gui })
+	corner(RadarFrame, 84)
+	new("UIStroke", { Color = Mode().Accent, Transparency = 0.6, Thickness = 1.5, Parent = RadarFrame })
+	new("Frame", { Size = UDim2.new(1, 0, 0, 1), Position = UDim2.new(0, 0, 0.5, 0),
+		BackgroundColor3 = Mode().Accent, BackgroundTransparency = 0.75, BorderSizePixel = 0, Parent = RadarFrame })
+	new("Frame", { Size = UDim2.new(0, 1, 1, 0), Position = UDim2.new(0.5, 0, 0, 0),
+		BackgroundColor3 = Mode().Accent, BackgroundTransparency = 0.75, BorderSizePixel = 0, Parent = RadarFrame })
+	RadarSelf = new("Frame", { Size = UDim2.new(0, 8, 0, 8), AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.new(0.5, 0, 0.5, 0), BackgroundColor3 = Color3.fromRGB(120, 255, 160),
+		BorderSizePixel = 0, Parent = RadarFrame })
+	corner(RadarSelf, 4)
+end
+function updateRadar(dt)
+	if not State.Radar then if RadarFrame then RadarFrame.Visible = false end return end
+	buildRadar()
+	RadarFrame.Visible = true
+	if not (HRP and HRP.Parent) then return end
+	RadarTimer = (RadarTimer or 0) + (dt or 0)
+	if RadarTimer > 0.9 then
+		RadarTimer = 0
+		RadarNpcCache = {}
+		pcall(function()
+			local n = 0
+			for _, o in ipairs(Workspace:GetDescendants()) do
+				if n >= 40 then break end
+				if o:IsA("Model") and o:FindFirstChildOfClass("Humanoid")
+					and not Players:GetPlayerFromCharacter(o) then
+					local hr = o:FindFirstChild("HumanoidRootPart")
+					if hr then table.insert(RadarNpcCache, { P = hr, C = Color3.fromRGB(255, 200, 90) }); n = n + 1 end
+				end
+				if RadarMode == 1 and o:FindFirstChildOfClass("ProximityPrompt") and o:IsA("BasePart") then
+					table.insert(RadarNpcCache, { P = o, C = Color3.fromRGB(120, 200, 255) })
+				end
+			end
+		end)
+	end
+	local pts = {}
+	for _, pl in ipairs(Players:GetPlayers()) do
+		if pl ~= LP and pl.Character then
+			local hr = pl.Character:FindFirstChild("HumanoidRootPart")
+			if hr then table.insert(pts, { P = hr, C = Color3.fromRGB(255, 110, 110) }) end
+		end
+	end
+	for _, q in ipairs(RadarNpcCache) do table.insert(pts, q) end
+	local RANGE, RR = 220, 78
+	local myPos = HRP.Position
+	local myLook = HRP.CFrame.LookVector
+	local right = Vector3.new(-myLook.Z, 0, myLook.X)
+	for i, it in ipairs(pts) do
+		local dot = RadarDots[i]
+		if not dot then
+			dot = new("Frame", { Size = UDim2.new(0, 7, 0, 7), AnchorPoint = Vector2.new(0.5, 0.5),
+				BackgroundColor3 = it.C, BorderSizePixel = 0, Parent = RadarFrame })
+			corner(dot, 3.5)
+			RadarDots[i] = dot
+		end
+		dot.Visible = true
+		dot.BackgroundColor3 = it.C
+		local d = it.P.Position - myPos
+		local dist = math.sqrt(d.X * d.X + d.Z * d.Z)
+		local fx = d:Dot(right)
+		local fz = d:Dot(Vector3.new(myLook.X, 0, myLook.Z))
+		local k = math.min(dist / RANGE, 1) * RR
+		local ang = math.atan2(fx, fz)
+		dot.Position = UDim2.new(0.5, math.sin(ang) * k, 0.5, -math.cos(ang) * k)
+	end
+	for i = #pts + 1, #RadarDots do RadarDots[i].Visible = false end
 end
 
 function notify(msg, col)
@@ -4516,6 +4503,7 @@ function setStealth(on)
 	if StealthTgl then StealthTgl.Set(on, true) end
 end
 RunService.Heartbeat:Connect(function(dt)
+	if HON_SHUTDOWN then return end
 	if not State.Stealth then stealthAcc = 0; return end
 	stealthTime = stealthTime + dt
 	stealthAcc = stealthAcc + dt
@@ -4601,10 +4589,12 @@ end
 -- ---------- 新功能的每帧驱动（黑洞 / 变车 / 防摔落 / HUD 附加信息）----------
 pcall(function() RunService:UnbindFromRenderStep("HonFunLoop") end)
 RunService:BindToRenderStep("HonFunLoop", 9995, function(dt)
+	if HON_SHUTDOWN then return end
 	if State.BlackHole and HoleCore and HoleCore.Parent then
 		local c = HoleCore.Position
 		local f = State.BlackHoleForce or 60
 		for _, pl in ipairs(Players:GetPlayers()) do
+			if pl ~= LP then
 			local ch = pl.Character
 			local h = ch and ch:FindFirstChild("HumanoidRootPart")
 			if h then
@@ -4613,6 +4603,7 @@ RunService:BindToRenderStep("HonFunLoop", 9995, function(dt)
 				if m > 3 and m < 90 then
 					pcall(function() h.AssemblyLinearVelocity = d.Unit * (f * (1 - m / 90) + 12) end)
 				end
+			end
 			end
 		end
 		pcall(function()
@@ -4689,6 +4680,7 @@ RunService:BindToRenderStep("HonFunLoop", 9995, function(dt)
 			end)
 		end
 	end
+	pcall(updateRadar, dt)
 	TopBarTimer = (TopBarTimer or 0) + dt
 	if TopBarTimer > 0.35 then
 		TopBarTimer = 0
@@ -4719,7 +4711,17 @@ RunService:BindToRenderStep("HonFunLoop", 9995, function(dt)
 				local cr = cl:FindFirstChild("HumanoidRootPart")
 				if cr then
 					local a = tick() * 1.4 + (i / #Clones) * math.pi * 2
-					cr.CFrame = CFrame.new(HRP.Position + Vector3.new(math.cos(a) * 6.5, 0, math.sin(a) * 6.5)) * CFrame.Angles(0, -a, 0)
+					local tx = HRP.Position + Vector3.new(math.cos(a) * 6.5, 0, math.sin(a) * 6.5)
+					-- 贴地：向下打一条射线找到地面高度，这样分身能跟着上楼梯/坡道
+					local gy = tx.Y
+					pcall(function()
+						local rp = RaycastParams.new()
+						rp.FilterDescendantsInstances = { cl }
+						rp.FilterType = Enum.RaycastFilterType.Blacklist
+						local hit = Workspace:Raycast(Vector3.new(tx.X, tx.Y + 12, tx.Z), Vector3.new(0, -40, 0), rp)
+						if hit then gy = hit.Position.Y end
+					end)
+					cr.CFrame = CFrame.new(tx.X, gy + 2.6, tx.Z) * CFrame.Angles(0, -a, 0)
 				end
 			end
 		end)
@@ -4845,15 +4847,24 @@ tspawn(function()
 	end
 end)
 -- 手机端触摸兜底（放在这里是因为此刻所有界面对象都已创建完成）
-pcall(function()
+do
+	local downY, downX = nil, nil
 	TabBar.InputBegan:Connect(function(i)
 		if i.UserInputType ~= Enum.UserInputType.Touch and i.UserInputType ~= Enum.UserInputType.MouseButton1 then return end
+		downY, downX = i.Position.Y, i.Position.X
+	end)
+	TabBar.InputEnded:Connect(function(i)
+		if i.UserInputType ~= Enum.UserInputType.Touch and i.UserInputType ~= Enum.UserInputType.MouseButton1 then return end
+		if not downY then return end
+		local moved = math.abs(i.Position.Y - downY) + math.abs(i.Position.X - (downX or 0))
+		downY = nil
+		if moved > 12 then return end   -- 滑动了就不切页，只滚动
 		local rel = i.Position - TabBar.AbsolutePosition + TabBar.CanvasPosition
 		if rel.X < 0 or rel.X > TabBar.AbsoluteSize.X then return end
 		local idx = math.floor((rel.Y - 10) / 44) + 1
 		if idx >= 1 and idx <= #TabBtns then pcall(SetTab, idx) end
 	end)
-end)
+end
 pcall(function()
 	CardHolder.InputBegan:Connect(function(i)
 		if i.UserInputType ~= Enum.UserInputType.Touch and i.UserInputType ~= Enum.UserInputType.MouseButton1 then return end
@@ -4880,4 +4891,4 @@ tspawn(function()
 		end)
 	end
 end)
-print("[HON SPEED HUB] v5.27 已加载 · 完整文件约 4884 行 · 若你的脚本远大于此行数说明粘贴重复了")
+print("[HON SPEED HUB] v5.30 已加载 · 完整文件约 4895 行 · 若你的脚本远大于此行数说明粘贴重复了")
