@@ -4,7 +4,7 @@ local MASTER_KEY  = "chenchen1116"
 local VALID_KEYS  = {
 	["chenchen1116"] = true,
 }
-print("[HON SPEED HUB] 载入中 · v5.29 · 若只看到这一行说明文件在中途中断")
+print("[HON SPEED HUB] 载入中 · v5.30 · 若只看到这一行说明文件在中途中断")
 local twait  = (type(task) == "table" and task.wait)  or wait  or function() end
 local tspawn = (type(task) == "table" and task.spawn) or spawn or function(f, ...) return f(...) end
 if type(twait) ~= "function" then twait = function() end end
@@ -95,7 +95,7 @@ local State = {
 	InstantInteract = false, EspDepth = true,
 	ClickTP = false, AntiVoid = false, FakeChar = false, BodyTransp = 0, Fullbright = false, LowGravity = false, GravityValue = 40,
 	Spin = false, Rainbow = false, Bounce = false, Orbit = false, LowFx = false,
-	Dance = false, Halo = false, Follow = false, Face = false, FovValue = 0, WatchTarget = nil, Radar = false, GfxShadow = false, GfxFog = false, GfxParticle = false, GfxDecal = false,
+	Dance = false, Follow = false, Face = false, FovValue = 0, WatchTarget = nil, Radar = false, GfxShadow = false, GfxFog = false, GfxParticle = false, GfxDecal = false, DashRun = false, WPLoop = false, WPLoopInt = 5,
 	Freeze = false, HidePlayers = false, HideUI = false, AutoJump = false, CoordHud = false,
 	TPLoop = false, TPInterval = 0, TPOffsetY = 3,
 	MoveGameUI = false, UILayoutLocked = false,
@@ -139,7 +139,6 @@ if KEY_SYSTEM and KEY_REMEMBER then
 	if remembered then Authed = true end
 end
 local rainbowTimer, wasAirborne, FxBackup = 0, false, nil
-local HaloPart = nil
 local hideTimer = 0
 local tpTimer = 0
 local HiddenParts = {}
@@ -210,7 +209,7 @@ label({ Text = "HON SPEED HUB", Font = Enum.Font.GothamBold, TextSize = 21,
 	TextColor3 = Color3.fromRGB(238, 243, 255),
 	Position = UDim2.new(0, 36, 0, 16), Size = UDim2.new(0, 200, 0, 24),
 	TextXAlignment = Enum.TextXAlignment.Left }, Header)
-label({ Text = "Universal Hub  ·  W / V / CF  ·  v5.29", Font = Enum.Font.Gotham, TextSize = 11,
+label({ Text = "Universal Hub  ·  W / V / CF  ·  v5.30", Font = Enum.Font.Gotham, TextSize = 11,
 	TextColor3 = Color3.fromRGB(140, 149, 172),
 	Position = UDim2.new(0, 36, 0, 42), Size = UDim2.new(0, 240, 0, 16),
 	TextXAlignment = Enum.TextXAlignment.Left }, Header)
@@ -250,6 +249,15 @@ iconBtn("×", -34, Color3.fromRGB(255, 108, 118), function()
 end)
 -- ---------- 更新公告 ----------
 CHANGELOG = {
+	{ v = "v5.31", t = {
+		"重要修复 · 之前误删翅膀系统导致脚本在装扮页中断，装扮 / 设置 / 画质三页全空 —— 已重建，三页恢复正常",
+		"新增 · 装扮页改成「装饰商城」：背饰/尾部/颈部/腰部/头发/上衣/裤子/裙子/袜子/鞋子 共 30 项 + 搜索 + 卸下全部（客户端本地装扮，只有自己看得见，重生自动重扮）",
+		"新增 · 传送页「坐标传送」：实时显示当前坐标，可手动输入 XYZ 传送，一键填入当前坐标",
+		"新增 · 传送页「标点系统」：保存当前位置为标点（无上限），点击/★选中/删除，自动存档，写文件 + 跨服务器 TeleportSetting 双保险，换服不丢",
+		"新增 · 标点循环传送：每隔 N 秒自动传送到 ★ 选中标点（间隔可调）",
+		"删除 · 光环相关残留代码已清干净",
+		"加固 · 布局检查器升级：横排控件不再误报重叠",
+	}},
 	{ v = "v5.30", t = {
 		"改 · × = 彻底关闭脚本（弹确认后关全部功能并卸载）；– = 收起面板（功能继续跑）",
 	}},
@@ -259,7 +267,7 @@ CHANGELOG = {
 		"修复 · closeAllFeatures 函数定义此前被误删导致调用无效，已补回",
 		"加固 · 14 条循环全部加关停检查，卸载后彻底停止",
 	}},
-	{ v = "v5.29", t = {
+	{ v = "v5.28", t = {
 		"改 · 关闭脚本时自动关闭全部功能（不只是隐藏面板）",
 		"改 · 启动/删除动画 4 种样式真正生效（神威漩涡 / 淡入淡出 / 缩放弹出 / 不要动画），之前选了没反应",
 		"改 · 已开启功能显示：挪到屏幕右上角，竖排编号 1. 2. 3.",
@@ -273,7 +281,7 @@ CHANGELOG = {
 		"改 · 侧栏滑动时不切换页面（滑动只滚动，点击才切）",
 		"改 · 跳舞包含 NPC；工具页也加了重力与防布娃娃",
 	}},
-	{ v = "v5.29", t = {
+	{ v = "v5.27", t = {
 		"新增 · 设置页（第 11 页）：4 种 UI 样式 · 面板缩放 · 启动/删除动画样式 · 字体大小 · 背景图与透明度",
 		"新增 · 面板背景图：用你给的那张 IMG_3683 当面板背景，可开关 + 启动时自动加载",
 		"新增 · 恢复角色外观按钮（修被画质/材质改动染色的角色）",
@@ -281,11 +289,11 @@ CHANGELOG = {
 		"新增 · 防布娃娃（夜脚本同款）：不会被打倒/摔倒",
 		"新增 · 换个服务器（随机重进）",
 	}},
-	{ v = "v5.29", t = {
+	{ v = "v5.26", t = {
 		"重做 · 神威动画严格对齐预览：14 条螺旋卷入线 + 16 个沿螺旋内流的碎屑粒子 + 7 圈空间环 + 黑洞奇点，时长 3 秒，参数逐项一致",
 		"修复 · 移动键拖动：之前挂错了不存在的变量（NumBtns→TouchBtns），现在数字键/方向键都能在屏幕上直接拖",
 	}},
-	{ v = "v5.29", t = {
+	{ v = "v5.25", t = {
 		"重做 · 翅膀：每侧 3 层 × 9 片共 54 片羽翼，按翼形轮廓排布（中间长两端短）+ 波浪式扇动，新增「EVA 暴走翼」",
 		"修复 · 头顶光环默认改成水平（Torus 默认竖直），并加降级方案：不支持就用 24 段拼环，保证一定出现",
 		"修复 · 误删的彩虹拖尾 / 分身军团 / 粒子环绕 / 全员跳舞 四个函数已补回",
@@ -293,26 +301,26 @@ CHANGELOG = {
 		"修复 · 顶部横排总是显示「1 加速」：引擎默认开着不算已开功能",
 		"修复 · 功能列表显示被 HUD 覆盖的判定问题",
 	}},
-	{ v = "v5.29", t = {
+	{ v = "v5.24", t = {
 		"修复 · 头顶光环是竖着的：Roblox 的 Torus 默认竖直，默认角度改为 90°（水平悬浮），并做得更细",
 		"修复 · 视野 FOV：拖动滑条立即生效，不用等平滑过渡",
 	}},
-	{ v = "v5.29", t = {
+	{ v = "v5.23", t = {
 		"修复 · 黑洞吸力滑条与「倒立 FLIP」重叠（都在 y=352），倒立已下移到独立位置",
 		"新增 · 布局检查器构建闸门：自动扫描所有页面控件 y 区间，重叠直接拦下",
 	}},
-	{ v = "v5.29", t = {
+	{ v = "v5.22", t = {
 		"紧急修复 · 白屏崩溃：FunBtns 表在第 679 行被使用却在第 1159 行才定义，导致 table.insert(nil) 报错、初始化中断",
 		"修复 · 表定义顺序全部前移，新增「表检查器」构建闸门（table.insert 目标必须先定义）",
 		"修复 · 收起面板后状态还原，关闭/重开不再残留",
 	}},
-	{ v = "v5.29", t = {
+	{ v = "v5.21", t = {
 		"紧急修复 · makeToggle 内部自引用导致每次 Set() 抛错（连锁引发页面/小窗打不开）",
 		"修复 · 关不掉：关闭流程改为无论如何都会收起面板并还原状态",
 		"修复 · 启动动画：移除与神威冲突的旧弹出动画，改为神威之后衔接弹出",
 		"修复 · 侧栏只认前 8 页：改为动态全部页 + 画布放大，10 个标签都能点",
 		"新增 · 看门狗：5 秒后若界面意外消失会自动恢复，防止整个 UI 不见",
-	}},	{ v = "v5.29", t = {
+	}},	{ v = "v5.20", t = {
 		"改 · 移动 UI：屏幕上点哪个就能拖哪个（数字键/方向键各自独立拖动）",
 		"新增 · 自由视角开关：角色定在原地，镜头到处飞",
 		"改 · 环绕 TA：开启后弹面板选人（取消会自动关掉开关）",
@@ -322,7 +330,7 @@ CHANGELOG = {
 		"改 · 全部关闭：先弹确认框并说明会关掉哪些东西",
 		"新增 · 传送页：查看玩家（选中即可看他）+ 恢复自己视角",
 		"改 · 存档点：保存成功/失败都有明确提示",
-	}},	{ v = "v5.29", t = {
+	}},	{ v = "v5.19", t = {
 		"新增 · 装扮页：6 种大翅膀（天使/堕天/恶魔/光/火/机械）+ 5 种头顶光环",
 		"新增 · 蔚蓝档案式光环（悬浮旋转，可调大小与角度）",
 		"新增 · 隐藏身上方块：一键清除配件/框选/名牌等附加物",
@@ -332,25 +340,25 @@ CHANGELOG = {
 		"修复 · 血量显示与功能列表被 HUD 覆盖不显示",
 		"新增 · 空壳检查器：自动揪出「开关没用」的字段",
 	}},
-	{ v = "v5.29", t = {
+	{ v = "v5.18", t = {
 		"新增 · 公告界面（本页）· 设置页入口",
 		"新增 · 头顶光环（蔚蓝档案式）· 分身独立面板",
 		"修复 · 飞行 / FOV / 连跳 / 拖尾 / 跳舞 / 骑头 失效",
 		"修复 · 黑洞与倒立控件重叠 · 存档点提示",
 		"重构 · 混淆版：字符串全加密 + 诱饵逻辑，抗反混淆",
 	}},
-	{ v = "v5.29", t = {
+	{ v = "v5.17", t = {
 		"修复 · 特效永远不停（时长单位错误）",
 		"修复 · 放出动画不显示漩涡",
 		"回退 · 漩涡恢复平面版（更好看的那版）",
 		"调整 · 动画时长延长到 3 秒",
 	}},
-	{ v = "v5.15", t = {
+	{ v = "v5.16", t = {
 		"新增 · 面板撕裂：切成 18 块被卷进奇点",
 		"新增 · 碎片沿螺旋轨迹卷入（龙卷风感）",
 		"优化 · 减少线条数量，降低卡顿",
 	}},
-	{ v = "v5.14", t = {
+	{ v = "v5.15", t = {
 		"新增 · 面板撕裂（3×6 碎片 + 发光断面）",
 		"新增 · 传送独立页面 · 引擎描边开关",
 		"新增 · 黑洞 / 甩飞 / 闪电冲刺 / 少侠飞行 / 变车",
@@ -466,7 +474,7 @@ do
 end
 local PageHost = new("Frame", { Name = "Content", Size = UDim2.new(0, 464, 0, 336), Position = UDim2.new(0, 180, 0, 84),
 	BackgroundTransparency = 1, BorderSizePixel = 0, ClipsDescendants = true, Parent = Main })
-local PAGE_H = { 620, 380, 660, 680, 1000, 1300, 560, 760, 1000, 760, 1000, 720 }
+local PAGE_H = { 620, 380, 660, 680, 1000, 1300, 560, 880, 1260, 760, 1000, 720 }
 PageList = {}
 local function mkPage(i, visible)
 	return new("ScrollingFrame", { Name = "Page" .. tostring(i),
@@ -912,7 +920,7 @@ label({ Text = "传 送 TELEPORT", Font = Enum.Font.GothamBold, TextSize = 11,
 local ViewBtn = new("TextButton", { Text = "查看玩家 VIEW PLAYER", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Mode().Accent, BackgroundColor3 = Color3.fromRGB(255, 255, 255), BackgroundTransparency = 0.9,
 	BorderSizePixel = 0, AutoButtonColor = false,
-	Size = UDim2.new(1, 0, 0, 34), Position = UDim2.new(0, 0, 0, 560), Parent = PageTp })
+	Size = UDim2.new(1, 0, 0, 34), Position = UDim2.new(0, 0, 0, 1160), Parent = PageTp })
 corner(ViewBtn, 10)
 table.insert(FunBtns, ViewBtn)
 bindClick(ViewBtn, "查看玩家", function()
@@ -930,7 +938,7 @@ end)
 local CamBackBtn = new("TextButton", { Text = "恢复自己的视角", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Color3.fromRGB(190, 198, 220), BackgroundColor3 = Color3.fromRGB(255, 255, 255),
 	BackgroundTransparency = 0.9, BorderSizePixel = 0, AutoButtonColor = false,
-	Size = UDim2.new(1, 0, 0, 34), Position = UDim2.new(0, 0, 0, 600), Parent = PageTp })
+	Size = UDim2.new(1, 0, 0, 34), Position = UDim2.new(0, 0, 0, 1200), Parent = PageTp })
 corner(CamBackBtn, 10)
 table.insert(FunBtns, CamBackBtn)
 bindClick(CamBackBtn, "恢复视角", function()
@@ -1042,6 +1050,204 @@ end, false)
 local TPOffSlider = makeSlider(PageTp, "高度偏移", 492, 0, 30, 3, " m", function(v)
 	State.TPOffsetY = v
 end, false)
+-- ---------- 坐标 / 标点传送 ----------
+Waypoints = {}
+WP_FILE = "HonSpeedHub_Waypoints.json"
+WPSelIdx = 0
+function wpSave()
+	local slim = {}
+	for i, w in ipairs(Waypoints) do
+		slim[i] = { n = string.sub(tostring(w.n or ("点" .. i)), 1, 14),
+			x = math.floor(w.x or 0), y = math.floor(w.y or 0), z = math.floor(w.z or 0) }
+	end
+	local ok, json = pcall(function() return HttpService:JSONEncode(slim) end)
+	if not ok or not json then return end
+	pcall(function() if writefile then writefile(WP_FILE, json) end end)
+	pcall(function() TeleportService:SetTeleportSetting("HON_WP", json) end)
+end
+function wpLoad()
+	local data = nil
+	pcall(function()
+		if isfile and readfile and isfile(WP_FILE) then
+			local ok, d = pcall(function() return HttpService:JSONDecode(readfile(WP_FILE)) end)
+			if ok and type(d) == "table" then data = d end
+		end
+	end)
+	if not data then
+		pcall(function()
+			local raw = TeleportService:GetTeleportSetting("HON_WP")
+			if raw and raw ~= "" then
+				local ok, d = pcall(function() return HttpService:JSONDecode(raw) end)
+				if ok and type(d) == "table" then data = d end
+			end
+		end)
+	end
+	if data then
+		Waypoints = {}
+		for _, w in ipairs(data) do
+			if type(w) == "table" and w.x then
+				table.insert(Waypoints, { n = tostring(w.n or "点"), x = w.x or 0, y = w.y or 0, z = w.z or 0 })
+			end
+		end
+	end
+end
+wpLoad()
+function tpToPos(x, y, z)
+	if not (HRP and HRP.Parent) then
+		if notify then notify("角色还没加载", Color3.fromRGB(255, 108, 118)) end
+		return
+	end
+	pcall(function() HRP.CFrame = CFrame.new(x, y, z) end)
+end
+
+label({ Text = "坐 标 传 送 COORD TP", Font = Enum.Font.GothamBold, TextSize = 11,
+	TextColor3 = Color3.fromRGB(120, 129, 152), Size = UDim2.new(1, 0, 0, 16),
+	Position = UDim2.new(0, 2, 0, 540), TextXAlignment = Enum.TextXAlignment.Left }, PageTp)
+local CoordLbl = label({ Text = "当前坐标：读取中…", Font = Enum.Font.GothamBold, TextSize = 12,
+	TextColor3 = Color3.fromRGB(150, 220, 255), Size = UDim2.new(1, 0, 0, 18),
+	Position = UDim2.new(0, 2, 0, 562), TextXAlignment = Enum.TextXAlignment.Left }, PageTp)
+local function mkNumBox(x, ph)
+	return new("TextBox", { PlaceholderText = ph, Text = "", Font = Enum.Font.GothamBold, TextSize = 12,
+		TextColor3 = Color3.fromRGB(238, 243, 255), PlaceholderColor3 = Color3.fromRGB(110, 118, 140),
+		BackgroundColor3 = Color3.fromRGB(255, 255, 255), BackgroundTransparency = 0.92,
+		BorderSizePixel = 0, ClearTextOnFocus = false,
+		Size = UDim2.new(0.32, -4, 0, 32), Position = UDim2.new(x, 0, 0, 586), Parent = PageTp })
+end
+corner(mkNumBox(0, "X"), 8); corner(mkNumBox(0.34, "Y"), 8); corner(mkNumBox(0.67, "Z"), 8)
+local CxBox, CyBox, CzBox = nil, nil, nil
+do
+	local boxes = {}
+	for _, c in ipairs(PageTp:GetChildren()) do
+		if c:IsA("TextBox") then table.insert(boxes, c) end
+	end
+	table.sort(boxes, function(a, b) return a.Position.X.Offset < b.Position.X.Offset end)
+	CxBox, CyBox, CzBox = boxes[#boxes - 2], boxes[#boxes - 1], boxes[#boxes]
+end
+local CoordTpBtn = new("TextButton", { Text = "传送到坐标 GO", Font = Enum.Font.GothamBold, TextSize = 11,
+	TextColor3 = Color3.fromRGB(150, 220, 255), BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+	BackgroundTransparency = 0.9, BorderSizePixel = 0, AutoButtonColor = false,
+	Size = UDim2.new(0.62, -4, 0, 32), Position = UDim2.new(0, 0, 0, 626), Parent = PageTp })
+corner(CoordTpBtn, 8)
+table.insert(ToolBtns, CoordTpBtn)
+bindClick(CoordTpBtn, "坐标传送", function()
+	local x = tonumber(CxBox and CxBox.Text) or 0
+	local y = tonumber(CyBox and CyBox.Text) or 0
+	local z = tonumber(CzBox and CzBox.Text) or 0
+	tpToPos(x, y, z)
+	if notify then notify(string.format("已传送到 X %d · Y %d · Z %d", x, y, z)) end
+end)
+local CurPosBtn = new("TextButton", { Text = "填入当前", Font = Enum.Font.GothamBold, TextSize = 11,
+	TextColor3 = Color3.fromRGB(190, 198, 220), BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+	BackgroundTransparency = 0.9, BorderSizePixel = 0, AutoButtonColor = false,
+	Size = UDim2.new(0.38, 0, 0, 32), Position = UDim2.new(0.62, 4, 0, 626), Parent = PageTp })
+corner(CurPosBtn, 8)
+table.insert(ToolBtns, CurPosBtn)
+bindClick(CurPosBtn, "填入当前坐标", function()
+	if not (HRP and HRP.Parent) then return end
+	local q = HRP.Position
+	CxBox.Text = tostring(math.floor(q.X))
+	CyBox.Text = tostring(math.floor(q.Y))
+	CzBox.Text = tostring(math.floor(q.Z))
+end)
+label({ Text = "标 点 WAYPOINTS · 自动存档 · 换服不丢", Font = Enum.Font.GothamBold, TextSize = 11,
+	TextColor3 = Color3.fromRGB(120, 129, 152), Size = UDim2.new(1, 0, 0, 16),
+	Position = UDim2.new(0, 2, 0, 668), TextXAlignment = Enum.TextXAlignment.Left }, PageTp)
+local WpNameBox = new("TextBox", { PlaceholderText = "标点名称（如：家 / 刷怪点）", Text = "",
+	Font = Enum.Font.Gotham, TextSize = 11, TextColor3 = Color3.fromRGB(238, 243, 255),
+	PlaceholderColor3 = Color3.fromRGB(110, 118, 140), BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+	BackgroundTransparency = 0.92, BorderSizePixel = 0, ClearTextOnFocus = false,
+	Size = UDim2.new(0.58, -4, 0, 30), Position = UDim2.new(0, 0, 0, 692), Parent = PageTp })
+corner(WpNameBox, 8)
+local WpSaveBtn = new("TextButton", { Text = "保存当前位置", Font = Enum.Font.GothamBold, TextSize = 11,
+	TextColor3 = Mode().Accent, BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+	BackgroundTransparency = 0.9, BorderSizePixel = 0, AutoButtonColor = false,
+	Size = UDim2.new(0.42, 0, 0, 30), Position = UDim2.new(0.58, 4, 0, 692), Parent = PageTp })
+corner(WpSaveBtn, 8)
+table.insert(ToolBtns, WpSaveBtn)
+local WPListWrap = new("Frame", { Size = UDim2.new(1, 0, 0, 300), Position = UDim2.new(0, 0, 0, 730),
+	BackgroundColor3 = Color3.fromRGB(20, 23, 33), BackgroundTransparency = 0.25,
+	BorderSizePixel = 0, ClipsDescendants = true, Parent = PageTp })
+corner(WPListWrap, 10)
+new("UIStroke", { Color = Modes[1].Accent, Transparency = 0.75, Thickness = 1, Parent = WPListWrap })
+local WPList = new("ScrollingFrame", { Size = UDim2.new(1, -8, 1, -8), Position = UDim2.new(0, 4, 0, 4),
+	BackgroundTransparency = 1, BorderSizePixel = 0, ScrollBarThickness = 4,
+	ScrollBarImageTransparency = 0.5, CanvasSize = UDim2.new(0, 0, 0, 0), Parent = WPListWrap })
+local function wpRefresh()
+	for _, c in ipairs(WPList:GetChildren()) do
+		if c:IsA("Frame") or c:IsA("TextButton") then c:Destroy() end
+	end
+	for i, w in ipairs(Waypoints) do
+		local row = new("Frame", { Size = UDim2.new(1, -4, 0, 28), Position = UDim2.new(0, 2, 0, (i - 1) * 31),
+			BackgroundTransparency = 1, Parent = WPList })
+		local nm = new("TextButton", { Text = string.format("%d. %s  (%d, %d, %d)", i, tostring(w.n), w.x, w.y, w.z),
+			Font = Enum.Font.Gotham, TextSize = 11, TextColor3 = Color3.fromRGB(226, 233, 248),
+			BackgroundTransparency = 1, BorderSizePixel = 0, AutoButtonColor = false,
+			Size = UDim2.new(0.66, 0, 1, 0), TextXAlignment = Enum.TextXAlignment.Left, Parent = row })
+		local sel = new("TextButton", { Text = WPSelIdx == i and "★" or "☆", Font = Enum.Font.Gotham, TextSize = 12,
+			TextColor3 = WPSelIdx == i and Color3.fromRGB(255, 210, 90) or Color3.fromRGB(140, 149, 172),
+			BackgroundTransparency = 1, BorderSizePixel = 0, AutoButtonColor = false,
+			Size = UDim2.new(0.10, 0, 1, 0), Parent = row })
+		local go = new("TextButton", { Text = "去", Font = Enum.Font.GothamBold, TextSize = 11,
+			TextColor3 = Color3.fromRGB(150, 220, 255), BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+			BackgroundTransparency = 0.9, BorderSizePixel = 0, AutoButtonColor = false,
+			Size = UDim2.new(0.11, 0, 0, 22), Position = UDim2.new(0.75, 0, 0, 3), Parent = row })
+		corner(go, 6)
+		local del = new("TextButton", { Text = "删", Font = Enum.Font.GothamBold, TextSize = 11,
+			TextColor3 = Color3.fromRGB(255, 108, 118), BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+			BackgroundTransparency = 0.9, BorderSizePixel = 0, AutoButtonColor = false,
+			Size = UDim2.new(0.11, 0, 0, 22), Position = UDim2.new(0.88, 0, 0, 3), Parent = row })
+		corner(del, 6)
+		nm.MouseButton1Click:Connect(function() tpToPos(w.x, w.y, w.z); if notify then notify("已传送到：" .. tostring(w.n)) end end)
+		sel.MouseButton1Click:Connect(function()
+			WPSelIdx = (WPSelIdx == i) and 0 or i
+			wpRefresh()
+			if notify then notify(WPSelIdx == i and ("已选中：" .. tostring(w.n)) or "已取消选中") end
+		end)
+		go.MouseButton1Click:Connect(function() tpToPos(w.x, w.y, w.z); if notify then notify("已传送到：" .. tostring(w.n)) end end)
+		del.MouseButton1Click:Connect(function()
+			table.remove(Waypoints, i)
+			if WPSelIdx == i then WPSelIdx = 0 elseif WPSelIdx > i then WPSelIdx = WPSelIdx - 1 end
+			wpSave(); wpRefresh()
+			if notify then notify("已删除标点：" .. tostring(w.n)) end
+		end)
+	end
+	WPList.CanvasSize = UDim2.new(0, 0, 0, math.max(#Waypoints * 31 + 6, 1))
+end
+bindClick(WpSaveBtn, "保存标点", function()
+	if not (HRP and HRP.Parent) then
+		if notify then notify("角色还没加载", Color3.fromRGB(255, 108, 118)) end
+		return
+	end
+	local q = HRP.Position
+	local nm = WpNameBox.Text
+	if nm == "" then nm = "标点 " .. tostring(#Waypoints + 1) end
+	table.insert(Waypoints, { n = nm, x = math.floor(q.X), y = math.floor(q.Y), z = math.floor(q.Z) })
+	WpNameBox.Text = ""
+	wpSave(); wpRefresh()
+	if notify then notify("已保存标点：" .. nm .. "（共 " .. #Waypoints .. " 个）") end
+end)
+wpRefresh()
+local WPLoopTgl = makeToggle(PageTp, 1046, "标点循环 LOOP", "每隔一段时间传送一次到 ★ 选中标点", false, function(v)
+	State.WPLoop = v
+	if v and WPSelIdx == 0 and notify then
+		notify("请先在标点列表里点 ☆ 选一个", Color3.fromRGB(255, 108, 118))
+		State.WPLoop = false
+		WPLoopTgl.Set(false, true)
+	end
+end)
+makeSlider(PageTp, "循环间隔", 1094, 1, 60, 5, " 秒", function(v) State.WPLoopInt = v end, false)
+RunService:BindToRenderStep("HonCoord", 9993, function(dt)
+	if HON_SHUTDOWN then return end
+	WPCoordTimer = (WPCoordTimer or 0) + dt
+	if WPCoordTimer < 0.25 then return end
+	WPCoordTimer = 0
+	if not (CoordLbl and CoordLbl.Parent) then return end
+	if HRP and HRP.Parent then
+		local q = HRP.Position
+		CoordLbl.Text = string.format("当前坐标：X %d   Y %d   Z %d", q.X, q.Y, q.Z)
+	end
+end)
+
 function getTargetPlayer(name)
 	name = tostring(name or ""):lower()
 	if name == "" then return nil end
@@ -1463,10 +1669,6 @@ end, false)
 HeadSlider = makeSlider(PageMore, "头比例 HEAD", 124, 0.3, 5, 1, " x", function(v)
 	setBodyScale(nil, nil, v)
 end, false)
-HaloTgl = makeToggle(PageMore, 178, "头顶光环 HALO", "跟着头转的霓虹光环", false, function(v)
-	State.Halo = v
-	if not v then HaloPart = nil end
-end)
 FollowTgl = makeToggle(PageMore, 226, "自动跟随 FOLLOW", "开启后弹出面板选要跟的人", false, function(v)
 	State.Follow = v
 	if v then openPlayerPicker("选择要跟随的玩家", function(pl)
@@ -1593,31 +1795,7 @@ RunService:BindToRenderStep("HonDance", 9999, function()
 		end
 	end
 end)
-RunService.Heartbeat:Connect(function()
-	if HON_SHUTDOWN then return end
-	if State.Halo then
-		local c = LP.Character
-		local head = c and c:FindFirstChild("Head")
-		if head then
-			if not (HaloPart and HaloPart.Parent) then
-				HaloPart = Instance.new("Part")
-				HaloPart.Name = "HonHalo"
-				HaloPart.Size = Vector3.new(3.0, 0.16, 3.0)
-				HaloPart.Shape = Enum.PartType.Cylinder
-				HaloPart.Material = Enum.Material.Neon
-				HaloPart.BrickColor = BrickColor.new("Bright yellow")
-				HaloPart.CanCollide = false
-				HaloPart.Anchored = true
-				HaloPart.Parent = Workspace
-			end
-			local a = tick() * 2
-			HaloPart.CFrame = CFrame.new(head.Position + Vector3.new(0, 2.6, 0)) * CFrame.Angles(0, a, 0)
-		end
-	elseif HaloPart then
-		if HaloPart.Parent then HaloPart:Destroy() end
-		HaloPart = nil
-	end
-end)
+
 UtilBtns = {}
 label({ Text = "实 用 工 具", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Color3.fromRGB(120, 129, 152), Size = UDim2.new(1, 0, 0, 18),
@@ -2589,12 +2767,12 @@ function unloadScript()
 	HON_SHUTDOWN = true
 	pcall(closeAllFeatures)
 	pcall(function() if type(clearWings) == "function" then clearWings() end end)
+	pcall(function() if type(decoUnwearAll) == "function" then decoUnwearAll() end end)
 	pcall(function() if type(setCloneArmy) == "function" then setCloneArmy(false) end end)
 	pcall(function() if type(setBlackHole) == "function" then setBlackHole(false) end end)
 	pcall(function() if type(setTrail) == "function" then setTrail(false) end end)
 	pcall(function() if type(setOrbitFx) == "function" then setOrbitFx(false) end end)
 	pcall(function() if type(setCar) == "function" then setCar(false) end end)
-	pcall(function() if type(setHalo) == "function" then setHalo(0) end end)
 	pcall(function() if type(setHeroFly) == "function" then setHeroFly(false) end end)
 	pcall(function() if type(setFreecam) == "function" then setFreecam(false) end end)
 	pcall(function() if KamuiRoot then KamuiRoot.Visible = false end end)
@@ -3236,6 +3414,20 @@ RunService.Heartbeat:Connect(function(dt)
 		end
 		return
 	end
+	if State.WPLoop then
+		local w = Waypoints[WPSelIdx]
+		if not w then
+			State.WPLoop = false
+			if WPLoopTgl then WPLoopTgl.Set(false, true) end
+			if notify then notify("标点已失效，循环已停止", Color3.fromRGB(255, 108, 118)) end
+		else
+			wpTimer = (wpTimer or 0) + dt
+			if wpTimer >= (State.WPLoopInt or 5) then
+				wpTimer = 0
+				tpToPos(w.x, w.y, w.z)
+			end
+		end
+	end
 	if State.TPLoop then
 		local cf = tpTargetCF()
 		if not cf then
@@ -3705,6 +3897,242 @@ function danceAll()
 	if notify then notify("已让 " .. n .. " 人开始跳舞") end
 end
 
+-- ---------- 翅膀系统（重建）----------
+WING_STYLES = {
+	{ name = "天使之翼", c = Color3.fromRGB(245, 248, 255), layers = 3, mat = Enum.Material.SmoothPlastic },
+	{ name = "恶魔之翼", c = Color3.fromRGB(196, 48, 54), layers = 3, mat = Enum.Material.SmoothPlastic },
+	{ name = "暗影之翼", c = Color3.fromRGB(62, 44, 96), layers = 4, mat = Enum.Material.SmoothPlastic },
+	{ name = "龙翼",     c = Color3.fromRGB(54, 100, 78), layers = 2, mat = Enum.Material.Fabric },
+	{ name = "蝴蝶之翼", c = Color3.fromRGB(255, 160, 220), layers = 4, mat = Enum.Material.Neon },
+	{ name = "光翼",     c = Color3.fromRGB(140, 210, 255), layers = 5, mat = Enum.Material.Neon },
+	{ name = "火焰之翼", c = Color3.fromRGB(255, 142, 46), layers = 3, mat = Enum.Material.Neon },
+	{ name = "机械翼",   c = Color3.fromRGB(158, 168, 184), layers = 2, mat = Enum.Material.DiamondPlate },
+}
+WingIdx, WingParts, WingSizeV = 0, {}, 1
+function clearWings()
+	for _, w in ipairs(WingParts) do
+		pcall(function() if w.P then w.P:Destroy() end end)
+	end
+	WingParts = {}
+	WingIdx = 0
+end
+function setWing(i)
+	clearWings()
+	local st = WING_STYLES[i]
+	if not st then return end
+	WingIdx = i
+	for side = -1, 1, 2 do
+		for layer = 1, st.layers do
+			local f = (st.layers == 1) and 0 or (layer - 1) / (st.layers - 1)
+			local pt = Instance.new("Part")
+			pt.Name = "HonWing"
+			pt.Anchored = true
+			pt.CanCollide = false
+			pt.CastShadow = false
+			pt.Material = st.mat
+			pt.Color = st.c
+			pt.TopSurface = Enum.SurfaceType.Smooth
+			pt.BottomSurface = Enum.SurfaceType.Smooth
+			pt.Parent = Workspace
+			local len = 2.8 - f * 1.5
+			local wid = 1.15 - f * 0.55
+			table.insert(WingParts, {
+				P = pt, F = f, Layer = layer, Side = side,
+				Off = CFrame.new(side * (1.15 + f * 2.3), 0.25 + f * 0.95, 0.15 + f * 1.5)
+					* CFrame.Angles(0, side * (0.25 + f * 0.55), side * 0.3),
+				W = wid, L = len,
+			})
+		end
+	end
+	if notify then notify("已装备：" .. st.name) end
+end
+
+-- ---------- 商城装饰系统（客户端本地装扮，只有自己看得见）----------
+DecoParts, DecoActive, DecoCloth, DecoOrig, DecoSearch = {}, {}, {}, {}, ""
+DECO_CATS = { "背饰", "尾部", "颈部", "腰部", "头发", "上衣", "裤子", "裙子", "袜子", "鞋子" }
+local function dPart(size, off, color, mat, shape)
+	local p = Instance.new("Part")
+	p.Name = "HonDeco"
+	p.Anchored = true
+	p.CanCollide = false
+	p.CastShadow = false
+	p.Size = size
+	p.Color = color or Color3.fromRGB(220, 220, 220)
+	p.Material = mat or Enum.Material.SmoothPlastic
+	if shape then p.Shape = shape end
+	p.TopSurface = Enum.SurfaceType.Smooth
+	p.BottomSurface = Enum.SurfaceType.Smooth
+	p.Parent = Workspace
+	return { P = p, Off = off }
+end
+
+-- ===== 装饰库 =====
+DECO_ITEMS = {
+	-- 背饰
+	{ cat = "背饰", name = "勇者之剑", build = function() return {
+		dPart(Vector3.new(0.16, 2.4, 0.34), CFrame.new(0, 0.5, 0.55) * CFrame.Angles(math.rad(16), 0, 0), Color3.fromRGB(205, 215, 230), Enum.Material.Metal),
+		dPart(Vector3.new(0.95, 0.14, 0.22), CFrame.new(0, -0.6, 0.86), Color3.fromRGB(235, 205, 95), Enum.Material.Metal),
+		dPart(Vector3.new(0.16, 0.55, 0.16), CFrame.new(0, -0.95, 1.05), Color3.fromRGB(125, 92, 42), Enum.Material.Wood),
+		dPart(Vector3.new(0.18, 0.35, 0.18), CFrame.new(0, -1.3, 1.2), Color3.fromRGB(85, 62, 30)) } end },
+	{ cat = "背饰", name = "魔法书", build = function() return {
+		dPart(Vector3.new(1.3, 1.6, 0.22), CFrame.new(0, 0.35, 0.5), Color3.fromRGB(96, 62, 160)),
+		dPart(Vector3.new(1.34, 0.16, 0.26), CFrame.new(0, -0.5, 0.5), Color3.fromRGB(70, 44, 120)),
+		dPart(Vector3.new(0.28, 0.28, 0.1), CFrame.new(0, 0.35, 0.4), Color3.fromRGB(255, 215, 90), Enum.Material.Neon) } end },
+	{ cat = "背饰", name = "旅行背包", build = function() return {
+		dPart(Vector3.new(1.25, 1.35, 0.65), CFrame.new(0, -0.05, 0.48), Color3.fromRGB(70, 105, 70)),
+		dPart(Vector3.new(1.0, 0.5, 0.2), CFrame.new(0, 0.72, 0.42), Color3.fromRGB(52, 80, 52)),
+		dPart(Vector3.new(0.2, 0.7, 0.2), CFrame.new(0, 0.85, 0.42), Color3.fromRGB(45, 45, 50)) } end },
+	{ cat = "背饰", name = "恶魔翅刺", build = function() return {
+		dPart(Vector3.new(0.14, 1.1, 0.14), CFrame.new(-0.5, 1.5, 0.45) * CFrame.Angles(0, 0, math.rad(28)), Color3.fromRGB(50, 45, 60)),
+		dPart(Vector3.new(0.14, 1.1, 0.14), CFrame.new(0.5, 1.5, 0.45) * CFrame.Angles(0, 0, math.rad(-28)), Color3.fromRGB(50, 45, 60)),
+		dPart(Vector3.new(0.14, 0.9, 0.14), CFrame.new(-0.8, 1.1, 0.45) * CFrame.Angles(0, 0, math.rad(40)), Color3.fromRGB(50, 45, 60)),
+		dPart(Vector3.new(0.14, 0.9, 0.14), CFrame.new(0.8, 1.1, 0.45) * CFrame.Angles(0, 0, math.rad(-40)), Color3.fromRGB(50, 45, 60)) } end },
+	-- 尾部
+	{ cat = "尾部", name = "狐狸尾巴", build = function() return {
+		dPart(Vector3.new(0.6, 0.6, 0.9), CFrame.new(0, -0.1, 0.75) * CFrame.Angles(math.rad(50), 0, 0), Color3.fromRGB(235, 130, 50)),
+		dPart(Vector3.new(0.34, 0.34, 0.4), CFrame.new(0, 0.32, 1.05), Color3.fromRGB(250, 245, 235)) } end },
+	{ cat = "尾部", name = "龙尾巴", build = function() return {
+		dPart(Vector3.new(0.5, 0.5, 0.5), CFrame.new(0, -0.15, 0.6), Color3.fromRGB(60, 120, 80)),
+		dPart(Vector3.new(0.38, 0.38, 0.55), CFrame.new(0, -0.35, 1.0), Color3.fromRGB(52, 110, 72)),
+		dPart(Vector3.new(0.26, 0.26, 0.5), CFrame.new(0, -0.6, 1.35), Color3.fromRGB(45, 100, 65)),
+		dPart(Vector3.new(0.5, 0.5, 0.14), CFrame.new(0, -0.8, 1.55), Color3.fromRGB(240, 220, 120), Enum.Material.Neon) } end },
+	{ cat = "尾部", name = "猫咪尾巴", build = function() return {
+		dPart(Vector3.new(0.22, 1.1, 0.22), CFrame.new(0, -0.1, 0.6) * CFrame.Angles(math.rad(35), 0, 0), Color3.fromRGB(240, 240, 245)),
+		dPart(Vector3.new(0.22, 1.1, 0.22), CFrame.new(0, 0.45, 0.85) * CFrame.Angles(math.rad(-25), 0, 0), Color3.fromRGB(235, 235, 240)),
+		dPart(Vector3.new(0.24, 0.24, 0.24), CFrame.new(0, 0.85, 0.75), Color3.fromRGB(200, 170, 200)) } end },
+	{ cat = "尾部", name = "恶魔刺尾", build = function() return {
+		dPart(Vector3.new(0.3, 0.9, 0.3), CFrame.new(0, -0.2, 0.65) * CFrame.Angles(math.rad(40), 0, 0), Color3.fromRGB(55, 45, 65)),
+		dPart(Vector3.new(0.34, 0.5, 0.34), CFrame.new(0, -0.65, 0.95), Color3.fromRGB(48, 40, 58), Enum.PartType.Ball),
+		dPart(Vector3.new(0.14, 0.5, 0.14), CFrame.new(0, -1.0, 1.15) * CFrame.Angles(math.rad(40), 0, 0), Color3.fromRGB(180, 40, 45)) } end },
+	-- 颈部
+	{ cat = "颈部", name = "红围巾", build = function() return {
+		dPart(Vector3.new(1.3, 0.3, 0.85), CFrame.new(0, 1.25, 0.1), Color3.fromRGB(190, 45, 50), Enum.Material.Fabric),
+		dPart(Vector3.new(0.45, 0.9, 0.16), CFrame.new(0.15, 0.85, 0.42), Color3.fromRGB(170, 38, 42), Enum.Material.Fabric) } end },
+	{ cat = "颈部", name = "金项链", build = function() return {
+		dPart(Vector3.new(0.14, 0.14, 1.5), CFrame.new(0, 1.15, 0.05) * CFrame.Angles(math.rad(12), 0, 0), Color3.fromRGB(240, 205, 90), Enum.Material.Metal),
+		dPart(Vector3.new(0.22, 0.22, 0.22), CFrame.new(0, 0.95, 0.3), Color3.fromRGB(255, 220, 100), Enum.Material.Neon) } end },
+	{ cat = "颈部", name = "蝴蝶结", build = function() return {
+		dPart(Vector3.new(0.3, 0.3, 0.16), CFrame.new(-0.35, 1.35, 0.28) * CFrame.Angles(0, 0, math.rad(30)), Color3.fromRGB(240, 130, 170)),
+		dPart(Vector3.new(0.3, 0.3, 0.16), CFrame.new(0.35, 1.35, 0.28) * CFrame.Angles(0, 0, math.rad(-30)), Color3.fromRGB(240, 130, 170)),
+		dPart(Vector3.new(0.18, 0.18, 0.14), CFrame.new(0, 1.35, 0.3), Color3.fromRGB(220, 100, 145)) } end },
+	-- 腰部
+	{ cat = "腰部", name = "皮腰带", build = function() return {
+		dPart(Vector3.new(1.5, 0.22, 0.95), CFrame.new(0, -0.15, 0.05), Color3.fromRGB(70, 48, 32), Enum.Material.Fabric),
+		dPart(Vector3.new(0.3, 0.26, 0.12), CFrame.new(0, -0.15, 0.55), Color3.fromRGB(215, 190, 110), Enum.Material.Metal) } end },
+	{ cat = "腰部", name = "霓虹腰环", build = function() return {
+		dPart(Vector3.new(1.55, 0.1, 0.1), CFrame.new(0, 0.05, 0.52) * CFrame.Angles(0, math.rad(90), 0), Color3.fromRGB(120, 230, 255), Enum.Material.Neon),
+		dPart(Vector3.new(1.55, 0.1, 0.1), CFrame.new(0, 0.05, -0.42) * CFrame.Angles(0, math.rad(90), 0), Color3.fromRGB(120, 230, 255), Enum.Material.Neon),
+		dPart(Vector3.new(0.1, 0.1, 1.0), CFrame.new(0.75, 0.05, 0.05) * CFrame.Angles(math.rad(90), 0, 0), Color3.fromRGB(120, 230, 255), Enum.Material.Neon),
+		dPart(Vector3.new(0.1, 0.1, 1.0), CFrame.new(-0.75, 0.05, 0.05) * CFrame.Angles(math.rad(90), 0, 0), Color3.fromRGB(120, 230, 255), Enum.Material.Neon) } end },
+	{ cat = "腰部", name = "身后飘带", build = function() return {
+		dPart(Vector3.new(0.22, 1.3, 0.06), CFrame.new(-0.45, -0.1, 0.55) * CFrame.Angles(math.rad(8), 0, math.rad(6)), Color3.fromRGB(200, 60, 70), Enum.Material.Fabric),
+		dPart(Vector3.new(0.22, 1.3, 0.06), CFrame.new(0.45, -0.1, 0.55) * CFrame.Angles(math.rad(8), 0, math.rad(-6)), Color3.fromRGB(200, 60, 70), Enum.Material.Fabric) } end },
+	-- 头发
+	{ cat = "头发", name = "干练短发", build = function() return {
+		dPart(Vector3.new(1.25, 0.4, 1.2), CFrame.new(0, 2.05, 0.02), Color3.fromRGB(40, 34, 30)),
+		dPart(Vector3.new(0.35, 0.5, 0.3), CFrame.new(-0.6, 1.95, 0.1), Color3.fromRGB(40, 34, 30)),
+		dPart(Vector3.new(0.35, 0.5, 0.3), CFrame.new(0.6, 1.95, 0.1), Color3.fromRGB(40, 34, 30)),
+		dPart(Vector3.new(1.15, 0.22, 0.3), CFrame.new(0, 1.72, -0.5), Color3.fromRGB(40, 34, 30)) } end },
+	{ cat = "头发", name = "银色长发", build = function() return {
+		dPart(Vector3.new(1.3, 0.4, 1.25), CFrame.new(0, 2.05, 0.02), Color3.fromRGB(215, 220, 230)),
+		dPart(Vector3.new(0.4, 1.1, 0.4), CFrame.new(-0.65, 1.6, 0.15), Color3.fromRGB(205, 210, 222)),
+		dPart(Vector3.new(0.4, 1.1, 0.4), CFrame.new(0.65, 1.6, 0.15), Color3.fromRGB(205, 210, 222)),
+		dPart(Vector3.new(1.2, 1.2, 0.35), CFrame.new(0, 1.5, -0.45), Color3.fromRGB(200, 206, 220)) } end },
+	{ cat = "头发", name = "双马尾", build = function() return {
+		dPart(Vector3.new(1.25, 0.4, 1.2), CFrame.new(0, 2.05, 0.02), Color3.fromRGB(160, 90, 180)),
+		dPart(Vector3.new(0.45, 0.45, 0.45), CFrame.new(-0.72, 2.25, 0.05), Color3.fromRGB(170, 95, 190)),
+		dPart(Vector3.new(0.45, 0.45, 0.45), CFrame.new(0.72, 2.25, 0.05), Color3.fromRGB(170, 95, 190)),
+		dPart(Vector3.new(0.3, 1.2, 0.3), CFrame.new(-0.85, 1.75, 0.05), Color3.fromRGB(160, 90, 180)),
+		dPart(Vector3.new(0.3, 1.2, 0.3), CFrame.new(0.85, 1.75, 0.05), Color3.fromRGB(160, 90, 180)) } end },
+	{ cat = "头发", name = "刺猬头", build = function() return {
+		dPart(Vector3.new(1.25, 0.35, 1.2), CFrame.new(0, 2.0, 0.02), Color3.fromRGB(35, 35, 40)),
+		dPart(Vector3.new(0.18, 0.45, 0.18), CFrame.new(0, 2.35, -0.3), Color3.fromRGB(35, 35, 40)),
+		dPart(Vector3.new(0.18, 0.45, 0.18), CFrame.new(-0.4, 2.3, -0.15), Color3.fromRGB(35, 35, 40)),
+		dPart(Vector3.new(0.18, 0.45, 0.18), CFrame.new(0.4, 2.3, -0.15), Color3.fromRGB(35, 35, 40)),
+		dPart(Vector3.new(0.18, 0.45, 0.18), CFrame.new(-0.75, 2.15, 0.1), Color3.fromRGB(35, 35, 40)),
+		dPart(Vector3.new(0.18, 0.45, 0.18), CFrame.new(0.75, 2.15, 0.1), Color3.fromRGB(35, 35, 40)) } end },
+	-- 上衣（换色）
+	{ cat = "上衣", name = "白衬衫", cloth = { UpperTorso = Color3.fromRGB(245, 245, 250), LowerTorso = Color3.fromRGB(235, 235, 240), LeftUpperArm = Color3.fromRGB(245, 245, 250), LeftLowerArm = Color3.fromRGB(245, 245, 250), RightUpperArm = Color3.fromRGB(245, 245, 250), RightLowerArm = Color3.fromRGB(245, 245, 250) } },
+	{ cat = "上衣", name = "黑卫衣", cloth = { UpperTorso = Color3.fromRGB(35, 38, 45), LowerTorso = Color3.fromRGB(30, 33, 40), LeftUpperArm = Color3.fromRGB(35, 38, 45), LeftLowerArm = Color3.fromRGB(35, 38, 45), RightUpperArm = Color3.fromRGB(35, 38, 45), RightLowerArm = Color3.fromRGB(35, 38, 45) } },
+	{ cat = "上衣", name = "蓝夹克", cloth = { UpperTorso = Color3.fromRGB(45, 85, 150), LowerTorso = Color3.fromRGB(40, 75, 135), LeftUpperArm = Color3.fromRGB(45, 85, 150), LeftLowerArm = Color3.fromRGB(45, 85, 150), RightUpperArm = Color3.fromRGB(45, 85, 150), RightLowerArm = Color3.fromRGB(45, 85, 150) } },
+	{ cat = "上衣", name = "红T恤", cloth = { UpperTorso = Color3.fromRGB(190, 55, 55), LowerTorso = Color3.fromRGB(175, 48, 48), LeftUpperArm = Color3.fromRGB(190, 55, 55), LeftLowerArm = Color3.fromRGB(190, 55, 55), RightUpperArm = Color3.fromRGB(190, 55, 55), RightLowerArm = Color3.fromRGB(190, 55, 55) } },
+	-- 裤子（换色）
+	{ cat = "裤子", name = "黑长裤", cloth = { LeftUpperLeg = Color3.fromRGB(40, 42, 50), LeftLowerLeg = Color3.fromRGB(40, 42, 50), RightUpperLeg = Color3.fromRGB(40, 42, 50), RightLowerLeg = Color3.fromRGB(40, 42, 50) } },
+	{ cat = "裤子", name = "蓝牛仔", cloth = { LeftUpperLeg = Color3.fromRGB(55, 85, 135), LeftLowerLeg = Color3.fromRGB(55, 85, 135), RightUpperLeg = Color3.fromRGB(55, 85, 135), RightLowerLeg = Color3.fromRGB(55, 85, 135) } },
+	{ cat = "裤子", name = "卡其裤", cloth = { LeftUpperLeg = Color3.fromRGB(150, 130, 85), LeftLowerLeg = Color3.fromRGB(150, 130, 85), RightUpperLeg = Color3.fromRGB(150, 130, 85), RightLowerLeg = Color3.fromRGB(150, 130, 85) } },
+	-- 裙子（Part 拼）
+	{ cat = "裙子", name = "百褶短裙", build = function() return {
+		dPart(Vector3.new(1.45, 0.75, 1.0), CFrame.new(0, -0.35, 0.02) * CFrame.Angles(0, 0, 0), Color3.fromRGB(60, 60, 75), Enum.Material.Fabric),
+		dPart(Vector3.new(1.45, 0.75, 1.0), CFrame.new(0, -0.7, 0.02), Color3.fromRGB(52, 52, 66), Enum.Material.Fabric),
+		dPart(Vector3.new(1.45, 0.75, 1.0), CFrame.new(0, -1.05, 0.02), Color3.fromRGB(60, 60, 75), Enum.Material.Fabric) } end },
+	{ cat = "裙子", name = "粉色长裙", build = function() return {
+		dPart(Vector3.new(1.5, 1.5, 1.1), CFrame.new(0, -0.4, 0.02), Color3.fromRGB(240, 160, 190), Enum.Material.Fabric),
+		dPart(Vector3.new(1.45, 1.5, 1.05), CFrame.new(0, -0.95, 0.02), Color3.fromRGB(232, 145, 178), Enum.Material.Fabric),
+		dPart(Vector3.new(1.4, 1.5, 1.0), CFrame.new(0, -1.5, 0.02), Color3.fromRGB(225, 132, 168), Enum.Material.Fabric) } end },
+	-- 袜子（换色：小腿）
+	{ cat = "袜子", name = "白长袜", cloth = { LeftLowerLeg = Color3.fromRGB(245, 245, 250), RightLowerLeg = Color3.fromRGB(245, 245, 250) } },
+	{ cat = "袜子", name = "黑丝袜", cloth = { LeftLowerLeg = Color3.fromRGB(45, 45, 55), RightLowerLeg = Color3.fromRGB(45, 45, 55) } },
+	{ cat = "袜子", name = "条纹袜", cloth = { LeftLowerLeg = Color3.fromRGB(230, 230, 240), RightLowerLeg = Color3.fromRGB(230, 230, 240) } },
+	-- 鞋子（换色：脚）
+	{ cat = "鞋子", name = "黑皮鞋", cloth = { LeftFoot = Color3.fromRGB(35, 32, 32), RightFoot = Color3.fromRGB(35, 32, 32) } },
+	{ cat = "鞋子", name = "白球鞋", cloth = { LeftFoot = Color3.fromRGB(240, 242, 248), RightFoot = Color3.fromRGB(240, 242, 248) } },
+	{ cat = "鞋子", name = "红靴子", cloth = { LeftFoot = Color3.fromRGB(170, 45, 45), RightFoot = Color3.fromRGB(170, 45, 45) } },
+}
+function decoUnwear(cat)
+	local it = DecoActive[cat]
+	if not it then return end
+	if it.build then
+		for i = #DecoParts, 1, -1 do
+			if DecoParts[i].Cat == cat then
+				pcall(function() DecoParts[i].P:Destroy() end)
+				table.remove(DecoParts, i)
+			end
+		end
+	end
+	if DecoOrig[cat] then
+		local ch = LP and LP.Character
+		if ch then
+			for name, col in pairs(DecoOrig[cat]) do
+				local p = ch:FindFirstChild(name)
+				if p and p:IsA("BasePart") then p.Color = col end
+			end
+		end
+	end
+	DecoCloth[cat] = nil
+	DecoOrig[cat] = nil
+	DecoActive[cat] = nil
+end
+function decoWear(item)
+	if not item then return end
+	decoUnwear(item.cat)
+	DecoActive[item.cat] = item
+	if item.build then
+		for _, d in ipairs(item.build()) do
+			d.Cat = item.cat
+			table.insert(DecoParts, d)
+		end
+	end
+	if item.cloth then
+		local ch = LP and LP.Character
+		if ch then
+			DecoCloth[item.cat] = {}
+			DecoOrig[item.cat] = {}
+			for name, col in pairs(item.cloth) do
+				local p = ch:FindFirstChild(name)
+				if p and p:IsA("BasePart") then
+					DecoOrig[item.cat][name] = p.Color
+					DecoCloth[item.cat][name] = col
+				end
+			end
+		end
+	end
+	if notify then notify("已装扮：" .. item.name) end
+end
+function decoUnwearAll()
+	for _, c in ipairs(DECO_CATS) do decoUnwear(c) end
+	if notify then notify("已卸下全部装饰") end
+end
+
 -- ---------- 装扮页 UI ----------
 label({ Text = "翅 膀 WINGS", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Color3.fromRGB(120, 129, 152), Size = UDim2.new(1, 0, 0, 18),
@@ -3730,10 +4158,87 @@ corner(NoWingBtn, 8)
 table.insert(FunBtns, NoWingBtn)
 bindClick(NoWingBtn, "收起翅膀", function() clearWings() end)
 
-makeSlider(PageDeco, "翅膀大小", 420, 40, 220, 100, " %", function(v) WingSizeV = v / 100 end, false)
+makeSlider(PageDeco, "翅膀大小", 224, 40, 220, 100, " %", function(v) WingSizeV = v / 100 end, false)
 label({ Text = "翅膀：点一下装备，再点「收起翅膀」卸下；大小可滑", Font = Enum.Font.Gotham, TextSize = 10,
-	TextColor3 = Color3.fromRGB(120, 129, 152), Position = UDim2.new(0, 2, 0, 588),
+	TextColor3 = Color3.fromRGB(120, 129, 152), Position = UDim2.new(0, 2, 0, 274),
 	Size = UDim2.new(1, -4, 0, 26), TextWrapped = true,
+	TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top }, PageDeco)
+label({ Text = "装 饰 商 城 COSTUME · 客户端本地装扮", Font = Enum.Font.GothamBold, TextSize = 11,
+	TextColor3 = Color3.fromRGB(120, 129, 152), Size = UDim2.new(1, 0, 0, 18),
+	Position = UDim2.new(0, 2, 0, 306), TextXAlignment = Enum.TextXAlignment.Left }, PageDeco)
+local DecoSearchBox = new("TextBox", { PlaceholderText = "搜索装饰…", Text = "", Font = Enum.Font.Gotham, TextSize = 11,
+	TextColor3 = Color3.fromRGB(238, 243, 255), PlaceholderColor3 = Color3.fromRGB(110, 118, 140),
+	BackgroundColor3 = Color3.fromRGB(255, 255, 255), BackgroundTransparency = 0.92,
+	BorderSizePixel = 0, ClearTextOnFocus = false,
+	Size = UDim2.new(0.58, -4, 0, 30), Position = UDim2.new(0, 0, 0, 330), Parent = PageDeco })
+corner(DecoSearchBox, 8)
+local DecoClearBtn = new("TextButton", { Text = "卸下全部", Font = Enum.Font.GothamBold, TextSize = 11,
+	TextColor3 = Color3.fromRGB(255, 108, 118), BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+	BackgroundTransparency = 0.9, BorderSizePixel = 0, AutoButtonColor = false,
+	Size = UDim2.new(0.42, 0, 0, 30), Position = UDim2.new(0.58, 4, 0, 330), Parent = PageDeco })
+corner(DecoClearBtn, 8)
+table.insert(FunBtns, DecoClearBtn)
+local DecoListWrap = new("Frame", { Size = UDim2.new(1, 0, 0, 430), Position = UDim2.new(0, 0, 0, 368),
+	BackgroundColor3 = Color3.fromRGB(20, 23, 33), BackgroundTransparency = 0.25,
+	BorderSizePixel = 0, ClipsDescendants = true, Parent = PageDeco })
+corner(DecoListWrap, 10)
+new("UIStroke", { Color = Modes[1].Accent, Transparency = 0.75, Thickness = 1, Parent = DecoListWrap })
+local DecoList = new("ScrollingFrame", { Size = UDim2.new(1, -8, 1, -8), Position = UDim2.new(0, 4, 0, 4),
+	BackgroundTransparency = 1, BorderSizePixel = 0, ScrollBarThickness = 4,
+	ScrollBarImageTransparency = 0.5, CanvasSize = UDim2.new(0, 0, 0, 0), Parent = DecoListWrap })
+function decoRefresh()
+	for _, c in ipairs(DecoList:GetChildren()) do
+		if c:IsA("TextButton") or c:IsA("TextLabel") then c:Destroy() end
+	end
+	local kw = string.lower(DecoSearch or "")
+	local yy = 0
+	for _, cat in ipairs(DECO_CATS) do
+		local items = {}
+		for _, it in ipairs(DECO_ITEMS) do
+			if it.cat == cat and (kw == "" or string.find(string.lower(it.name), kw, 1, true)
+				or string.find(string.lower(cat), kw, 1, true)) then
+				table.insert(items, it)
+			end
+		end
+		if #items > 0 then
+			label({ Text = "▎" .. cat, Font = Enum.Font.GothamBold, TextSize = 10,
+				TextColor3 = Color3.fromRGB(120, 129, 152), Size = UDim2.new(1, -6, 0, 18),
+				Position = UDim2.new(0, 3, 0, yy), TextXAlignment = Enum.TextXAlignment.Left }, DecoList)
+			yy = yy + 20
+			for _, it in ipairs(items) do
+				local on = (DecoActive[cat] == it)
+				local b = new("TextButton", { Text = (on and "✓ " or "") .. it.name, Font = Enum.Font.Gotham, TextSize = 11,
+					TextColor3 = on and Mode().Accent or Color3.fromRGB(226, 233, 248),
+					BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+					BackgroundTransparency = on and 0.82 or 0.94, BorderSizePixel = 0, AutoButtonColor = false,
+					Size = UDim2.new(1, -6, 0, 26), Position = UDim2.new(0, 3, 0, yy),
+					TextXAlignment = Enum.TextXAlignment.Left, Parent = DecoList })
+				corner(b, 6)
+				table.insert(FunBtns, b)
+				bindClick(b, it.name, function()
+					if DecoActive[cat] == it then
+						decoUnwear(cat)
+					else
+						decoWear(it)
+					end
+					decoRefresh()
+				end)
+				yy = yy + 29
+			end
+			yy = yy + 6
+		end
+	end
+	DecoList.CanvasSize = UDim2.new(0, 0, 0, math.max(yy, 1))
+end
+DecoSearchBox:GetPropertyChangedSignal("Text"):Connect(function()
+	DecoSearch = DecoSearchBox.Text
+	decoRefresh()
+end)
+bindClick(DecoClearBtn, "卸下全部装饰", function() decoUnwearAll(); decoRefresh() end)
+decoRefresh()
+label({ Text = "全部装扮只有你自己看得见；换角色 / 重生后自动重扮。衣服类是直接给身体部件换色。", Font = Enum.Font.Gotham, TextSize = 10,
+	TextColor3 = Color3.fromRGB(120, 129, 152), Position = UDim2.new(0, 2, 0, 808),
+	Size = UDim2.new(1, -4, 0, 30), TextWrapped = true,
 	TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top }, PageDeco)
 
 -- ---------- 独立飞行 / 自动连跳 ----------
@@ -4665,19 +5170,23 @@ RunService:BindToRenderStep("HonFunLoop", 9995, function(dt)
 			end
 		end)
 	end
-	if HaloPart and HaloPart.Parent then
-		local head = LP.Character and LP.Character:FindFirstChild("Head")
-		if head then
-			pcall(function()
-				local t = tick()
-				local st = HALO_STYLES[HaloIdx]
-				if st and st.c == nil then
-					HaloPart.Color = Color3.fromHSV((t * 0.12) % 1, 0.75, 1)
+	if #DecoParts > 0 and HRP and HRP.Parent then
+		pcall(function()
+			local base = HRP.CFrame
+			for _, d in ipairs(DecoParts) do
+				if d.P and d.P.Parent then d.P.CFrame = base * d.Off end
+			end
+		end)
+	end
+	do
+		local ch = LP and LP.Character
+		if ch then
+			for _, map in pairs(DecoCloth) do
+				for name, col in pairs(map) do
+					local p = ch:FindFirstChild(name)
+					if p and p:IsA("BasePart") and p.Color ~= col then p.Color = col end
 				end
-				HaloPart.Size = Vector3.new(3.0 * HaloSizeV, 0.2 * HaloSizeV, 3.0 * HaloSizeV)
-				HaloPart.CFrame = head.CFrame * CFrame.new(0, 2.1 + math.sin(t * 1.6) * 0.12, 0)
-					* CFrame.Angles(math.rad(HaloTiltV), t * 1.1, 0)
-			end)
+			end
 		end
 	end
 	pcall(updateRadar, dt)
@@ -4891,4 +5400,4 @@ tspawn(function()
 		end)
 	end
 end)
-print("[HON SPEED HUB] v5.30 已加载 · 完整文件约 4895 行 · 若你的脚本远大于此行数说明粘贴重复了")
+print("[HON SPEED HUB] v5.31 已加载 · 完整文件约 5404 行 · 若你的脚本远大于此行数说明粘贴重复了")
