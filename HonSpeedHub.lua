@@ -4,7 +4,7 @@ local MASTER_KEY  = "chenchen1116"
 local VALID_KEYS  = {
 	["chenchen1116"] = true,
 }
-print("[HON SPEED HUB] 载入中 · v5.22 · 若只看到这一行说明文件在中途中断")
+print("[HON SPEED HUB] 载入中 · v5.27 · 若只看到这一行说明文件在中途中断")
 local twait  = (type(task) == "table" and task.wait)  or wait  or function() end
 local tspawn = (type(task) == "table" and task.spawn) or spawn or function(f, ...) return f(...) end
 if type(twait) ~= "function" then twait = function() end end
@@ -93,7 +93,7 @@ local State = {
 	PadKeys = false, PadSize = 100,
 	EspPlayer = false, EspNPC = false, EspInteract = false,
 	InstantInteract = false, EspDepth = true,
-	ClickTP = false, AntiVoid = false, FakeChar = false, BodyTransp = 0, Fullbright = false,
+	ClickTP = false, AntiVoid = false, FakeChar = false, BodyTransp = 0, Fullbright = false, LowGravity = false, GravityValue = 40,
 	Spin = false, Rainbow = false, Bounce = false, Orbit = false, LowFx = false,
 	Dance = false, Halo = false, Follow = false, Face = false, FovValue = 0, WatchTarget = nil,
 	Freeze = false, HidePlayers = false, HideUI = false, AutoJump = false, CoordHud = false,
@@ -210,7 +210,7 @@ label({ Text = "HON SPEED HUB", Font = Enum.Font.GothamBold, TextSize = 21,
 	TextColor3 = Color3.fromRGB(238, 243, 255),
 	Position = UDim2.new(0, 36, 0, 16), Size = UDim2.new(0, 200, 0, 24),
 	TextXAlignment = Enum.TextXAlignment.Left }, Header)
-label({ Text = "Universal Hub  ·  W / V / CF  ·  v5.22", Font = Enum.Font.Gotham, TextSize = 11,
+label({ Text = "Universal Hub  ·  W / V / CF  ·  v5.27", Font = Enum.Font.Gotham, TextSize = 11,
 	TextColor3 = Color3.fromRGB(140, 149, 172),
 	Position = UDim2.new(0, 36, 0, 42), Size = UDim2.new(0, 240, 0, 16),
 	TextXAlignment = Enum.TextXAlignment.Left }, Header)
@@ -246,18 +246,46 @@ iconBtn("–", -68, Color3.fromRGB(190, 198, 220), function() playCloseAnim(func
 iconBtn("×", -34, Color3.fromRGB(255, 108, 118), function() playCloseAnim() end)
 -- ---------- 更新公告 ----------
 CHANGELOG = {
-	{ v = "v5.22", t = {
+	{ v = "v5.27", t = {
+		"新增 · 设置页（第 11 页）：4 种 UI 样式 · 面板缩放 · 启动/删除动画样式 · 字体大小 · 背景图与透明度",
+		"新增 · 面板背景图：用你给的那张 IMG_3683 当面板背景，可开关 + 启动时自动加载",
+		"新增 · 恢复角色外观按钮（修被画质/材质改动染色的角色）",
+		"新增 · 重置身体比例按钮（放大身体后一键回 100%）",
+		"新增 · 防布娃娃（夜脚本同款）：不会被打倒/摔倒",
+		"新增 · 换个服务器（随机重进）",
+	}},
+	{ v = "v5.27", t = {
+		"重做 · 神威动画严格对齐预览：14 条螺旋卷入线 + 16 个沿螺旋内流的碎屑粒子 + 7 圈空间环 + 黑洞奇点，时长 3 秒，参数逐项一致",
+		"修复 · 移动键拖动：之前挂错了不存在的变量（NumBtns→TouchBtns），现在数字键/方向键都能在屏幕上直接拖",
+	}},
+	{ v = "v5.27", t = {
+		"重做 · 翅膀：每侧 3 层 × 9 片共 54 片羽翼，按翼形轮廓排布（中间长两端短）+ 波浪式扇动，新增「EVA 暴走翼」",
+		"修复 · 头顶光环默认改成水平（Torus 默认竖直），并加降级方案：不支持就用 24 段拼环，保证一定出现",
+		"修复 · 误删的彩虹拖尾 / 分身军团 / 粒子环绕 / 全员跳舞 四个函数已补回",
+		"新增 · 反重力开关 + 重力值滑条（辅助页）",
+		"修复 · 顶部横排总是显示「1 加速」：引擎默认开着不算已开功能",
+		"修复 · 功能列表显示被 HUD 覆盖的判定问题",
+	}},
+	{ v = "v5.27", t = {
+		"修复 · 头顶光环是竖着的：Roblox 的 Torus 默认竖直，默认角度改为 90°（水平悬浮），并做得更细",
+		"修复 · 视野 FOV：拖动滑条立即生效，不用等平滑过渡",
+	}},
+	{ v = "v5.27", t = {
+		"修复 · 黑洞吸力滑条与「倒立 FLIP」重叠（都在 y=352），倒立已下移到独立位置",
+		"新增 · 布局检查器构建闸门：自动扫描所有页面控件 y 区间，重叠直接拦下",
+	}},
+	{ v = "v5.27", t = {
 		"紧急修复 · 白屏崩溃：FunBtns 表在第 679 行被使用却在第 1159 行才定义，导致 table.insert(nil) 报错、初始化中断",
 		"修复 · 表定义顺序全部前移，新增「表检查器」构建闸门（table.insert 目标必须先定义）",
 		"修复 · 收起面板后状态还原，关闭/重开不再残留",
 	}},
-	{ v = "v5.22", t = {
+	{ v = "v5.27", t = {
 		"紧急修复 · makeToggle 内部自引用导致每次 Set() 抛错（连锁引发页面/小窗打不开）",
 		"修复 · 关不掉：关闭流程改为无论如何都会收起面板并还原状态",
 		"修复 · 启动动画：移除与神威冲突的旧弹出动画，改为神威之后衔接弹出",
 		"修复 · 侧栏只认前 8 页：改为动态全部页 + 画布放大，10 个标签都能点",
 		"新增 · 看门狗：5 秒后若界面意外消失会自动恢复，防止整个 UI 不见",
-	}},	{ v = "v5.22", t = {
+	}},	{ v = "v5.27", t = {
 		"改 · 移动 UI：屏幕上点哪个就能拖哪个（数字键/方向键各自独立拖动）",
 		"新增 · 自由视角开关：角色定在原地，镜头到处飞",
 		"改 · 环绕 TA：开启后弹面板选人（取消会自动关掉开关）",
@@ -267,7 +295,7 @@ CHANGELOG = {
 		"改 · 全部关闭：先弹确认框并说明会关掉哪些东西",
 		"新增 · 传送页：查看玩家（选中即可看他）+ 恢复自己视角",
 		"改 · 存档点：保存成功/失败都有明确提示",
-	}},	{ v = "v5.22", t = {
+	}},	{ v = "v5.27", t = {
 		"新增 · 装扮页：6 种大翅膀（天使/堕天/恶魔/光/火/机械）+ 5 种头顶光环",
 		"新增 · 蔚蓝档案式光环（悬浮旋转，可调大小与角度）",
 		"新增 · 隐藏身上方块：一键清除配件/框选/名牌等附加物",
@@ -277,14 +305,14 @@ CHANGELOG = {
 		"修复 · 血量显示与功能列表被 HUD 覆盖不显示",
 		"新增 · 空壳检查器：自动揪出「开关没用」的字段",
 	}},
-	{ v = "v5.22", t = {
+	{ v = "v5.27", t = {
 		"新增 · 公告界面（本页）· 设置页入口",
 		"新增 · 头顶光环（蔚蓝档案式）· 分身独立面板",
 		"修复 · 飞行 / FOV / 连跳 / 拖尾 / 跳舞 / 骑头 失效",
 		"修复 · 黑洞与倒立控件重叠 · 存档点提示",
 		"重构 · 混淆版：字符串全加密 + 诱饵逻辑，抗反混淆",
 	}},
-	{ v = "v5.22", t = {
+	{ v = "v5.27", t = {
 		"修复 · 特效永远不停（时长单位错误）",
 		"修复 · 放出动画不显示漩涡",
 		"回退 · 漩涡恢复平面版（更好看的那版）",
@@ -383,7 +411,7 @@ local TabBtns = {}
 local FunBtns = {}
 local CurTab = 1
 do
-	local names = { "引擎", "辅助", "视觉", "触屏", "工具", "娱乐", "更多", "实用", "传送", "装扮" }
+	local names = { "引擎", "辅助", "视觉", "触屏", "工具", "娱乐", "更多", "实用", "传送", "装扮", "设置" }
 	for i, n in ipairs(names) do
 		local b = new("TextButton", { Text = n, Font = Enum.Font.GothamBold, TextSize = 13,
 			TextColor3 = Color3.fromRGB(140, 149, 172), BackgroundTransparency = 1,
@@ -411,7 +439,7 @@ do
 end
 local PageHost = new("Frame", { Name = "Content", Size = UDim2.new(0, 464, 0, 336), Position = UDim2.new(0, 180, 0, 84),
 	BackgroundTransparency = 1, BorderSizePixel = 0, ClipsDescendants = true, Parent = Main })
-local PAGE_H = { 520, 380, 620, 680, 910, 1300, 530, 720, 960, 720 }
+local PAGE_H = { 520, 380, 620, 680, 910, 1300, 530, 720, 960, 720, 900 }
 PageList = {}
 local function mkPage(i, visible)
 	return new("ScrollingFrame", { Name = "Page" .. tostring(i),
@@ -434,7 +462,8 @@ local PageMore = mkPage(7, false)
 local PageUtil = mkPage(8, false)
 local PageTp = mkPage(9, false)
 local PageDeco = mkPage(10, false)
-PageList = { PageEng, PageAssist, PageEsp, PageTouch, PageTool, PageFun, PageMore, PageUtil, PageTp, PageDeco }
+local PageSet = mkPage(11, false)
+PageList = { PageEng, PageAssist, PageEsp, PageTouch, PageTool, PageFun, PageMore, PageUtil, PageTp, PageDeco, PageSet }
 local function makeSlider(parent, title, y, min, max, default, suffix, onChange, lockable, onLockChange, editable)
 	local wrap = new("Frame", { Size = UDim2.new(1, 0, 0, 46), Position = UDim2.new(0, 0, 0, y), BackgroundTransparency = 1, Parent = parent })
 	label({ Text = title, Font = Enum.Font.GothamBold, TextSize = 12, TextColor3 = Color3.fromRGB(196, 204, 224),
@@ -638,6 +667,17 @@ local JumpSlider = makeSlider(PageAssist, "跳跃力 JUMP", 24, 16, 200, DEFAULT
 	function(v) State.JumpPower = v end, true, function(v) State.JumpLocked = v end)
 local JumpToggle = makeToggle(PageAssist, 78, "启用跳跃增强", "逐帧回写防被重置", false, function(v) State.JumpEnabled = v end)
 local InfJumpTgl = makeToggle(PageAssist, 126, "无限跳", "空中可反复起跳", false, function(v) State.InfJump = v end)
+local GravTgl = makeToggle(PageAssist, 366, "反重力 LOW GRAVITY", "自由开关重力 · 关闭恢复默认", false, function(v)
+	State.LowGravity = v
+	pcall(function()
+		Workspace.Gravity = v and (State.GravityValue or 40) or 196.2
+	end)
+	if notify then notify(v and ("重力已改为 " .. tostring(State.GravityValue or 40)) or "重力已恢复默认 196.2") end
+end)
+makeSlider(PageAssist, "重力值", 414, 0, 196, 40, " g", function(v)
+	State.GravityValue = v
+	if State.LowGravity then pcall(function() Workspace.Gravity = v end) end
+end, false)
 local NoclipTgl  = makeToggle(PageAssist, 174, "穿墙 NOCLIP", "关闭时还原碰撞体", false, function(v)
 	State.Noclip = v
 	setNoclip(v)
@@ -1312,7 +1352,7 @@ LowFxTgl = makeToggle(PageFun, 1120, "FPS 加速 LOW FX", "关阴影/粒子/降�
 FlipBtn = new("TextButton", { Text = "倒立 FLIP", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Mode().Accent, BackgroundColor3 = Color3.fromRGB(255, 255, 255), BackgroundTransparency = 0.9,
 	BorderSizePixel = 0, AutoButtonColor = false,
-	Size = UDim2.new(1, 0, 0, 36), Position = UDim2.new(0, 0, 0, 352), Parent = PageFun })
+	Size = UDim2.new(1, 0, 0, 36), Position = UDim2.new(0, 0, 0, 1164), Parent = PageFun })
 corner(FlipBtn, 10)
 table.insert(FunBtns, FlipBtn)
 FlipBtn.MouseButton1Click:Connect(function()
@@ -1404,6 +1444,7 @@ ClockSlider = makeSlider(PageMore, "昼夜 CLOCK", 366, 0, 24, math.floor(Lighti
 end, false)
 FovSlider = makeSlider(PageMore, "视野 FOV", 420, 30, 120, 70, " °", function(v)
 	State.FovValue = v
+	pcall(function() if v > 0 then Cam.FieldOfView = v end end)
 	if v > 0 then Cam.FieldOfView = v end
 end, false)
 FX_LIST = { "OFF", "BLOOM", "CYBER", "NOIR" }
@@ -2251,113 +2292,60 @@ end
 KAMUI_A, KAMUI_B = 5, 0.30
 KamuiRoot, KamuiCore, KamuiGlow, KamuiDisc = nil, nil, nil, nil
 KamuiSegs, KamuiRings = {}, {}
-KamuiOn, KamuiT, KamuiDur, KamuiDir = false, 0, 2.8, 1
+KamuiOn, KamuiT, KamuiDur, KamuiDir = false, 0, 3.0, 1
 
+KAMUI_RMAX, KAMUI_RMIN, KAMUI_BASE = 215, 17, 6
+KAMUI_ARMS, KAMUI_SEGN = 14, 18
+KamuiDots = {}
 function buildKamui()
 	if KamuiRoot then return end
-	KamuiRoot = new("Frame", { Name = "HonKamui", Size = UDim2.new(0, 360, 0, 360),
+	KamuiRoot = new("Frame", { Name = "HonKamui", Size = UDim2.new(0, 480, 0, 480),
 		AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 0, 0.5, 0),
 		BackgroundTransparency = 1, BorderSizePixel = 0, Visible = false, Parent = Gui })
 	-- 奇点辉光
-	KamuiGlow = new("Frame", { Size = UDim2.new(0, 130, 0, 130), AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.new(0.5, 0, 0.5, 0), BackgroundColor3 = Color3.fromRGB(130, 165, 255),
+	KamuiGlow = new("Frame", { Size = UDim2.new(0, 150, 0, 150), AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.new(0.5, 0, 0.5, 0), BackgroundColor3 = Color3.fromRGB(150, 200, 255),
 		BackgroundTransparency = 0.8, BorderSizePixel = 0, Parent = KamuiRoot })
-	corner(KamuiGlow, 65)
-	-- 吸积盘
+	corner(KamuiGlow, 75)
+	-- 吸积盘（白亮细环）
 	KamuiDisc = new("Frame", { Size = UDim2.new(0, 78, 0, 78), AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.new(0.5, 0, 0.5, 0), BackgroundTransparency = 1,
 		BorderSizePixel = 0, Parent = KamuiRoot })
 	corner(KamuiDisc, 39)
-	new("UIStroke", { Color = Color3.fromRGB(230, 242, 255), Thickness = 3, Transparency = 0.08, Parent = KamuiDisc })
+	new("UIStroke", { Color = Color3.fromRGB(238, 246, 255), Thickness = 2.5, Transparency = 0.1, Parent = KamuiDisc })
 	-- 黑洞奇点
 	KamuiCore = new("Frame", { Size = UDim2.new(0, 34, 0, 34), AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.new(0.5, 0, 0.5, 0), BackgroundColor3 = Color3.fromRGB(1, 1, 4),
 		BackgroundTransparency = 0, BorderSizePixel = 0, Parent = KamuiRoot })
 	corner(KamuiCore, 17)
-	-- 同心空间环：内快外慢 → 差异旋转 = 剪切扭曲
-	for i = 1, 4 do
-		local d = 104 + i * 46
+	-- 7 圈空间环（对应预览 i=5..11）
+	for i = 5, 11 do
+		local d = (i / 11) * KAMUI_RMAX * 2
 		local r = new("Frame", { Size = UDim2.new(0, d, 0, d), AnchorPoint = Vector2.new(0.5, 0.5),
 			Position = UDim2.new(0.5, 0, 0.5, 0), BackgroundTransparency = 1,
 			BorderSizePixel = 0, Parent = KamuiRoot })
 		corner(r, d / 2)
-		local st = new("UIStroke", { Color = Color3.fromRGB(165, 190, 240), Thickness = 2, Transparency = 0.62, Parent = r })
-		table.insert(KamuiRings, { Ring = r, Stroke = st, D = d, Spd = 4.4 - i * 0.64 })
+		local st = new("UIStroke", { Color = Color3.fromRGB(165, 205, 255), Thickness = 1.3, Transparency = 1, Parent = r })
+		table.insert(KamuiRings, { Ring = r, Stroke = st, Idx = i, Base = d })
 	end
-	-- 等角螺旋：7 条臂 × 24 段，段沿切线方向首尾相接 → 连续螺旋曲线
-	local psi = math.deg(math.atan(1 / KAMUI_B))
-	local th0 = math.log(9 / KAMUI_A) / KAMUI_B
-	local th1 = math.log(140 / KAMUI_A) / KAMUI_B
-	local dth = (th1 - th0) / 13
-	for i = 1, 5 do
-		local base = (i - 1) * (360 / 5)
-		for j = 0, 12 do
-			local th = th0 + j * dth
-			local r = KAMUI_A * math.exp(KAMUI_B * th)
-			local len = r * dth * math.sqrt(1 + KAMUI_B * KAMUI_B) * 1.5
-			local w = 2 + (r / 140) * 3
-			local seg = new("Frame", { Size = UDim2.new(0, len, 0, w),
-				AnchorPoint = Vector2.new(0.5, 0.5), BackgroundColor3 = Color3.fromRGB(180, 205, 248),
-				BackgroundTransparency = 0.28, BorderSizePixel = 0, Parent = KamuiRoot })
-			corner(seg, w / 2)
-			table.insert(KamuiSegs, { Seg = seg, R = r, A0 = base + math.deg(th),
-				Rot = psi, Spd = 3.9 - (r / 140) * 2.5 })
+	-- 14 条螺旋线，每条 12 段（段首尾相接连成连续曲线）
+	for a = 1, KAMUI_ARMS do
+		for j = 0, KAMUI_SEGN - 1 do
+			local seg = new("Frame", { Size = UDim2.new(0, 8, 0, 1.8),
+				AnchorPoint = Vector2.new(0.5, 0.5), BackgroundColor3 = Color3.fromRGB(210, 230, 255),
+				BackgroundTransparency = 1, BorderSizePixel = 0, Parent = KamuiRoot })
+			corner(seg, 1)
+			table.insert(KamuiSegs, { Seg = seg, Arm = a, Idx = j })
 		end
 	end
-end
-
--- ---------- 面板撕裂：把面板切成 3×6 共 18 块，每块被空间扭曲扯向奇点 ----------
-KamuiShards, KamuiShatter = {}, false
-OrigMainSize = nil
-function buildShards()
-	if #KamuiShards > 0 then return end
-	for i = 1, 18 do
-		local f = new("Frame", { Name = "HonShard", Size = UDim2.new(0, 0, 0, 0),
-			Position = UDim2.new(0, 0, 0, 0), BackgroundColor3 = Color3.fromRGB(16, 19, 28),
-			BackgroundTransparency = 1, BorderSizePixel = 0, Visible = false, Parent = Gui })
-		corner(f, 5)
-		local st = new("UIStroke", { Color = Color3.fromRGB(120, 160, 255), Thickness = 1.5, Transparency = 1, Parent = f })
-		table.insert(KamuiShards, { F = f, S = st, OX = 0, OY = 0, OW = 0, OH = 0, CX = 0, CY = 0, R0 = 0 })
+	-- 16 个被卷入的碎屑粒子
+	for k = 0, 15 do
+		local dt2 = new("Frame", { Size = UDim2.new(0, 6, 0, 6), AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.new(0.5, 0, 0.5, 0), BackgroundColor3 = Color3.fromRGB(240, 248, 255),
+			BackgroundTransparency = 1, BorderSizePixel = 0, Parent = KamuiRoot })
+		corner(dt2, 3)
+		table.insert(KamuiDots, { Dot = dt2, Seed = k / 16 })
 	end
-end
-
-function shatterPanel()
-	buildShards()
-	if not OrigMainSize then OrigMainSize = Main.Size end
-	local mp, ms = Main.AbsolutePosition, Main.AbsoluteSize
-	if ms.X < 10 or ms.Y < 10 then return false end
-	local cxp, cyp = 0, 0
-	if KamuiRoot then
-		cxp = KamuiRoot.AbsolutePosition.X + KamuiRoot.AbsoluteSize.X / 2
-		cyp = KamuiRoot.AbsolutePosition.Y + KamuiRoot.AbsoluteSize.Y / 2
-	else
-		cxp = mp.X + ms.X / 2
-		cyp = mp.Y + ms.Y / 2
-	end
-	local cols, rows = 3, 6
-	local cw, ch = ms.X / cols, ms.Y / rows
-	local acc = Mode().Accent
-	local base = Main.BackgroundColor3
-	for i, d in ipairs(KamuiShards) do
-		local c = (i - 1) % cols
-		local r = math.floor((i - 1) / cols)
-		d.OX = mp.X + c * cw
-		d.OY = mp.Y + r * ch
-		d.OW = cw
-		d.OH = ch
-		d.CX = cxp
-		d.CY = cyp
-		d.R0 = ((i % 2 == 0) and 1 or -1) * (140 + (i * 37) % 220)
-		d.F.BackgroundColor3 = ((i % 4) == 0) and acc or base
-		d.F.BackgroundTransparency = 0.06
-		d.S.Color = acc
-		d.S.Transparency = 0.15
-	end
-	return true
-end
-
-function hideShards()
-	for _, d in ipairs(KamuiShards) do d.F.Visible = false end
 end
 
 function playKamui(mode)
@@ -2388,35 +2376,72 @@ RunService:BindToRenderStep("HonKamui", 9999, function(dt)
 	local acc = Mode().Accent
 	local phase = KamuiT * 2.6
 	local wind = k * 2.2
-	-- 螺旋段：差异旋转 + 持续卷紧
-	for _, g in ipairs(KamuiSegs) do
-		local ang = g.A0 + (phase + wind * 3.4) * g.Spd * KamuiDir
-		local rr = g.R * sc
-		local rd = math.rad(ang)
-		g.Seg.Position = UDim2.new(0.5, math.cos(rd) * rr, 0.5, math.sin(rd) * rr)
-		g.Seg.Rotation = ang + g.Rot
-		g.Seg.BackgroundTransparency = 1 - vis * 0.72
-		g.Seg.BackgroundColor3 = acc
+	-- ===== 神威：参数与预览逐项对齐 =====
+	local t = raw
+	local sc = out and (1 - math.pow(1 - t, 3)) or math.pow(1 - t, 2.2)
+	local wind = 3.6 + t * 4.0
+	local ph = KamuiT * 1.6
+	local al = out and ((t < 0.08) and (t / 0.08) or ((t > 0.90) and (1 - (t - 0.90) / 0.10) or 1)) or (1 - t * 0.5)
+	local R0, R1, BS = KAMUI_RMIN, KAMUI_RMAX, KAMUI_BASE
+	local ARMS, SEGN = KAMUI_ARMS, KAMUI_SEGN
+
+	-- 14 条螺旋卷入线：按 r 采样，段首尾相接成连续曲线
+	for a = 1, ARMS do
+		local a0 = (a - 1) * (math.pi * 2 / ARMS) + ph
+		local px, py = 0, 0
+		for j = 0, SEGN do
+			local f = j / SEGN
+			local r = R0 + (R1 - R0) * f
+			local th = a0 + wind * math.log(r / BS)
+			local x = math.cos(th) * r * sc
+			local y = math.sin(th) * r * sc
+			if j > 0 then
+				local sd = KamuiSegs[(a - 1) * SEGN + j]
+				if sd then
+					local mx, my = (px + x) / 2, (py + y) / 2
+					local dx, dy = x - px, y - py
+					local len = math.sqrt(dx * dx + dy * dy) * 1.35 + 1
+					sd.Seg.Position = UDim2.new(0.5, mx, 0.5, my)
+					sd.Seg.Size = UDim2.new(0, len, 0, 1.9)
+					sd.Seg.Rotation = math.deg(math.atan2(dy, dx))
+					sd.Seg.BackgroundTransparency = 1 - al * 0.62
+					sd.Seg.BackgroundColor3 = acc
+				end
+			end
+			px, py = x, y
+		end
 	end
-	-- 同心环：内快外慢
+
+	-- 16 个被卷入的碎屑：沿螺旋向内流动（预览里这一层最关键）
+	for _, d in ipairs(KamuiDots) do
+		local f2 = (d.Seed + KamuiT * 0.35) % 1
+		local r2 = R1 - (R1 - 15) * f2
+		local th2 = d.Seed * math.pi * 2 + ph + wind * math.log(r2 / BS)
+		local x = math.cos(th2) * r2 * sc
+		local y = math.sin(th2) * r2 * sc
+		local sz = (1.6 + 3.4 * (1 - f2)) * sc
+		d.Dot.Position = UDim2.new(0.5, x, 0.5, y)
+		d.Dot.Size = UDim2.new(0, sz, 0, sz)
+		d.Dot.BackgroundTransparency = 1 - al * (1 - f2 * 0.6) * 0.9
+	end
+
+	-- 7 圈空间环（对应预览 i=5..11，差异旋转）
 	for _, q in ipairs(KamuiRings) do
-		local d = q.D * sc
-		q.Ring.Size = UDim2.new(0, d, 0, d)
-		q.Ring.Rotation = (phase + wind * 2) * q.Spd * KamuiDir
-		q.Stroke.Transparency = 1 - vis * 0.45
+		local rr = (q.Idx / 11) * R1 * sc
+		local dd = rr * 2
+		q.Ring.Size = UDim2.new(0, dd, 0, dd)
+		q.Ring.Rotation = math.deg(wind * math.log(math.max(rr / BS, 1.2)) + ph * (1 - q.Idx / 12 * 0.6))
+		q.Stroke.Transparency = 1 - al * 0.34 * (1 - q.Idx / 14)
 		q.Stroke.Color = acc
 	end
-	-- 奇点：放出时由大收缩为点，吸入时膨胀吞噬
-	local cs = out and (150 - 116 * k) or (34 + 150 * k)
-	KamuiCore.Size = UDim2.new(0, cs, 0, cs)
-	pcall(function() corner(KamuiCore, cs / 2) end)
-	KamuiCore.BackgroundTransparency = 1 - vis
-	local ds = 78 * (out and (0.4 + 0.6 * k) or (1 + 0.9 * k))
-	KamuiDisc.Size = UDim2.new(0, ds, 0, ds)
-	KamuiDisc.BackgroundTransparency = 1
-	local gs = 130 * (out and (0.2 + 0.8 * k) or (1 + 0.5 * k))
-	KamuiGlow.Size = UDim2.new(0, gs, 0, gs)
-	KamuiGlow.BackgroundTransparency = 1 - vis * 0.22
+
+	-- 黑洞奇点：放出时由大收缩为点，吸入时膨胀吞噬
+	local coreR = (out and (58 - 42 * t) or (20 + 120 * t)) * 0.5
+	KamuiCore.Size = UDim2.new(0, coreR * 2, 0, coreR * 2)
+	KamuiCore.BackgroundTransparency = 1 - al
+	KamuiDisc.Size = UDim2.new(0, coreR * 2.44, 0, coreR * 2.44)
+	KamuiGlow.Size = UDim2.new(0, coreR * 3, 0, coreR * 3)
+	KamuiGlow.BackgroundTransparency = 1 - al * 0.22
 	KamuiGlow.BackgroundColor3 = acc
 	-- 撕裂碎片：1 = 完整拼在面板原位，0 = 被扯进奇点
 	if KamuiShatter and #KamuiShards > 0 then
@@ -3269,8 +3294,11 @@ RunService.Heartbeat:Connect(function(dt)
 				if State.Trail then table.insert(onList, "TRAIL") end
 				if #onList > 0 then extra = extra .. " · " .. table.concat(onList, "/") end
 			end
-			if extra ~= "" and HudSub.Text:find("HP") == nil then
-				HudSub.Text = HudSub.Text .. extra
+			if extra ~= "" then
+				local cur = HudSub.Text
+				local cut = cur:find("  ·")
+				if cut then cur = cur:sub(1, cut - 1) end
+				HudSub.Text = cur .. extra
 			end
 		end
 		HudText.Text = State.CoordHud and string.format("%d / %d / %d", math.floor(HRP.Position.X), math.floor(HRP.Position.Y), math.floor(HRP.Position.Z)) or string.format("%d stud/s", math.floor(cur))
@@ -3619,12 +3647,13 @@ end
 
 -- ---------- 装扮：翅膀 + 头顶光环（客户端可见，只有你自己看得见）----------
 WING_STYLES = {
-	{ name = "天使白翼", c1 = Color3.fromRGB(250, 252, 255), c2 = Color3.fromRGB(205, 222, 255), neon = false },
-	{ name = "堕天黑翼", c1 = Color3.fromRGB(26, 26, 34),    c2 = Color3.fromRGB(130, 24, 34),   neon = false },
-	{ name = "恶魔蝠翼", c1 = Color3.fromRGB(38, 18, 48),    c2 = Color3.fromRGB(160, 30, 60),   neon = false },
-	{ name = "光之翼",   c1 = Color3.fromRGB(255, 242, 190), c2 = Color3.fromRGB(255, 205, 100), neon = true },
-	{ name = "凤凰火翼", c1 = Color3.fromRGB(255, 130, 40),  c2 = Color3.fromRGB(255, 60, 20),   neon = true },
-	{ name = "机械光翼", c1 = Color3.fromRGB(160, 190, 220), c2 = Color3.fromRGB(90, 205, 255),  neon = true },
+	{ name = "天使白翼", c1 = Color3.fromRGB(252, 253, 255), c2 = Color3.fromRGB(206, 224, 255), neon = false, big = 1.25 },
+	{ name = "EVA 暴走翼", c1 = Color3.fromRGB(255, 92, 40),  c2 = Color3.fromRGB(120, 26, 60),  neon = true,  big = 1.45 },
+	{ name = "堕天黑翼", c1 = Color3.fromRGB(30, 30, 40),    c2 = Color3.fromRGB(140, 26, 36),   neon = false, big = 1.3 },
+	{ name = "恶魔蝠翼", c1 = Color3.fromRGB(44, 20, 56),    c2 = Color3.fromRGB(175, 32, 64),   neon = false, big = 1.3 },
+	{ name = "光之翼",   c1 = Color3.fromRGB(255, 244, 196), c2 = Color3.fromRGB(255, 208, 105), neon = true,  big = 1.35 },
+	{ name = "凤凰火翼", c1 = Color3.fromRGB(255, 138, 42),  c2 = Color3.fromRGB(255, 62, 20),   neon = true,  big = 1.35 },
+	{ name = "机械光翼", c1 = Color3.fromRGB(168, 196, 224), c2 = Color3.fromRGB(92, 208, 255),  neon = true,  big = 1.3 },
 }
 HALO_STYLES = {
 	{ name = "蓝白光环", c = Color3.fromRGB(150, 212, 255) },
@@ -3633,9 +3662,9 @@ HALO_STYLES = {
 	{ name = "紫光环",   c = Color3.fromRGB(195, 145, 255) },
 	{ name = "彩虹光环", c = nil },
 }
-WingParts, HaloPart = {}, nil
+WingParts, HaloPart, HaloSegs = {}, nil, {}
 WingIdx, HaloIdx = 0, 0
-WingSizeV, HaloSizeV, HaloTiltV = 1, 1, 0
+WingSizeV, HaloSizeV, HaloTiltV = 1, 1, 90
 
 function clearWings()
 	for _, d in ipairs(WingParts) do pcall(function() d.P:Destroy() end) end
@@ -3651,24 +3680,34 @@ function setWing(idx)
 	if not (HRP and HRP.Parent) then return end
 	WingIdx = idx
 	local mat = st.neon and Enum.Material.Neon or Enum.Material.SmoothPlastic
+	local big = st.big or 1.25
+	-- 每侧 3 层 × 9 片 = 27 片，共 54 片：按翼形轮廓排布（中间长、两端短），形成真正的羽翼
 	for side = -1, 1, 2 do
-		for i = 0, 6 do
-			local f = i / 6
-			local len = 3.2 - f * 1.6
-			local p = Instance.new("Part")
-			p.Name = "HonWing"
-			p.Size = Vector3.new(0.14, len, 1.0 - f * 0.45)
-			p.Material = mat
-			p.Color = (i % 2 == 0) and st.c1 or st.c2
-			p.Anchored = true
-			p.CanCollide = false
-			p.CastShadow = false
-			p.Transparency = st.neon and 0.15 or 0
-			p.Parent = Workspace
-			local ang = math.rad(-16 + f * 78)
-			local off = CFrame.new(side * (0.55 + f * 1.15), 0.85 - f * 0.75, -0.15 - f * 0.25)
-				* CFrame.Angles(0, 0, side * -ang) * CFrame.Angles(math.rad(-8), 0, 0)
-			table.insert(WingParts, { P = p, Off = off, Side = side, F = f })
+		for layer = 0, 2 do
+			for i = 0, 8 do
+				local t = i / 8
+				local L = (2.8 + math.sin(t * math.pi * 0.92) * 8.4) * big
+				local W = (0.85 + math.sin(t * math.pi) * 1.35) * big
+				local ang = math.rad(-16 + t * 98 + (layer - 1) * 8)
+				local pf = Instance.new("Part")
+				pf.Name = "HonWing"
+				pf.Size = Vector3.new(W * 0.2, L, W)
+				pf.Material = mat
+				pf.Color = (layer == 1) and st.c1 or st.c2
+				pf.Anchored = true
+				pf.CanCollide = false
+				pf.CastShadow = false
+				pf.Transparency = st.neon and 0.12 or 0
+				pf.Parent = Workspace
+				local ox = side * (0.9 + t * 7.4) * big
+				local oy = 1.5 + math.sin(t * math.pi * 0.92) * 1.5 * big - layer * 0.45
+				local oz = -0.35 - t * 0.9 + (layer - 1) * 0.6
+				local off = CFrame.new(ox, oy, oz)
+					* CFrame.Angles(0, 0, side * -ang)
+					* CFrame.Angles(math.rad(-7 + layer * 3.5), 0, 0)
+				table.insert(WingParts, { P = pf, Off = off, Side = side, F = t,
+					L = L, W = W, Layer = layer })
+			end
 		end
 	end
 	if notify then notify("已装备：" .. st.name) end
@@ -3676,24 +3715,45 @@ end
 
 function setHalo(idx)
 	if HaloPart then pcall(function() HaloPart:Destroy() end); HaloPart = nil end
+	for _, q in ipairs(HaloSegs) do pcall(function() q.P:Destroy() end) end
+	HaloSegs = {}
 	HaloIdx = idx or 0
 	if HaloIdx <= 0 then return end
 	local st = HALO_STYLES[HaloIdx]
 	if not st then return end
-	HaloPart = Instance.new("Part")
-	HaloPart.Name = "HonHalo"
-	HaloPart.Shape = Enum.PartType.Torus
-	HaloPart.Size = Vector3.new(3.2, 0.32, 3.2)
-	HaloPart.Material = Enum.Material.Neon
-	HaloPart.Color = st.c or Color3.fromRGB(255, 255, 255)
-	HaloPart.Anchored = true
-	HaloPart.CanCollide = false
-	HaloPart.CastShadow = false
-	HaloPart.Parent = Workspace
+	local col = st.c or Color3.fromRGB(255, 255, 255)
+	local ok = pcall(function()
+		HaloPart = Instance.new("Part")
+		HaloPart.Name = "HonHalo"
+		HaloPart.Shape = Enum.PartType.Torus
+		HaloPart.Size = Vector3.new(3.0, 0.2, 3.0)
+		HaloPart.Material = Enum.Material.Neon
+		HaloPart.Color = col
+		HaloPart.Anchored = true
+		HaloPart.CanCollide = false
+		HaloPart.CastShadow = false
+		HaloPart.Parent = Workspace
+	end)
+	if (not ok) or (not HaloPart) then
+		pcall(function()
+			for i = 0, 23 do
+				local sg = Instance.new("Part")
+				sg.Name = "HonHaloSeg"
+				sg.Size = Vector3.new(0.44, 0.18, 0.44)
+				sg.Material = Enum.Material.Neon
+				sg.Color = col
+				sg.Anchored = true
+				sg.CanCollide = false
+				sg.CastShadow = false
+				sg.Parent = Workspace
+				table.insert(HaloSegs, { P = sg, A = (i / 24) * math.pi * 2 })
+			end
+		end)
+	end
 	if notify then notify("已装备：" .. st.name) end
 end
 
--- ---------- 彩虹拖尾：角色上下两个挂点拉出彩色光带 ----------
+-- ---------- 彩虹拖尾 ----------
 TrailObj, TrailA0, TrailA1 = nil, nil, nil
 function setTrail(on)
 	if not on then
@@ -3703,7 +3763,7 @@ function setTrail(on)
 		TrailObj, TrailA0, TrailA1 = nil, nil, nil
 		return
 	end
-	if not (HRP and HRP.Parent) then State.Trail = false; return end
+	if not (HRP and HRP.Parent) then return end
 	pcall(function()
 		TrailA0 = Instance.new("Attachment")
 		TrailA0.Position = Vector3.new(0, -2.2, 0)
@@ -3723,16 +3783,16 @@ function setTrail(on)
 	end)
 end
 
--- ---------- 分身军团：克隆自己，围成一圈跟随 ----------
-Clones = {}
+-- ---------- 分身军团 ----------
 function setCloneArmy(on)
+	if type(Clones) ~= "table" then Clones = {} end
 	if not on then
 		for _, c in ipairs(Clones) do pcall(function() c:Destroy() end) end
 		Clones = {}
 		return
 	end
 	local c = LP.Character
-	if not (c and HRP and HRP.Parent) then State.CloneArmy = false; return end
+	if not (c and HRP and HRP.Parent) then return end
 	for i = 1, 5 do
 		pcall(function()
 			local cl = c:Clone()
@@ -3752,7 +3812,7 @@ function setCloneArmy(on)
 	if notify then notify("分身军团：已生成 " .. #Clones .. " 个分身") end
 end
 
--- ---------- 粒子环绕：角色身边一颗旋转的发光粒子球 ----------
+-- ---------- 粒子环绕 ----------
 OrbitPart = nil
 function setOrbitFx(on)
 	if not on then
@@ -3780,17 +3840,18 @@ function setOrbitFx(on)
 	end)
 end
 
--- ---------- 让所有人跳舞 ----------
+-- ---------- 全员跳舞（多个官方动画轮换，单个失效也能跳）----------
 DANCE_IDS = { "rbxassetid://507776043", "rbxassetid://507771019", "rbxassetid://507770453", "rbxassetid://507770239" }
 function danceAll()
-	local n = 0
+	local n, idx = 0, 0
 	for _, pl in ipairs(Players:GetPlayers()) do
 		local ch = pl.Character
 		local hum = ch and ch:FindFirstChildOfClass("Humanoid")
 		if hum then
+			idx = idx + 1
 			pcall(function()
 				local anim = Instance.new("Animation")
-				anim.AnimationId = DANCE_IDS[(i % #DANCE_IDS) + 1]
+				anim.AnimationId = DANCE_IDS[(idx % #DANCE_IDS) + 1]
 				local track = hum:LoadAnimation(anim)
 				track.Looped = true
 				track:Play()
@@ -3821,14 +3882,14 @@ end
 local NoWingBtn = new("TextButton", { Text = "收起翅膀", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Color3.fromRGB(255, 108, 118), BackgroundColor3 = Color3.fromRGB(255, 255, 255),
 	BackgroundTransparency = 0.9, BorderSizePixel = 0, AutoButtonColor = false,
-	Size = UDim2.new(1, 0, 0, 32), Position = UDim2.new(0, 0, 0, 144), Parent = PageDeco })
+	Size = UDim2.new(1, 0, 0, 32), Position = UDim2.new(0, 0, 0, 184), Parent = PageDeco })
 corner(NoWingBtn, 8)
 table.insert(FunBtns, NoWingBtn)
 bindClick(NoWingBtn, "收起翅膀", function() clearWings() end)
 
 label({ Text = "头 顶 光 环 HALO（蔚蓝档案式）", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Color3.fromRGB(120, 129, 152), Size = UDim2.new(1, 0, 0, 18),
-	Position = UDim2.new(0, 2, 0, 190), TextXAlignment = Enum.TextXAlignment.Left }, PageDeco)
+	Position = UDim2.new(0, 2, 0, 230), TextXAlignment = Enum.TextXAlignment.Left }, PageDeco)
 for i, st in ipairs(HALO_STYLES) do
 	local col = (i - 1) % 2
 	local row = math.floor((i - 1) / 2)
@@ -3836,7 +3897,7 @@ for i, st in ipairs(HALO_STYLES) do
 		TextColor3 = st.c or Color3.fromRGB(255, 255, 255), BackgroundColor3 = Color3.fromRGB(255, 255, 255),
 		BackgroundTransparency = 0.9, BorderSizePixel = 0, AutoButtonColor = false,
 		Size = UDim2.new(0.5, -4, 0, 34),
-		Position = UDim2.new(col == 0 and 0 or 0.5, col == 0 and 0 or 4, 0, 214 + row * 40),
+		Position = UDim2.new(col == 0 and 0 or 0.5, col == 0 and 0 or 4, 0, 254 + row * 40),
 		Parent = PageDeco })
 	corner(b, 8)
 	table.insert(FunBtns, b)
@@ -3845,16 +3906,16 @@ end
 local NoHaloBtn = new("TextButton", { Text = "收起光环", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Color3.fromRGB(255, 108, 118), BackgroundColor3 = Color3.fromRGB(255, 255, 255),
 	BackgroundTransparency = 0.9, BorderSizePixel = 0, AutoButtonColor = false,
-	Size = UDim2.new(1, 0, 0, 32), Position = UDim2.new(0, 0, 0, 334), Parent = PageDeco })
+	Size = UDim2.new(1, 0, 0, 32), Position = UDim2.new(0, 0, 0, 374), Parent = PageDeco })
 corner(NoHaloBtn, 8)
 table.insert(FunBtns, NoHaloBtn)
 bindClick(NoHaloBtn, "收起光环", function() setHalo(0) end)
 
-makeSlider(PageDeco, "翅膀大小", 380, 40, 220, 100, " %", function(v) WingSizeV = v / 100 end, false)
-makeSlider(PageDeco, "光环大小", 436, 40, 220, 100, " %", function(v) HaloSizeV = v / 100 end, false)
-makeSlider(PageDeco, "光环角度", 492, 0, 90, 0, " °", function(v) HaloTiltV = v end, false)
-label({ Text = "光环角度用来调平躺 / 竖立，戴歪了就调它", Font = Enum.Font.Gotham, TextSize = 10,
-	TextColor3 = Color3.fromRGB(120, 129, 152), Position = UDim2.new(0, 2, 0, 548),
+makeSlider(PageDeco, "翅膀大小", 420, 40, 220, 100, " %", function(v) WingSizeV = v / 100 end, false)
+makeSlider(PageDeco, "光环大小", 476, 40, 220, 100, " %", function(v) HaloSizeV = v / 100 end, false)
+makeSlider(PageDeco, "光环角度", 532, 0, 90, 90, " °", function(v) HaloTiltV = v end, false)
+label({ Text = "默认 90° 就是平躺在头顶（蔚蓝档案那种）；想立起来就调小", Font = Enum.Font.Gotham, TextSize = 10,
+	TextColor3 = Color3.fromRGB(120, 129, 152), Position = UDim2.new(0, 2, 0, 588),
 	Size = UDim2.new(1, -4, 0, 26), TextWrapped = true,
 	TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top }, PageDeco)
 
@@ -3922,9 +3983,15 @@ function makeDraggable(obj)
 	end)
 end
 function applyTouchDrag()
-	pcall(function() for _, o in ipairs(NumBtns) do makeDraggable(o.Btn or o) end end)
+	-- 触屏数字键 / 虚拟方向键：每个控件单独可拖，屏幕上点哪个就能挪哪个
+	pcall(function() for _, o in ipairs(TouchBtns) do makeDraggable(o.Btn or o) end end)
 	pcall(function() for _, o in ipairs(PadBtns) do makeDraggable(o.Btn or o) end end)
 	pcall(function() if PadFrame then makeDraggable(PadFrame) end end)
+	pcall(function()
+		if TouchBtns and #TouchBtns > 0 and notify then
+			notify("触屏控件已可拖动：按住屏幕上的键就能挪位置")
+		end
+	end)
 end
 
 -- ---------- 通用确认弹窗 ----------
@@ -4034,7 +4101,6 @@ function updateTopBar()
 			Position = UDim2.new(0, 8, 0, 2), TextXAlignment = Enum.TextXAlignment.Left }, TopBarFrame)
 	end
 	local list = {}
-	if State.Enabled then table.insert(list, "加速") end
 	if State.Fly then table.insert(list, "飞行") end
 	if State.Noclip then table.insert(list, "穿墙") end
 	if State.InfJump then table.insert(list, "无限跳") end
@@ -4124,6 +4190,164 @@ function buildClonePanel()
 		BackgroundTransparency = 1, Size = UDim2.new(1, -24, 0, 30), Position = UDim2.new(0, 12, 0, 144),
 		TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Left,
 		TextYAlignment = Enum.TextYAlignment.Top }, ClonePanel)
+end
+
+-- ---------- 设置页 ----------
+BG_URL = "https://raw.githubusercontent.com/ylt410/Liquid-glass-script/refs/heads/main/IMG_3683.jpeg"
+UI_STYLES = {
+	{ name = "默认暗色", bg = Color3.fromRGB(13, 15, 23), alpha = 0.05, stroke = 0.92 },
+	{ name = "液态玻璃", bg = Color3.fromRGB(22, 30, 46), alpha = 0.32, stroke = 0.5 },
+	{ name = "霓虹黑",   bg = Color3.fromRGB(8, 10, 18),  alpha = 0.12, stroke = 0.3 },
+	{ name = "纯黑极简", bg = Color3.fromRGB(0, 0, 0),    alpha = 0.22, stroke = 0.85 },
+}
+ANIM_STYLES = { "神威漩涡（推荐）", "淡入淡出", "缩放弹出", "不要动画" }
+BgImg, BgOn, BgAuto, FontScaleV, UiStyleIdx, AnimStyleIdx = nil, false, true, 1, 1, 1
+FontBase = {}
+
+function applyUiStyle(i)
+	local st = UI_STYLES[i] or UI_STYLES[1]
+	pcall(function()
+		Main.BackgroundColor3 = st.bg
+		Main.BackgroundTransparency = st.alpha
+		if MainStroke then MainStroke.Transparency = st.stroke end
+	end)
+	if notify then notify("UI 样式：" .. st.name) end
+end
+
+function applyFontScale(sc)
+	FontScaleV = sc
+	pcall(function()
+		for _, d in ipairs(Gui:GetDescendants()) do
+			if d:IsA("TextLabel") or d:IsA("TextButton") or d:IsA("TextBox") then
+				if not FontBase[d] then FontBase[d] = d.TextSize end
+				d.TextSize = math.max(6, math.floor(FontBase[d] * sc + 0.5))
+			end
+		end
+	end)
+end
+
+function setBg(on)
+	BgOn = on
+	if on and not BgImg then
+		pcall(function()
+			BgImg = new("ImageLabel", { Size = UDim2.new(1, 0, 1, 0), Position = UDim2.new(0, 0, 0, 0),
+				BackgroundTransparency = 1, Image = BG_URL, ImageTransparency = 0.45,
+				ScaleType = Enum.ScaleType.Crop, ZIndex = 0, Parent = Main })
+			corner(BgImg, 18)
+		end)
+	end
+	if BgImg then BgImg.Visible = on end
+	if notify then notify(on and "背景图已开启" or "背景图已关闭") end
+end
+
+label({ Text = "设 置 SETTINGS", Font = Enum.Font.GothamBold, TextSize = 11,
+	TextColor3 = Color3.fromRGB(120, 129, 152), Size = UDim2.new(1, 0, 0, 18),
+	Position = UDim2.new(0, 2, 0, 0), TextXAlignment = Enum.TextXAlignment.Left }, PageSet)
+
+-- UI 样式：4 个按钮
+for i, st in ipairs(UI_STYLES) do
+	local b = new("TextButton", { Text = st.name, Font = Enum.Font.GothamBold, TextSize = 11,
+		TextColor3 = Mode().Accent, BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+		BackgroundTransparency = 0.9, BorderSizePixel = 0, AutoButtonColor = false,
+		Size = UDim2.new(0.5, -4, 0, 32),
+		Position = UDim2.new(((i - 1) % 2 == 0) and 0 or 0.5, ((i - 1) % 2 == 0) and 0 or 4, 0, 24 + math.floor((i - 1) / 2) * 38),
+		Parent = PageSet })
+	corner(b, 8)
+	table.insert(FunBtns, b)
+	bindClick(b, st.name, function() UiStyleIdx = i; applyUiStyle(i) end)
+end
+
+-- 启动 / 删除动画样式
+local function animRow(title, y, onPick)
+	label({ Text = title, Font = Enum.Font.GothamBold, TextSize = 11,
+		TextColor3 = Color3.fromRGB(196, 204, 224), BackgroundTransparency = 1,
+		Size = UDim2.new(1, -4, 0, 16), Position = UDim2.new(0, 2, 0, y),
+		TextXAlignment = Enum.TextXAlignment.Left }, PageSet)
+	local b = new("TextButton", { Text = ANIM_STYLES[1] .. "  ▾", Font = Enum.Font.GothamBold, TextSize = 11,
+		TextColor3 = Mode().Accent, BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+		BackgroundTransparency = 0.9, BorderSizePixel = 0, AutoButtonColor = false,
+		Size = UDim2.new(1, 0, 0, 32), Position = UDim2.new(0, 0, 0, y + 18), Parent = PageSet })
+	corner(b, 8)
+	table.insert(FunBtns, b)
+	local idx = 1
+	bindClick(b, title, function()
+		idx = (idx % #ANIM_STYLES) + 1
+		b.Text = ANIM_STYLES[idx] .. "  ▾"
+		onPick(idx)
+	end)
+end
+animRow("启动动画样式", 108, function(i) AnimStyleIdx = i; if notify then notify("启动动画：" .. ANIM_STYLES[i]) end end)
+
+makeSlider(PageSet, "面板缩放", 190, 60, 140, 100, " %", function(v)
+	pcall(function() if MainScale then MainScale.Scale = v / 100 end end)
+end, false)
+makeSlider(PageSet, "字体大小", 246, 70, 160, 100, " %", function(v) applyFontScale(v / 100) end, false)
+makeSlider(PageSet, "背景图透明", 302, 0, 100, 45, " %", function(v)
+	if BgImg then BgImg.ImageTransparency = v / 100 end
+end, false)
+
+local BgTgl = makeToggle(PageSet, 358, "面板背景图", "用你给的那张图当面板背景", false, function(v) setBg(v) end, true)
+local BgAutoTgl = makeToggle(PageSet, 406, "启动时自动加载背景", "每次进游戏自动显示背景图", true, function(v) BgAuto = v end, true)
+local FixBtn = new("TextButton", { Text = "恢复角色外观（修染色）", Font = Enum.Font.GothamBold, TextSize = 11,
+	TextColor3 = Color3.fromRGB(150, 220, 255), BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+	BackgroundTransparency = 0.9, BorderSizePixel = 0, AutoButtonColor = false,
+	Size = UDim2.new(1, 0, 0, 34), Position = UDim2.new(0, 0, 0, 454), Parent = PageSet })
+corner(FixBtn, 8)
+table.insert(FunBtns, FixBtn)
+bindClick(FixBtn, "恢复外观", function() fixCharacterLook() end)
+
+local ResetScaleBtn = new("TextButton", { Text = "重置身体比例", Font = Enum.Font.GothamBold, TextSize = 11,
+	TextColor3 = Color3.fromRGB(255, 200, 120), BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+	BackgroundTransparency = 0.9, BorderSizePixel = 0, AutoButtonColor = false,
+	Size = UDim2.new(1, 0, 0, 34), Position = UDim2.new(0, 0, 0, 494), Parent = PageSet })
+corner(ResetScaleBtn, 8)
+table.insert(FunBtns, ResetScaleBtn)
+bindClick(ResetScaleBtn, "重置比例", function()
+	setBodyScale(1, 1, 1)
+	if notify then notify("身体比例已重置为 100%") end
+end)
+
+local RagTgl = makeToggle(PageSet, 534, "防布娃娃 ANTI RAGDOLL", "不会被打倒/摔倒（夜脚本同款）", false, function(v)
+	State.AntiRagdoll = v
+end, true)
+
+local SvBtn = new("TextButton", { Text = "换个服务器（随机重进）", Font = Enum.Font.GothamBold, TextSize = 11,
+	TextColor3 = Mode().Accent, BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+	BackgroundTransparency = 0.9, BorderSizePixel = 0, AutoButtonColor = false,
+	Size = UDim2.new(1, 0, 0, 34), Position = UDim2.new(0, 0, 0, 582), Parent = PageSet })
+corner(SvBtn, 8)
+table.insert(FunBtns, SvBtn)
+bindClick(SvBtn, "换服务器", function()
+	pcall(function()
+		if notify then notify("正在换服务器…") end
+		TeleportService:Teleport(game.PlaceId, LP)
+	end)
+end)
+label({ Text = "换服务器会重新加载脚本；背景图/Font 设置仅本次有效（脚本无存档功能时）",
+	Font = Enum.Font.Gotham, TextSize = 10, TextColor3 = Color3.fromRGB(132, 141, 163),
+	BackgroundTransparency = 1, Position = UDim2.new(0, 2, 0, 622),
+	Size = UDim2.new(1, -4, 0, 40), TextWrapped = true,
+	TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top }, PageSet)
+
+-- 恢复角色外观（修染色 + 材质）
+function fixCharacterLook()
+	local c = LP.Character
+	if not c then return end
+	pcall(function()
+		for _, d in ipairs(c:GetDescendants()) do
+			if d:IsA("BasePart") then
+				d.Material = Enum.Material.Plastic
+				d.Transparency = 0
+			end
+		end
+		local bc = c:FindFirstChild("Body Colors") or c:FindFirstChildOfClass("BodyColors")
+		if bc then
+			-- 触发肤色重新应用
+			bc.Parent = nil
+			bc.Parent = c
+		end
+	end)
+	if notify then notify("角色外观已恢复（材质/颜色重置）") end
 end
 
 function notify(msg, col)
@@ -4434,13 +4658,19 @@ RunService:BindToRenderStep("HonFunLoop", 9995, function(dt)
 	end
 	if WingIdx > 0 and #WingParts > 0 and HRP and HRP.Parent then
 		pcall(function()
-			local base = HRP.CFrame * CFrame.new(0, 0.4, 0.35)
-			local flap = math.sin(tick() * 2.2) * 0.16
+			local base = HRP.CFrame * CFrame.new(0, 0, 0.3)
+			local tm = tick()
 			for _, w in ipairs(WingParts) do
-				local o = w.Off
-				local swing = CFrame.Angles(0, 0, w.Side * flap * (0.4 + w.F))
-				w.P.CFrame = base * o * swing
-				w.P.Size = Vector3.new(0.14, (3.2 - w.F * 1.6) * WingSizeV, (1.0 - w.F * 0.45) * WingSizeV)
+				-- 波浪式扇动：内侧先动、外侧跟上，层间再错开一点相位
+				local ph = w.F * 1.15 + w.Layer * 0.22
+				local flap = math.sin(tm * 1.7 - ph) * 0.2 * (0.35 + w.F)
+				local lift = math.sin(tm * 1.7 - ph) * 0.12 * (1 - w.F * 0.5)
+				local cf = base * w.Off
+					* CFrame.Angles(0, 0, w.Side * flap)
+					* CFrame.new(0, lift, 0)
+				w.P.CFrame = cf
+				local k = WingSizeV or 1
+				w.P.Size = Vector3.new(w.W * 0.2 * k, w.L * k, w.W * k)
 			end
 		end)
 	end
@@ -4453,7 +4683,7 @@ RunService:BindToRenderStep("HonFunLoop", 9995, function(dt)
 				if st and st.c == nil then
 					HaloPart.Color = Color3.fromHSV((t * 0.12) % 1, 0.75, 1)
 				end
-				HaloPart.Size = Vector3.new(3.2 * HaloSizeV, 0.32 * HaloSizeV, 3.2 * HaloSizeV)
+				HaloPart.Size = Vector3.new(3.0 * HaloSizeV, 0.2 * HaloSizeV, 3.0 * HaloSizeV)
 				HaloPart.CFrame = head.CFrame * CFrame.new(0, 2.1 + math.sin(t * 1.6) * 0.12, 0)
 					* CFrame.Angles(math.rad(HaloTiltV), t * 1.1, 0)
 			end)
@@ -4465,6 +4695,16 @@ RunService:BindToRenderStep("HonFunLoop", 9995, function(dt)
 		pcall(updateTopBar)
 	end
 	opBarDone = true
+	if State.AntiRagdoll and Humanoid and Humanoid.Parent then
+		pcall(function()
+			if Humanoid:GetState() == Enum.HumanoidStateType.Ragdoll
+				or Humanoid:GetState() == Enum.HumanoidStateType.FallingDown then
+				Humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
+			end
+			Humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
+			Humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
+		end)
+	end
 	if State.NoFall and HRP and HRP.Parent then
 		pcall(function()
 			local v = HRP.AssemblyLinearVelocity
@@ -4587,6 +4827,7 @@ step("触屏可见", updateTouchVisibility)
 SetTab(1)
 pcall(applyTouchDrag)
 pcall(updateTopBar)
+if BgAuto then pcall(setBg, true) end
 -- 开场：神威空间扭曲展开
 pcall(function() playOpenAnim() end)
 tspawn(function()
@@ -4639,4 +4880,4 @@ tspawn(function()
 		end)
 	end
 end)
-print("[HON SPEED HUB] v5.22 已加载 · 完整文件约 4643 行 · 若你的脚本远大于此行数说明粘贴重复了")
+print("[HON SPEED HUB] v5.27 已加载 · 完整文件约 4884 行 · 若你的脚本远大于此行数说明粘贴重复了")
