@@ -1,11 +1,5 @@
-local KEY_SYSTEM  = false
-local KEY_REMEMBER = false
-local MASTER_KEY  = "chenchen1116"
-local VALID_KEYS  = {
-	["chenchen1116"] = true,
-}
 local _pr = (type(print) == "function") and print or (type(warn) == "function" and warn) or function() end
-_pr("[HON SPEED HUB] 载入中 · v5.40 · 若只看到这一行说明文件在中途中断")
+_pr("[HON SPEED HUB] 载入中 · v5.42 · 若只看到这一行说明文件在中途中断")
 local twait  = (type(task) == "table" and task.wait)  or wait  or function() end
 local tspawn = (type(task) == "table" and task.spawn) or spawn or function(f, ...) return f(...) end
 if type(twait) ~= "function" then twait = function() end end
@@ -98,6 +92,7 @@ local State = {
 	InstantInteract = false, EspDepth = true,
 	ClickTP = false, SparkTP = false, AntiVoid = false, FakeChar = false, BodyTransp = 0, Fullbright = false, LowGravity = false, GravityValue = 40,
 	Spin = false, Rainbow = false, Bounce = false, Orbit = false, LowFx = false,
+	PlayDead = false, NeonGlow = false, EjectCd = 0,
 	Dance = false, Follow = false, Face = false, FovValue = 0, WatchTarget = nil, Radar = false, GfxShadow = false, GfxFog = false, GfxParticle = false, GfxDecal = false, GfxNight = false, GfxSuperNight = false, GfxNoFog = false, DashRun = false, WPLoop = false, WPLoopInt = 5,
 	Freeze = false, HidePlayers = false, HideUI = false, AutoJump = false, CoordHud = false,
 	TPLoop = false, TPInterval = 0, TPOffsetY = 3,
@@ -107,7 +102,7 @@ local State = {
 	EngineOutline = true, Trail = false, CloneArmy = false, OrbitFx = false, HideBlock = false,
 	HeadRide = false, Shake = false, SpinCam = false, Magnet = false,
 	ThirdPerson = false, NoFall = false, ShowHP = false, ShowFunList = false,
-	AntiKB = false, AntiStun = false, Freecam = false,
+	AntiKB = false, AntiStun = false,
 	SafePos = nil,
 }
 function bindClick(btn, tag, fn)
@@ -133,14 +128,6 @@ end
 local function Mode() return Modes[State.ModeIndex] end
 local cur = 0
 local fps, fpsAcc, fpsFrames = 0, 0, 0
-local Authed = (not KEY_SYSTEM)
-if KEY_SYSTEM and KEY_REMEMBER then
-	local remembered = false
-	pcall(function()
-		remembered = (TeleportService:GetTeleportSetting("HON_KEY_OK") == true)
-	end)
-	if remembered then Authed = true end
-end
 local rainbowTimer, wasAirborne, FxBackup = 0, false, nil
 local hideTimer = 0
 local tpTimer = 0
@@ -193,6 +180,8 @@ local Main = new("Frame", {
 	BorderSizePixel = 0, ClipsDescendants = true, Active = true, Parent = Gui,
 })
 corner(Main, 18)
+-- 面板缩放：此前全脚本只有 10 处 if MainScale then 空跑（对象从未创建，「面板收缩没有用」的实锤）
+MainScale = new("UIScale", { Scale = 1, Parent = Main })
 local MainStroke = new("UIStroke", { Color = Color3.fromRGB(255, 255, 255), Transparency = 0.92, Thickness = 1, Parent = Main })
 local Glow = new("Frame", { Size = UDim2.new(1, 0, 0, 150), BackgroundColor3 = Modes[1].Accent,
 	BackgroundTransparency = 0.78, BorderSizePixel = 0, Parent = Main })
@@ -212,7 +201,7 @@ label({ Text = "HON SPEED HUB", Font = Enum.Font.GothamBold, TextSize = 21,
 	TextColor3 = Color3.fromRGB(238, 243, 255),
 	Position = UDim2.new(0, 36, 0, 16), Size = UDim2.new(0, 200, 0, 24),
 	TextXAlignment = Enum.TextXAlignment.Left }, Header)
-label({ Text = "Universal Hub  ·  W / V / CF  ·  v5.40", Font = Enum.Font.Gotham, TextSize = 11,
+label({ Text = "Universal Hub  ·  W / V / CF  ·  v5.42", Font = Enum.Font.Gotham, TextSize = 11,
 	TextColor3 = Color3.fromRGB(140, 149, 172),
 	Position = UDim2.new(0, 36, 0, 42), Size = UDim2.new(0, 240, 0, 16),
 	TextXAlignment = Enum.TextXAlignment.Left }, Header)
@@ -252,6 +241,23 @@ iconBtn("×", -34, Color3.fromRGB(255, 108, 118), function()
 end)
 -- ---------- 更新公告 ----------
 CHANGELOG = {
+	{ v = "v5.42", t = {
+		"重要修复 · 设置页三项自动保存全部落地：字体大小 / 面板收缩 / 面板透明度改完即存（本地 HonSpeedHub_Pref.json + 跨服务器 HON_PREF 双保险），重启 / 换服自动恢复；顺差修掉两个真 bug——①「面板收缩没有用」的实锤：MainScale 从来没被创建，全脚本 10 处 if MainScale then 全是空跑，已补 new UIScale；② 透明度关闭态下拖滑条不生效，已闭环（关着时提示先开「面板背景图」开关，开启后实时刷新 ImageTransparency）",
+		"改进 · 启动 / 关闭动画样式互斥：播放神威漩涡时再点别的样式，旧协程立即停账清碎片，不再出现两个动画叠加或旧碎片残留；动画样式选择本身也已自动存档",
+		"重要修复 · 录屏 / 截图（隐藏全部 UI / 隐身录屏）不再隐藏 Roblox 系统 UI：旧版动过 StarterGui:SetCoreGuiEnabled(All) 和 SetCore('TopbarEnabled')，把聊天 / 排行榜 / 菜单一并弄没导致部分设备UI错乱——现在只收自己 PlayerGui 下的 ScreenGui，系统 UI 原样保留；UNLOAD 时按记录精确还原",
+		"重大改进 · 雷达重做（五项全修）：① 扫描线「木棍乱晃」——旧实现用 Frame.Rotation 转一根 1×78 的贴边线，端点绕偏心几何中心公转，已改为 2×156 直径线 + UIGradient 渐隐绕中心旋转，纹丝不动；② 中心「小绿方块乱飘」——4×9 无圆角方块朝向标同样踩偏心公转，已改为位置计算的 3×13 圆角短线，贴着中心点；③ 墙壁改成折线——大块建筑取俯视长边中轴线（Size.X vs Size.Z 取大）缓存屏幕方向，Frame 贴中点旋转绘制，L 形墙多段自然接成折线，想要的一条竖线 / 拐弯跟拐弯都有了；④ 雷达框开 ClipsDescendants，扫描线不再溢出边框；⑤ 双模式按钮文字统一为「全显 + 墙壁 ▾ / 仅人物 / NPC ▾」，切换不再乱",
+		"清理 · 按用户要求彻底删除装扮页：商城 63 件商品数据（246 行）+ 装扮函数（55 行）+ 装扮页 UI（143 行）整体拆除，标签栏 12 → 11 页；原装扮里的「玩具」8 件和「翅膀」8 款已搬到娱乐页，即开即关不丢功能",
+		"重大新增 · 娱乐页三个新趣味功能：🚀 弹射升空 EJECT（垂直 190 速度弹射，2.5 秒冷却防连点）· 装死倒地 PLAY DEAD（PlatformStand 当场躺平，再点站起来）· 霓虹发光 NEON GLOW（全身色相循环流光，记录原始颜色，关闭 / 重生自动还原）",
+		"重要修复 · 「画质为什么每次启动都必须开，不开就出 bug」根因清除：① 画质各项此前往死里写固定值（雾 FogEnd=500 / 阴影 true / 粒子 Enabled=true），游戏原本不是这个值就被改坏，且 ColorCorrectionEffect 挂在 Lighting 里不随脚本卸载销毁——下次启动画面残留黑白 / 异常，用户只能开画质盖住；现已改为「第一次开启时记录游戏原始值，关闭时原样还原」+「亮度 / 饱和度 100% 时直接销毁特效而不是留个 0 值的效果」+ UNLOAD 连 Lighting 里的残留一起清；② 画质 7 开关 + 亮度 / 饱和度现在也自动存档（HonSpeedHub_Gfx.json + HON_GFX），不用每次重启再开；设置页新增「恢复默认画质」一键同步全部 UI 与存档",
+		"改进 · 大招照搬参考源码回归纯点击传送：去掉自研的 800 米限距 / 1 秒冷却 / 双端粒子特效（射线 2000 内点哪传哪，和「点击传送」共用一套输入回调，关闭即停），行为与参考脚本完全一致",
+		"性能 · 启动卡顿治理：神威漩涡启动动画 252 段碎片 → 112 段 + 颜色缓存（Color3 常量预计算），低端机首帧掉帧明显缓解",
+		"改进 · 全页空隙排查（11 页逐页核对元素坐标）：修掉 6 处死空——视觉页 44px（透明度滑块贴住雷达组）、工具页 56px + 106px（大招 / 反重力两组悬空）、娱乐页 34px + 一处真重叠（「收起翅膀」整宽按钮压住第 4 行两只翅膀）、更多页 52px、实用页 60px、传送页 114px（目标列表面板收起后大片空白）；另删掉一条贴错页面、压住雷达开关的说明 label（内容已并入工具页「分身隐身」描述），清理删装扮页残留在 PAGE_H 里的第 12 项高度，修正设置 / 画质两页 mkPage 索引错位（11/12 → 10/11）",
+		"实测 · mock 全量回归全绿：11 个测试文件（含本轮新增 / 重写的画质还原与存档、设置三项、雷达新实现、隐身录屏系统 UI 零调用监控、新趣味功能、玩具边界）全部通过；76 开关 + 160 按钮触发 0 报错",
+	}},
+	{ v = "v5.41", t = {
+		"清理 · 按用户要求彻底移除密钥系统：删除 KEY_SYSTEM / KEY_REMEMBER / MASTER_KEY / VALID_KEYS 全部配置、Authed 鉴权变量与两处权限门、整块卡密输入 UI（71 行）及 HON_KEY_OK 本机记录读写——全文件零残留，脚本打开即用，无任何验证环节",
+		"实测 · 移除后 mock 全量回归通过：76 开关 + 172 按钮 0 报错，背景 / 大招 / 存档三件套专项回归全过；主文件 6547 → 6461 行",
+	}},
 	{ v = "v5.40", t = {
 		"重大新增 · 工具箱新增「闪电尖兵大招 SPARK ULT」：开启后点击屏幕任意位置即可闪电突进过去——射线找落点、限距 800 米、冷却 1 秒（冷却中再点会提示）、起点终点各一发蓝白雷暴粒子特效；右上角功能列表实时显示「瞬移」；和「点击传送」互不冲突（大招优先），UNLOAD 自动关闭",
 		"重大新增 · 设置页背景区搬入 WindUI 参考脚本的 11 张背景预设（蓝色系少女 / 粉色系少女 / 蓝色系猫娘 / 彩蛋 / 紫色系御姐 / 蓝色系少女2 / 你懂的 / 你懂的2 / 你懂的3 / 罪恶王冠楪祈 / 罪恶王冠楪祈2）：3 列 chips 横排点击即切换，切换结果自动存档（本地文件 + 跨服务器双保险），重启/换服不丢",
@@ -515,7 +521,7 @@ local TabBtns = {}
 local FunBtns = {}
 local CurTab = 1
 do
-	local names = { "引擎", "辅助", "视觉", "触屏", "工具", "娱乐", "更多", "实用", "传送", "装扮", "设置", "画质" }
+	local names = { "引擎", "辅助", "视觉", "触屏", "工具", "娱乐", "更多", "实用", "传送", "设置", "画质" }
 	for i, n in ipairs(names) do
 		local b = new("TextButton", { Text = n, Font = Enum.Font.GothamBold, TextSize = 13,
 			TextColor3 = Color3.fromRGB(140, 149, 172), BackgroundTransparency = 1,
@@ -543,7 +549,7 @@ do
 end
 local PageHost = new("Frame", { Name = "Content", Size = UDim2.new(0, 464, 0, 336), Position = UDim2.new(0, 180, 0, 84),
 	BackgroundTransparency = 1, BorderSizePixel = 0, ClipsDescendants = true, Parent = Main })
-local PAGE_H = { 620, 380, 660, 680, 1000, 1300, 560, 880, 1260, 900, 1080, 820 }
+local PAGE_H = { 620, 380, 500, 680, 600, 2040, 560, 660, 1260, 900, 1080 }
 PageList = {}
 local function mkPage(i, visible)
 	return new("ScrollingFrame", { Name = "Page" .. tostring(i),
@@ -565,10 +571,9 @@ local PageFun = mkPage(6, false)
 local PageMore = mkPage(7, false)
 local PageUtil = mkPage(8, false)
 local PageTp = mkPage(9, false)
-local PageDeco = mkPage(10, false)
-local PageSet = mkPage(11, false)
-local PageGfx = mkPage(12, false)
-PageList = { PageEng, PageAssist, PageEsp, PageTouch, PageTool, PageFun, PageMore, PageUtil, PageTp, PageDeco, PageSet, PageGfx }
+local PageSet = mkPage(10, false)
+local PageGfx = mkPage(11, false)
+PageList = { PageEng, PageAssist, PageEsp, PageTouch, PageTool, PageFun, PageMore, PageUtil, PageTp, PageSet, PageGfx }
 local function makeSlider(parent, title, y, min, max, default, suffix, onChange, lockable, onLockChange, editable)
 	local wrap = new("Frame", { Size = UDim2.new(1, 0, 0, 46), Position = UDim2.new(0, 0, 0, y), BackgroundTransparency = 1, Parent = parent })
 	label({ Text = title, Font = Enum.Font.GothamBold, TextSize = 12, TextColor3 = Color3.fromRGB(196, 204, 224),
@@ -639,6 +644,7 @@ local function makeSlider(parent, title, y, min, max, default, suffix, onChange,
 	local api = {
 		Fill = fill, Value = val, Track = track, Row = wrap, TitleText = title,
 		Set = function(v) apply(v, true) end,
+		Apply = function(v) apply(v, false) end,
 		SetRange = function(a, b) local nv = math.clamp(value, a, b); lo, hi = a, b; apply(nv, true) end,
 		GetValue = function() return value end,
 		IsLocked = function() return locked end,
@@ -753,7 +759,7 @@ local SmoothSlider = makeSlider(PageEng, "顺滑 SMOOTH", 258, 1, 20, State.Smoo
 	function(v) State.Smooth = v end, false)
 local PowerToggle   = makeToggle(PageEng, 312, "启用引擎", "F2 快捷键 · 隐身时仍保持", true, function(v) State.Enabled = v end, true)
 local InertiaToggle = makeToggle(PageEng, 360, "惯性滑行", "仅 V 引擎生效", true, function(v) State.Inertia = v end)
-local SlideToggle   = makeToggle(PageEng, 408, "防穿墙 / 沿墙滑动", "仅 CF 引擎生效", true, function(v) State.WallSlide = v end)
+local SlideToggle   = makeToggle(PageEng, 408, "防穿墙 / 沿墙滑动", "CF / V 引擎生效", true, function(v) State.WallSlide = v end)
 local TeleportToggle = makeToggle(PageEng, 456, "瞬移闪现 TP", "仅 CF · 蓄力后整段位移", false, function(v)
 	State.CFTeleport = v
 OutlineTgl = makeToggle(PageEng, 504, "引擎描边 OUTLINE", "角色轮廓跟着引擎颜色", true, function(v)
@@ -809,48 +815,41 @@ end)
 InstantTgl   = makeToggle(PageEsp, 168, "秒交互", "HoldDuration=0 · 距离 30", false, function(v)
 	State.InstantInteract = v; applyInstantInteract(v)
 end)
-RadarTgl = makeToggle(PageEsp, 352, "雷达 RADAR", "右上角 · 2D全显人/建筑/互动物", false, function(v)
+RadarTgl = makeToggle(PageEsp, 318, "雷达 RADAR", "右上角 · 人/NPC/互动物/墙壁折线", false, function(v)
 	State.Radar = v
 	if not v and RadarFrame then RadarFrame.Visible = false end
 end)
-local RadarModeBtn = new("TextButton", { Text = "雷达模式：2D 全显 ▾", Font = Enum.Font.GothamBold, TextSize = 11,
+local RadarModeBtn = new("TextButton", { Text = "雷达模式：全显 + 墙壁 ▾", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Mode().Accent, BackgroundColor3 = Color3.fromRGB(255, 255, 255), BackgroundTransparency = 0.9,
 	BorderSizePixel = 0, AutoButtonColor = false,
-	Size = UDim2.new(1, 0, 0, 32), Position = UDim2.new(0, 0, 0, 392), Parent = PageEsp })
+	Size = UDim2.new(1, 0, 0, 32), Position = UDim2.new(0, 0, 0, 366), Parent = PageEsp })
 corner(RadarModeBtn, 8)
 table.insert(FunBtns, RadarModeBtn)
 bindClick(RadarModeBtn, "雷达模式", function()
 	RadarMode = (RadarMode % 2) + 1
-	RadarModeBtn.Text = (RadarMode == 1) and "雷达模式：2D 全显 ▾" or "雷达模式：仅人物 / NPC ▾"
-	if notify then notify((RadarMode == 1) and "雷达：2D 全显（人+建筑+可互动物）" or "雷达：仅人物 / NPC") end
+	RadarModeBtn.Text = (RadarMode == 1) and "雷达模式：全显 + 墙壁 ▾" or "雷达模式：仅人物 / NPC ▾"
+	if notify then notify((RadarMode == 1) and "雷达：全显（人 + NPC + 互动物 + 墙壁折线）" or "雷达：仅人物 / NPC（干净模式）") end
 end)
 EspDepthTgl  = makeToggle(PageEsp, 216, "穿墙显示", "ESP 无视遮挡（任何厚度都能看到）", true, function(v)
 	State.EspDepth = v; refreshEspDepth()
 end)
-TranspSlider = makeSlider(PageEsp, "身体透明度", 300, 0, 100, 0, " %", function(v)
+TranspSlider = makeSlider(PageEsp, "身体透明度", 264, 0, 100, 0, " %", function(v)
 	State.BodyTransp = v / 100
 end, false)
-local FreecamTgl = makeToggle(PageEsp, 518, "自由视角 FREE CAM", "角色定在原地 · 镜头随便飞", false, function(v)
-	if type(setFreecam) == "function" then setFreecam(v) end
-end)
-BlockTgl = makeToggle(PageEsp, 432, "隐藏身上方块 NO BLOCK", "配件 / 框选 / 名牌等附加物一起藏", false, function(v)
+BlockTgl = makeToggle(PageEsp, 406, "隐藏身上方块 NO BLOCK", "配件 / 框选 / 名牌等附加物一起藏", false, function(v)
 	State.HideBlock = v
 	hideBodyBlocks(v)
 end)
 local BlockBtn = new("TextButton", { Text = "立即清除身上方块", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Mode().Accent, BackgroundColor3 = Color3.fromRGB(255, 255, 255), BackgroundTransparency = 0.9,
 	BorderSizePixel = 0, AutoButtonColor = false,
-	Size = UDim2.new(1, 0, 0, 34), Position = UDim2.new(0, 0, 0, 476), Parent = PageEsp })
+	Size = UDim2.new(1, 0, 0, 34), Position = UDim2.new(0, 0, 0, 454), Parent = PageEsp })
 corner(BlockBtn, 10)
 table.insert(FunBtns, BlockBtn)
 bindClick(BlockBtn, "清除方块", function()
 	local n = hideBodyBlocks(true)
 	if notify then notify("已清除 " .. n .. " 个附加物") end
 end)
-label({ Text = "改的是本体（有网络所有权，会同步），关闭分身隐身后别人能看见半透明的你",
-	Font = Enum.Font.Gotham, TextSize = 10, TextColor3 = Color3.fromRGB(120, 129, 152),
-	Position = UDim2.new(0, 2, 0, 352), Size = UDim2.new(1, -4, 0, 26),
-	TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top }, PageEsp)
 label({ Text = "触 屏 控 制", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Color3.fromRGB(120, 129, 152), Size = UDim2.new(1, 0, 0, 18),
 	Position = UDim2.new(0, 2, 0, 0), TextXAlignment = Enum.TextXAlignment.Left }, PageTouch)
@@ -862,7 +861,7 @@ PadTgl = makeToggle(PageTouch, 72, "虚拟方向键", "8 向 WASD · 长按中�
 	State.PadKeys = v
 	updateTouchVisibility()
 end)
-ToolGravTgl = makeToggle(PageTool, 640, "反重力 LOW GRAVITY", "和辅助页那个是同一个开关", false, function(v)
+ToolGravTgl = makeToggle(PageTool, 502, "反重力 LOW GRAVITY", "和辅助页那个是同一个开关", false, function(v)
 	State.LowGravity = v
 	pcall(function() Workspace.Gravity = v and (State.GravityValue or 40) or 196.2 end)
 	if notify then notify(v and "重力已降低" or "重力已恢复") end
@@ -873,7 +872,7 @@ function syncRagTgls(v)
 		if t._title == "防布娃娃 ANTI RAGDOLL" and t.Set then t.Set(v, true) end
 	end
 end
-ToolRagTgl = makeToggle(PageTool, 688, "防布娃娃 ANTI RAGDOLL", "不会被打倒 / 摔倒", false, function(v)
+ToolRagTgl = makeToggle(PageTool, 554, "防布娃娃 ANTI RAGDOLL", "不会被打倒 / 摔倒", false, function(v)
 	syncRagTgls(v)
 end)
 PadSizeSlider = makeSlider(PageTouch, "方向键大小", 120, 50, 200, 100, " %", function(v)
@@ -969,7 +968,7 @@ toolBtn("重进", 248,   function() rejoinServer() end)
 AntiVoidTgl = makeToggle(PageTool, 152, "防坠落 ANTI-VOID", "掉出地图自动拉回安全点", false, function(v)
 	State.AntiVoid = v
 end)
-   local FakeTgl = makeToggle(PageTool, 200, "分身隐身 FAKE CHAR", "本体升空 · 留半透明分身 · 镜头跟分身", false, function(v)
+   local FakeTgl = makeToggle(PageTool, 200, "分身隐身 FAKE CHAR", "改的是本体（有网络所有权，会同步）", false, function(v)
 	setFakeChar(v)
 end)
 BrightTgl = makeToggle(PageTool, 248, "夜视 FULLBRIGHT", "去雾 + 全亮，关闭时还原", false, function(v)
@@ -983,26 +982,19 @@ AntiStunTgl = makeToggle(PageTool, 344, "防失控 ANTI-STUN", "自动解除被�
 end)
 GravitySlider = makeSlider(PageTool, "重力 GRAVITY", 392, -200, 300, math.floor(Workspace.Gravity + 0.5), " g",
 	function(v) Workspace.Gravity = v end, false)
-local FreecamTgl = makeToggle(PageTool, 446, "自由视角 FREECAM", "WASD 飞镜头 · Shift 加速", false, function(v)
-	setFreecam(v)
-end)
-SparkTgl = makeToggle(PageTool, 494, "闪电尖兵大招 SPARK ULT", "点击闪电突进 · 限距800 · 冷却1秒 · 雷特效", false, function(v)
+SparkTgl = makeToggle(PageTool, 450, "闪电尖兵大招 SPARK ULT", "点击画面任意位置直接传送过去（照搬参考源码）", false, function(v)
 	State.SparkTP = v
-	if v then
-		SparkTPCd = 0
-		if notify then notify("闪电尖兵大招就绪：点击目标位置即可突进") end
-	end
 end)
-label({ Text = "传 送 TELEPORT", Font = Enum.Font.GothamBold, TextSize = 11,
-	TextColor3 = Color3.fromRGB(120, 129, 152), Size = UDim2.new(1, 0, 0, 16),
-	Position = UDim2.new(0, 2, 0, 0), TextXAlignment = Enum.TextXAlignment.Left }, PageTp)
 label({ Text = "传 送 TELEPORT", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Color3.fromRGB(120, 129, 152), Size = UDim2.new(1, 0, 0, 18),
 	Position = UDim2.new(0, 2, 0, 0), TextXAlignment = Enum.TextXAlignment.Left }, PageTp)
+label({ Text = "传 送 玩 家 PLAYER TP", Font = Enum.Font.GothamBold, TextSize = 11,
+	TextColor3 = Color3.fromRGB(196, 204, 224), Size = UDim2.new(1, 0, 0, 16),
+	Position = UDim2.new(0, 2, 0, 24), TextXAlignment = Enum.TextXAlignment.Left }, PageTp)
 local ViewBtn = new("TextButton", { Text = "查看玩家 VIEW PLAYER", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Mode().Accent, BackgroundColor3 = Color3.fromRGB(255, 255, 255), BackgroundTransparency = 0.9,
 	BorderSizePixel = 0, AutoButtonColor = false,
-	Size = UDim2.new(1, 0, 0, 34), Position = UDim2.new(0, 0, 0, 1160), Parent = PageTp })
+	Size = UDim2.new(1, 0, 0, 34), Position = UDim2.new(0, 0, 0, 1062), Parent = PageTp })
 corner(ViewBtn, 10)
 table.insert(FunBtns, ViewBtn)
 bindClick(ViewBtn, "查看玩家", function()
@@ -1020,7 +1012,7 @@ end)
 local CamBackBtn = new("TextButton", { Text = "恢复自己的视角", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Color3.fromRGB(190, 198, 220), BackgroundColor3 = Color3.fromRGB(255, 255, 255),
 	BackgroundTransparency = 0.9, BorderSizePixel = 0, AutoButtonColor = false,
-	Size = UDim2.new(1, 0, 0, 34), Position = UDim2.new(0, 0, 0, 1200), Parent = PageTp })
+	Size = UDim2.new(1, 0, 0, 34), Position = UDim2.new(0, 0, 0, 1102), Parent = PageTp })
 corner(CamBackBtn, 10)
 table.insert(FunBtns, CamBackBtn)
 bindClick(CamBackBtn, "恢复视角", function()
@@ -1031,10 +1023,10 @@ local TPTarget = nil
 local TargetBtn = new("TextButton", { Text = "选择目标 ▾  （玩家 / NPC）", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Mode().Accent, BackgroundColor3 = Color3.fromRGB(255, 255, 255), BackgroundTransparency = 0.9,
 	BorderSizePixel = 0, AutoButtonColor = false,
-	Size = UDim2.new(1, 0, 0, 36), Position = UDim2.new(0, 0, 0, 152), Parent = PageTp })
+	Size = UDim2.new(1, 0, 0, 36), Position = UDim2.new(0, 0, 0, 44), Parent = PageTp })
 corner(TargetBtn, 10)
 table.insert(ToolBtns, TargetBtn)
-local TPListWrap = new("Frame", { Size = UDim2.new(1, 0, 0, 150), Position = UDim2.new(0, 0, 0, 194),
+local TPListWrap = new("Frame", { Size = UDim2.new(1, 0, 0, 150), Position = UDim2.new(0, 0, 0, 86),
 	BackgroundColor3 = Color3.fromRGB(20, 23, 33), BackgroundTransparency = 0.25,
 	BorderSizePixel = 0, Visible = false, ClipsDescendants = true, Parent = PageTp })
 corner(TPListWrap, 10)
@@ -1106,7 +1098,7 @@ end
 local TPOnceBtn = new("TextButton", { Text = "传送到目标 TP ONCE", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Mode().Accent, BackgroundColor3 = Color3.fromRGB(255, 255, 255), BackgroundTransparency = 0.9,
 	BorderSizePixel = 0, AutoButtonColor = false,
-	Size = UDim2.new(1, 0, 0, 36), Position = UDim2.new(0, 0, 0, 350), Parent = PageTp })
+	Size = UDim2.new(1, 0, 0, 36), Position = UDim2.new(0, 0, 0, 244), Parent = PageTp })
 corner(TPOnceBtn, 10)
 table.insert(ToolBtns, TPOnceBtn)
 TPOnceBtn.MouseButton1Click:Connect(function()
@@ -1118,7 +1110,7 @@ TPOnceBtn.MouseButton1Click:Connect(function()
 		notify("未选择目标或目标已失效", Color3.fromRGB(255, 108, 118))
 	end
 end)
-local TPLoopTgl = makeToggle(PageTp, 392, "循环传送 LOOP TP", "持续锁定目标（离开即停）", false, function(v)
+local TPLoopTgl = makeToggle(PageTp, 288, "循环传送 LOOP TP", "持续锁定目标（离开即停）", false, function(v)
 	State.TPLoop = v
 	if v and not TPTarget and notify then
 		notify("请先选择目标", Color3.fromRGB(255, 108, 118))
@@ -1126,10 +1118,10 @@ local TPLoopTgl = makeToggle(PageTp, 392, "循环传送 LOOP TP", "持续锁定�
 		if TPLoopTgl then TPLoopTgl.Set(false, true) end
 	end
 end)
-TPSpeedSlider = makeSlider(PageTp, "循环间隔 (0=每帧)", 440, 0, 20, 0, " 秒", function(v)
+TPSpeedSlider = makeSlider(PageTp, "循环间隔 (0=每帧)", 336, 0, 20, 0, " 秒", function(v)
 	State.TPInterval = v / 10
 end, false)
-TPOffSlider = makeSlider(PageTp, "高度偏移", 492, 0, 30, 3, " m", function(v)
+TPOffSlider = makeSlider(PageTp, "高度偏移", 390, 0, 30, 3, " m", function(v)
 	State.TPOffsetY = v
 end, false)
 -- ---------- 坐标 / 标点传送 ----------
@@ -1184,16 +1176,16 @@ end
 
 label({ Text = "坐 标 传 送 COORD TP", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Color3.fromRGB(120, 129, 152), Size = UDim2.new(1, 0, 0, 16),
-	Position = UDim2.new(0, 2, 0, 540), TextXAlignment = Enum.TextXAlignment.Left }, PageTp)
+	Position = UDim2.new(0, 2, 0, 442), TextXAlignment = Enum.TextXAlignment.Left }, PageTp)
 local CoordLbl = label({ Text = "当前坐标：读取中…", Font = Enum.Font.GothamBold, TextSize = 12,
 	TextColor3 = Color3.fromRGB(150, 220, 255), Size = UDim2.new(1, 0, 0, 18),
-	Position = UDim2.new(0, 2, 0, 562), TextXAlignment = Enum.TextXAlignment.Left }, PageTp)
+	Position = UDim2.new(0, 2, 0, 464), TextXAlignment = Enum.TextXAlignment.Left }, PageTp)
 function mkNumBox(x, ph)
 	return new("TextBox", { PlaceholderText = ph, Text = "", Font = Enum.Font.GothamBold, TextSize = 12,
 		TextColor3 = Color3.fromRGB(238, 243, 255), PlaceholderColor3 = Color3.fromRGB(110, 118, 140),
 		BackgroundColor3 = Color3.fromRGB(255, 255, 255), BackgroundTransparency = 0.92,
 		BorderSizePixel = 0, ClearTextOnFocus = false,
-		Size = UDim2.new(0.32, -4, 0, 32), Position = UDim2.new(x, 0, 0, 586), Parent = PageTp })
+		Size = UDim2.new(0.32, -4, 0, 32), Position = UDim2.new(x, 0, 0, 488), Parent = PageTp })
 end
 corner(mkNumBox(0, "X"), 8); corner(mkNumBox(0.34, "Y"), 8); corner(mkNumBox(0.67, "Z"), 8)
 local CxBox, CyBox, CzBox = nil, nil, nil
@@ -1208,7 +1200,7 @@ end
 local CoordTpBtn = new("TextButton", { Text = "传送到坐标 GO", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Color3.fromRGB(150, 220, 255), BackgroundColor3 = Color3.fromRGB(255, 255, 255),
 	BackgroundTransparency = 0.9, BorderSizePixel = 0, AutoButtonColor = false,
-	Size = UDim2.new(0.62, -4, 0, 32), Position = UDim2.new(0, 0, 0, 626), Parent = PageTp })
+	Size = UDim2.new(0.62, -4, 0, 32), Position = UDim2.new(0, 0, 0, 528), Parent = PageTp })
 corner(CoordTpBtn, 8)
 table.insert(ToolBtns, CoordTpBtn)
 bindClick(CoordTpBtn, "坐标传送", function()
@@ -1221,7 +1213,7 @@ end)
 local CurPosBtn = new("TextButton", { Text = "填入当前", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Color3.fromRGB(190, 198, 220), BackgroundColor3 = Color3.fromRGB(255, 255, 255),
 	BackgroundTransparency = 0.9, BorderSizePixel = 0, AutoButtonColor = false,
-	Size = UDim2.new(0.38, 0, 0, 32), Position = UDim2.new(0.62, 4, 0, 626), Parent = PageTp })
+	Size = UDim2.new(0.38, 0, 0, 32), Position = UDim2.new(0.62, 4, 0, 528), PageTp })
 corner(CurPosBtn, 8)
 table.insert(ToolBtns, CurPosBtn)
 bindClick(CurPosBtn, "填入当前坐标", function()
@@ -1233,20 +1225,20 @@ bindClick(CurPosBtn, "填入当前坐标", function()
 end)
 label({ Text = "标 点 WAYPOINTS · 自动存档 · 换服不丢", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Color3.fromRGB(120, 129, 152), Size = UDim2.new(1, 0, 0, 16),
-	Position = UDim2.new(0, 2, 0, 668), TextXAlignment = Enum.TextXAlignment.Left }, PageTp)
+	Position = UDim2.new(0, 2, 0, 570), TextXAlignment = Enum.TextXAlignment.Left }, PageTp)
 local WpNameBox = new("TextBox", { PlaceholderText = "标点名称（如：家 / 刷怪点）", Text = "",
 	Font = Enum.Font.Gotham, TextSize = 11, TextColor3 = Color3.fromRGB(238, 243, 255),
 	PlaceholderColor3 = Color3.fromRGB(110, 118, 140), BackgroundColor3 = Color3.fromRGB(255, 255, 255),
 	BackgroundTransparency = 0.92, BorderSizePixel = 0, ClearTextOnFocus = false,
-	Size = UDim2.new(0.58, -4, 0, 30), Position = UDim2.new(0, 0, 0, 692), Parent = PageTp })
+	Size = UDim2.new(0.58, -4, 0, 30), Position = UDim2.new(0, 0, 0, 594), Parent = PageTp })
 corner(WpNameBox, 8)
 local WpSaveBtn = new("TextButton", { Text = "保存当前位置", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Mode().Accent, BackgroundColor3 = Color3.fromRGB(255, 255, 255),
 	BackgroundTransparency = 0.9, BorderSizePixel = 0, AutoButtonColor = false,
-	Size = UDim2.new(0.42, 0, 0, 30), Position = UDim2.new(0.58, 4, 0, 692), Parent = PageTp })
+	Size = UDim2.new(0.42, 0, 0, 30), Position = UDim2.new(0.58, 4, 0, 594), Parent = PageTp })
 corner(WpSaveBtn, 8)
 table.insert(ToolBtns, WpSaveBtn)
-local WPListWrap = new("Frame", { Size = UDim2.new(1, 0, 0, 300), Position = UDim2.new(0, 0, 0, 730),
+local WPListWrap = new("Frame", { Size = UDim2.new(1, 0, 0, 300), Position = UDim2.new(0, 0, 0, 632),
 	BackgroundColor3 = Color3.fromRGB(20, 23, 33), BackgroundTransparency = 0.25,
 	BorderSizePixel = 0, ClipsDescendants = true, Parent = PageTp })
 corner(WPListWrap, 10)
@@ -1309,7 +1301,7 @@ bindClick(WpSaveBtn, "保存标点", function()
 	if notify then notify("已保存标点：" .. nm .. "（共 " .. #Waypoints .. " 个）") end
 end)
 wpRefresh()
-local WPLoopTgl = makeToggle(PageTp, 1046, "标点循环 LOOP", "每隔一段时间传送一次到 ★ 选中标点", false, function(v)
+local WPLoopTgl = makeToggle(PageTp, 948, "标点循环 LOOP", "每隔一段时间传送一次到 ★ 选中标点", false, function(v)
 	State.WPLoop = v
 	if v and WPSelIdx == 0 and notify then
 		notify("请先在标点列表里点 ☆ 选一个", Color3.fromRGB(255, 108, 118))
@@ -1317,7 +1309,7 @@ local WPLoopTgl = makeToggle(PageTp, 1046, "标点循环 LOOP", "每隔一段时
 		if WPLoopTgl then WPLoopTgl.Set(false, true) end
 	end
 end)
-makeSlider(PageTp, "循环间隔", 1094, 1, 60, 5, " 秒", function(v) State.WPLoopInt = v end, false)
+makeSlider(PageTp, "循环间隔", 996, 1, 60, 5, " 秒", function(v) State.WPLoopInt = v end, false)
 RunService:BindToRenderStep("HonCoord", 9993, function(dt)
 	if HON_SHUTDOWN then return end
 	WPCoordTimer = (WPCoordTimer or 0) + dt
@@ -1495,52 +1487,12 @@ function setFullbright(on)
 		Lighting.GlobalShadows = LightBackup.GlobalShadows
 	end
 end
-local FreecamPrev = nil
-local fcYaw, fcPitch = 0, 0
-function setFreecam(on)
-	State.Freecam = on
-	if on then
-		FreecamPrev = Cam.CameraType
-		local px, py = Cam.CFrame:ToEulerAnglesYXZ()
-		fcPitch, fcYaw = px, py
-		Cam.CameraType = Enum.CameraType.Scriptable
-		if HRP and HRP.Parent then HRP.AssemblyLinearVelocity = Vector3.zero end
-	else
-		Cam.CameraType = Enum.CameraType.Custom
-		if Humanoid and Humanoid.Parent then Cam.CameraSubject = Humanoid end
-	end
-end
-pcall(function() RunService:UnbindFromRenderStep("HonFreecam") end)
-RunService:BindToRenderStep("HonFreecam", 10000, function(dt)
-	if HON_SHUTDOWN then return end
-	if not State.Freecam then return end
-	if Cam.CameraType ~= Enum.CameraType.Scriptable then Cam.CameraType = Enum.CameraType.Scriptable end
-	local rot = CFrame.fromEulerAnglesYXZ(fcPitch, fcYaw, 0)
-	local pos = Cam.CFrame.Position
-	local d = keyDir()
-	if d then
-		local sp = UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) and 180 or 60
-		pos = pos + d * sp * dt
-	end
-	Cam.CFrame = CFrame.new(pos) * rot
-end)
-UserInputService.InputChanged:Connect(function(i)
-	if State.Freecam and i.UserInputType == Enum.UserInputType.MouseMovement then
-		fcYaw = fcYaw - i.Delta.X * 0.0035
-		fcPitch = math.clamp(fcPitch - i.Delta.Y * 0.0035, -math.rad(85), math.rad(85))
-	end
-end)
 UserInputService.InputBegan:Connect(function(input, processed)
 	if processed then return end
 	if not State.ClickTP and not State.SparkTP then return end
 	if input.UserInputType ~= Enum.UserInputType.MouseButton1 and input.UserInputType ~= Enum.UserInputType.Touch then return end
 	if not HRP or not HRP.Parent then return end
 	local pos = (input.UserInputType == Enum.UserInputType.Touch) and input.Position or UserInputService:GetMouseLocation()
-	if State.SparkTP then
-		-- 闪电尖兵大招：点击闪电突进（限距 800 · 冷却 1 秒 · 起终点雷暴特效）
-		sparkBlink(pos)
-		return
-	end
 	local ray = Cam:ViewportPointToRay(pos.X, pos.Y)
 	local params = RaycastParams.new()
 	params.FilterDescendantsInstances = { LP.Character }
@@ -1928,6 +1880,82 @@ FlipBtn.MouseButton1Click:Connect(function()
 		HRP.CFrame = HRP.CFrame * CFrame.Angles(0, 0, math.rad(180))
 	end
 end)
+
+-- ===== 三个新趣味功能（删掉装扮商城后补上的）=====
+-- 手写 HSV→RGB：不依赖 Color3.fromHSV，执行器/mock 都稳
+function hsv2rgb(h, s, v)
+	h = (h % 1) * 6
+	local i = math.floor(h)
+	local f = h - i
+	local p, q, t = v * (1 - s), v * (1 - s * f), v * (1 - s * (1 - f))
+	i = i % 6
+	if i == 0 then return Color3.new(v, t, p) end
+	if i == 1 then return Color3.new(q, v, p) end
+	if i == 2 then return Color3.new(p, v, t) end
+	if i == 3 then return Color3.new(p, q, v) end
+	if i == 4 then return Color3.new(t, p, v) end
+	return Color3.new(v, p, q)
+end
+-- 1) 弹射升空：一键把自己炸上天（2.5s 冷却防连点）
+EjectCd = 0
+function ejectUp()
+	if not (HRP and HRP.Parent) then
+		if notify then notify("角色还没就绪") end
+		return
+	end
+	if tick() < (EjectCd or 0) then
+		if notify then notify("弹射冷却中，稍等一下", Color3.fromRGB(255, 205, 110)) end
+		return
+	end
+	EjectCd = tick() + 2.5
+	HRP.AssemblyLinearVelocity = Vector3.new(0, 190, 0)
+	-- 脚下补一圈烟花，起飞更有仪式感
+	pcall(toyFirework)
+	if notify then notify("咻——起飞！", Color3.fromRGB(120, 230, 150)) end
+end
+-- 2) 装死倒地：PlatformStand 让角色当场躺平（再点站起来；起身走两步自动退出）
+function setPlayDead(on)
+	State.PlayDead = on
+	if Humanoid and Humanoid.Parent then
+		Humanoid.PlatformStand = on and true or false
+		if not on then
+			pcall(function() Humanoid:ChangeState(Enum.HumanoidStateType.GettingUp) end)
+		end
+	end
+	if notify then notify(on and "已躺平·装死中（再点站起来）" or "已起身") end
+end
+-- 3) 霓虹发光：全身 Neon + 色相循环（只有自己看得见的本地特效；记录原材质/颜色，关闭还原）
+NeonBackup, NeonHue = nil, 0
+function setNeonGlow(on)
+	State.NeonGlow = on
+	local ch = LP and LP.Character
+	if on then
+		if not ch then
+			if notify then notify("角色还没就绪") end
+			return
+		end
+		if NeonBackup then return end
+		NeonBackup = {}
+		for _, p in ipairs(ch:GetChildren()) do
+			if p:IsA("BasePart") then
+				NeonBackup[p] = { M = p.Material, C = p.Color }
+			end
+		end
+		-- 开启瞬间就应用一次，不用等下一帧
+		for p, _ in pairs(NeonBackup) do
+			if p and p.Parent then p.Material = Enum.Material.Neon end
+		end
+		if notify then notify("霓虹发光开启 · 关掉自动还原", Color3.fromRGB(120, 230, 150)) end
+	else
+		if NeonBackup then
+			for p, v in pairs(NeonBackup) do
+				if p and p.Parent then p.Material = v.M; p.Color = v.C end
+			end
+			NeonBackup = nil
+		end
+		if notify then notify("已还原材质") end
+	end
+end
 FxBackup = nil
 function setLowFx(on)
 	State.LowFx = on
@@ -1977,14 +2005,14 @@ end, false)
 HeadSlider = makeSlider(PageMore, "头比例 HEAD", 124, 0.3, 5, 1, " x", function(v)
 	setBodyScale(nil, nil, v)
 end, false)
-FollowTgl = makeToggle(PageMore, 226, "自动跟随 FOLLOW", "开启后弹出面板选要跟的人", false, function(v)
+FollowTgl = makeToggle(PageMore, 182, "自动跟随 FOLLOW", "开启后弹出面板选要跟的人", false, function(v)
 	State.Follow = v
 	if v then openPlayerPicker("选择要跟随的玩家", function(pl)
 		State.WatchTarget = pl
 		if notify then notify("已锁定：" .. (pl.DisplayName or pl.Name)) end
 	end) end
 end)
-FaceTgl   = makeToggle(PageMore, 274, "始终注视 FACING", "开启后弹出面板选要看的人", false, function(v)
+FaceTgl   = makeToggle(PageMore, 230, "始终注视 FACING", "开启后弹出面板选要看的人", false, function(v)
 	State.Face = v
 	if v then openPlayerPicker("选择要注视的玩家", function(pl)
 		State.WatchTarget = pl
@@ -1994,7 +2022,7 @@ end)
 FeignBtn = new("TextButton", { Text = "装死躺平 FEIGN", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Mode().Accent, BackgroundColor3 = Color3.fromRGB(255, 255, 255), BackgroundTransparency = 0.9,
 	BorderSizePixel = 0, AutoButtonColor = false,
-	Size = UDim2.new(1, 0, 0, 36), Position = UDim2.new(0, 0, 0, 322), Parent = PageMore })
+	Size = UDim2.new(1, 0, 0, 36), Position = UDim2.new(0, 0, 0, 278), Parent = PageMore })
 corner(FeignBtn, 10)
 table.insert(MoreBtns, FeignBtn)
 FeignBtn.MouseButton1Click:Connect(function()
@@ -2003,10 +2031,10 @@ FeignBtn.MouseButton1Click:Connect(function()
 		if Humanoid then Humanoid.PlatformStand = true end
 	end
 end)
-ClockSlider = makeSlider(PageMore, "昼夜 CLOCK", 366, 0, 24, math.floor(Lighting.ClockTime), " h", function(v)
+ClockSlider = makeSlider(PageMore, "昼夜 CLOCK", 322, 0, 24, math.floor(Lighting.ClockTime), " h", function(v)
 	Lighting.ClockTime = v
 end, false)
-FovSlider = makeSlider(PageMore, "视野 FOV", 420, 30, 120, 70, " °", function(v)
+FovSlider = makeSlider(PageMore, "视野 FOV", 376, 30, 120, 70, " °", function(v)
 	State.FovValue = v
 	pcall(function() if v > 0 then Cam.FieldOfView = v end end)
 	if v > 0 then Cam.FieldOfView = v end
@@ -2016,7 +2044,7 @@ fxIndex = 1
 FxBtn = new("TextButton", { Text = "画面特效：OFF", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Mode().Accent, BackgroundColor3 = Color3.fromRGB(255, 255, 255), BackgroundTransparency = 0.9,
 	BorderSizePixel = 0, AutoButtonColor = false,
-	Size = UDim2.new(1, 0, 0, 36), Position = UDim2.new(0, 0, 0, 474), Parent = PageMore })
+	Size = UDim2.new(1, 0, 0, 36), Position = UDim2.new(0, 0, 0, 430), PageMore })
 corner(FxBtn, 10)
 table.insert(MoreBtns, FxBtn)
 FxBtn.MouseButton1Click:Connect(function() applyScreenFx() end)
@@ -2117,11 +2145,11 @@ end, true)
 
 label({ Text = "开启后右上角出现一个 REC 悬浮窗：点一下恢复全部界面，再点一下重新隐藏。\n隐藏期间加速 / 飞行 / ESP 全部继续生效。\n注：注入器若是独立原生窗口，脚本无法控制它，请用它自己的快捷键。",
 	Font = Enum.Font.Gotham, TextSize = 10, TextColor3 = Color3.fromRGB(132, 141, 163),
-	Position = UDim2.new(0, 2, 0, 616), Size = UDim2.new(1, -4, 0, 56),
+	Position = UDim2.new(0, 2, 0, 564), Size = UDim2.new(1, -4, 0, 56),
 	TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top }, PageUtil)
 WaypointLabel = label({ Text = "存档点：未设置", Font = Enum.Font.Gotham, TextSize = 10,
 	TextColor3 = Color3.fromRGB(132, 141, 163), Size = UDim2.new(1, -4, 0, 20),
-	Position = UDim2.new(0, 2, 0, 680), TextXAlignment = Enum.TextXAlignment.Left }, PageUtil)
+	Position = UDim2.new(0, 2, 0, 628), TextXAlignment = Enum.TextXAlignment.Left }, PageUtil)
 function utilBtn(text, y, onClick)
 	local b = new("TextButton", { Text = text, Font = Enum.Font.GothamBold, TextSize = 11,
 		TextColor3 = Mode().Accent, BackgroundColor3 = Color3.fromRGB(255, 255, 255), BackgroundTransparency = 0.9,
@@ -2172,7 +2200,7 @@ HidePlrTgl = makeToggle(PageUtil, 204, "隐藏其他玩家", "别人变透明，
 		HiddenParts = {}
 	end
 end)
-HideUiTgl = makeToggle(PageUtil, 252, "隐藏全部 UI", "录屏 / 截图用", false, function(v) setHideUI(v) end)
+HideUiTgl = makeToggle(PageUtil, 252, "隐藏全部 UI", "录屏 / 截图用（系统 UI 保留）", false, function(v) setHideUI(v) end)
 AutoJumpTgl = makeToggle(PageUtil, 300, "自动连跳 AUTO JUMP", "一直保持弹跳前进", false, function(v) State.AutoJump = v end)
 CoordTgl = makeToggle(PageUtil, 348, "坐标显示 COORD", "自动开启 HUD 并在上面显示 XYZ", false, function(v)
 	State.CoordHud = v
@@ -2196,14 +2224,25 @@ end)
 HiddenParts = {}
 function setHideUI(on)
 	State.HideUI = on
-	for _, g in ipairs(PG:GetChildren()) do
-		if g:IsA("ScreenGui") and g ~= Gui then
-			g.Enabled = not on
+	-- 只收 PlayerGui 下的界面（游戏自己的 UI + 我们的面板）；
+	-- Roblox 系统 UI（聊天 / 玩家列表 / 左上角菜单 / 顶栏）不碰——录屏也要有系统 UI。
+	-- 记下被我们关掉的 ScreenGui，卸载时原样恢复，不误伤游戏本来就关着的
+	HideUIHidden = HideUIHidden or {}
+	for _, g in ipairs(HideUIHidden) do
+		if g and g.Parent then g.Enabled = true end
+	end
+	HideUIHidden = {}
+	if on then
+		for _, g in ipairs(PG:GetChildren()) do
+			if g:IsA("ScreenGui") and g ~= Gui and g.Enabled then
+				g.Enabled = false
+				table.insert(HideUIHidden, g)
+			end
 		end
 	end
-	pcall(function()
-		pcall(function() StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, not on) end)
-	end)
+	if notify then
+		notify(on and "已隐藏界面（系统 UI 保留，方便录屏）" or "已恢复界面")
+	end
 end
 LockShield = new("TextButton", { Text = "", AutoButtonColor = false,
 	BackgroundColor3 = Color3.fromRGB(8, 10, 16), BackgroundTransparency = 0.55, BorderSizePixel = 0,
@@ -2813,7 +2852,6 @@ function SetMode(i)
 	for _, o in ipairs(PadBtns) do TweenService:Create(o.Stroke, TWEEN_SOFT, { Color = m.Accent }):Play() end
 	for _, b in ipairs(ToolBtns) do TweenService:Create(b, TWEEN_SOFT, { TextColor3 = m.Accent }):Play() end
 	for _, b in ipairs(FunBtns) do TweenService:Create(b, TWEEN_SOFT, { TextColor3 = m.Accent }):Play() end
-	for _, b in ipairs(DecoBtns) do TweenService:Create(b, TWEEN_SOFT, { TextColor3 = m.Accent }):Play() end
 	for _, b in ipairs(MoreBtns) do TweenService:Create(b, TWEEN_SOFT, { TextColor3 = m.Accent }):Play() end
 	for _, b in ipairs(UtilBtns) do TweenService:Create(b, TWEEN_SOFT, { TextColor3 = m.Accent }):Play() end
 	for _, b in ipairs(UiBtns) do TweenService:Create(b, TWEEN_SOFT, { TextColor3 = m.Accent }):Play() end
@@ -2822,6 +2860,7 @@ function SetMode(i)
 	if notify then notify("引擎已切换：" .. m.Name, m.Accent) end
 	TeleportToggle.Dim(m.Id ~= "CF")
 	cur, CFAccum = 0, 0
+	VVEL = Vector3.zero
 end
 -- ---------- 神威 · 空间扭曲 ----------
 -- 还原「空间被拧成漩涡」：把一整片空间网格（同心环 + 径向线）按等角(对数)螺旋
@@ -2834,7 +2873,7 @@ KamuiSegs, KamuiRings = {}, {}
 KamuiOn, KamuiT, KamuiDur, KamuiDir = false, 0, 3.0, 1
 
 KAMUI_RMAX, KAMUI_RMIN, KAMUI_BASE = 215, 17, 6
-KAMUI_ARMS, KAMUI_SEGN = 14, 18
+KAMUI_ARMS, KAMUI_SEGN = 14, 8
 KamuiDots = {}
 -- 神威「撕裂碎片」：开/关面板时把面板切成网格碎片，被黑洞奇点吸入/喷出
 KamuiShards, KamuiShatter = {}, false
@@ -2933,6 +2972,15 @@ function buildKamui()
 	end
 end
 
+-- 立即结束正在播放的神威动画：切换动画样式时调用，否则旧协程 1.6s 后还会
+-- hideShards + Main.Visible = true 把新样式的结果搅乱（「动画样式不能关闭」的残余路径）
+function stopKamui()
+	KamuiOn = false
+	KamuiShatter = false
+	if KamuiRoot then KamuiRoot.Visible = false end
+	pcall(hideShards)
+end
+
 function playKamui(mode)
 	buildKamui()
 	KamuiDir = (mode == "out") and -1 or 1
@@ -2972,6 +3020,11 @@ RunService:BindToRenderStep("HonKamui", 9999, function(dt)
 	local ARMS, SEGN = KAMUI_ARMS, KAMUI_SEGN
 
 	-- 14 条螺旋卷入线：按 r 采样，段首尾相接成连续曲线
+	-- 颜色只在引擎主题变化时整表刷新（此前每帧每段都写色，1300 次属性写入/帧，手机必卡）
+	if acc ~= KamuiLastAcc then
+		KamuiLastAcc = acc
+		for _, sd in ipairs(KamuiSegs) do sd.Seg.BackgroundColor3 = acc end
+	end
 	for a = 1, ARMS do
 		local a0 = (a - 1) * (math.pi * 2 / ARMS) + ph
 		local px, py = 0, 0
@@ -3061,6 +3114,7 @@ end)
 
 function playOpenAnim()
 	local st = AnimStyleIdx or 1
+	if st ~= 1 then stopKamui() end
 	if st == 4 then
 		Main.Visible = true
 		pcall(function()
@@ -3122,7 +3176,6 @@ function unloadScript()
 	HON_SHUTDOWN = true
 	pcall(closeAllFeatures)
 	pcall(function() if type(clearWings) == "function" then clearWings() end end)
-	pcall(function() if type(decoUnwearAll) == "function" then decoUnwearAll() end end)
 	pcall(function() if type(toyStopAll) == "function" then toyStopAll() end end)
 	pcall(function() if type(setCloneArmy) == "function" then setCloneArmy(false) end end)
 	pcall(function() if type(setBlackHole) == "function" then setBlackHole(false) end end)
@@ -3130,10 +3183,31 @@ function unloadScript()
 	pcall(function() if type(setOrbitFx) == "function" then setOrbitFx(false) end end)
 	pcall(function() if type(setCar) == "function" then setCar(false) end end)
 	pcall(function() if type(setHeroFly) == "function" then setHeroFly(false) end end)
-	pcall(function() if type(setFreecam) == "function" then setFreecam(false) end end)
 	pcall(function() if KamuiRoot then KamuiRoot.Visible = false end end)
 	pcall(function() Workspace.Gravity = 196.2 end)
-	for _, nm in ipairs({ "HonFunLoop", "HonFlyJump", "HonFov", "HonKamui", "HonFreecam",
+	-- 画质特效残留清理：ColorCorrectionEffect 挂在 Lighting 里，不销毁会赖到下一个脚本
+	-- （下次启动画面黑白/过亮，用户只能开画质覆盖——「不开画质就出 bug」的根因之一）
+	pcall(function()
+		if GfxFx then GfxFx:Destroy(); GfxFx = nil end
+		setGfxParticles(false); setGfxDecal(false)
+		setGfxShadows(false); setGfxFog(false)
+	end)
+	-- 卸载前把「隐藏全部 UI / 隐身录屏」收起来的游戏界面全部还回去，不留残
+	pcall(function()
+		for _, g in ipairs(PG:GetChildren()) do
+			if g:IsA("ScreenGui") and g ~= Gui then
+				if HideUIHidden then
+					for _, h in ipairs(HideUIHidden) do
+						if h == g then g.Enabled = true end
+					end
+				end
+				for _, h in ipairs(StealthHiddenGui or {}) do
+					if h == g then g.Enabled = true end
+				end
+			end
+		end
+	end)
+	for _, nm in ipairs({ "HonFunLoop", "HonFlyJump", "HonFov", "HonKamui",
 		"HonUILayout", "HonPadMove", "HonFakeSync", "HonDance" }) do
 		pcall(function() RunService:UnbindFromRenderStep(nm) end)
 	end
@@ -3144,6 +3218,7 @@ end
 
 function playCloseAnim(after)
 	local st = CloseAnimIdx or 1
+	if st ~= 1 then stopKamui() end
 	if st == 4 then
 		Main.Visible = false
 		if after then pcall(after) end
@@ -3650,7 +3725,6 @@ end
 RayParams = RaycastParams.new()
 RunService.Heartbeat:Connect(function(dt)
 	if HON_SHUTDOWN then return end
-	if not Authed then return end
 	updateEsp(dt)
 	if not refsValid() then
 		if not selfHeal() then
@@ -3765,24 +3839,7 @@ RunService.Heartbeat:Connect(function(dt)
 			HRP.AssemblyLinearVelocity = Vector3.new(v.X * s, v.Y, v.Z * s)
 		end
 	end
-	if State.Freecam then
-		Humanoid.WalkSpeed = 0
-		if HRP.AssemblyLinearVelocity.Magnitude > 0.05 then
-			HRP.AssemblyLinearVelocity = Vector3.zero
-		end
-		statTimer = statTimer + dt
-		if statTimer > 0.12 then
-			statTimer = 0
-			Status.Text = string.format(
-				'<font color="rgb(%d,%d,%d)"><b>FREECAM</b></font>  镜头自由移动 · 本体静止\n镜头坐标 %d / %d / %d',
-				math.floor(m.Accent.R * 255), math.floor(m.Accent.G * 255), math.floor(m.Accent.B * 255),
-				math.floor(Cam.CFrame.Position.X), math.floor(Cam.CFrame.Position.Y), math.floor(Cam.CFrame.Position.Z))
-			HudText.Text = "FREECAM"
-			HudSub.Text = string.format("%s · %d FPS", m.Tag, fps)
-		end
-		return
-	end
-	if State.WPLoop then
+if State.WPLoop then
 		local w = Waypoints[WPSelIdx]
 		if not w then
 			State.WPLoop = false
@@ -3879,17 +3936,36 @@ RunService.Heartbeat:Connect(function(dt)
 		Humanoid.WalkSpeed = cur
 		statNote = dir and "行进中" or "待机"
 	elseif m.Id == "V" then
+		-- V 引擎：自维护虚拟速度 VVEL + CFrame 位移。
+		-- 旧版直接写 AssemblyLinearVelocity，但 WalkSpeed=0 时 Humanoid 控制器会在物理步里把水平速度清零，
+		-- 角色完全不动——这就是「V 引擎不能用」。CFrame 位移不经过 Humanoid，任何游戏都能正常跑。
 		Humanoid.WalkSpeed = 0
+		VVEL = VVEL or Vector3.zero
 		if not HRP.Anchored then
-			local v = HRP.AssemblyLinearVelocity
-			if dir then
-				HRP.AssemblyLinearVelocity = Vector3.new(dir.X * cur, v.Y, dir.Z * cur)
+			local goal = dir and (dir * cur) or Vector3.zero
+			local k = 1 - math.exp(-dt * math.max(State.Smooth, 1))
+			VVEL = VVEL + (goal - VVEL) * k
+			if not dir and not State.Inertia then VVEL = Vector3.zero end
+			local hv = Vector3.new(VVEL.X, 0, VVEL.Z)
+			if hv.Magnitude > 0.05 then
+				local step = hv * dt
+				if State.WallSlide then
+					local hit = Workspace:Raycast(HRP.Position, step, RayParams)
+					if hit then
+						local n = hit.Normal
+						local slide = step - n * step:Dot(n)
+						step = (slide.Magnitude > 0.08) and slide or Vector3.zero
+					end
+				end
+				if step.Magnitude > 0 then
+					HRP.CFrame = (HRP.CFrame - HRP.CFrame.Position) + (HRP.Position + step)
+				end
+				statNote = dir and "惯性冲刺" or "滑行中"
 			else
-				local decay = State.Inertia and math.exp(-dt * 1.6) or 0
-				HRP.AssemblyLinearVelocity = Vector3.new(v.X * decay, v.Y, v.Z * decay)
+				statNote = State.Inertia and "滑行中" or "已刹停"
 			end
-			statNote = dir and "惯性冲刺" or (State.Inertia and "滑行中" or "已刹停")
 		else
+			VVEL = Vector3.zero
 			statNote = "锚定中"
 		end
 	elseif m.Id == "CF" then
@@ -4034,7 +4110,7 @@ LP.Idled:Connect(function()
 	end)
 end)
 UserInputService.InputBegan:Connect(function(input, processed)
-	if processed or not Authed then return end
+	if processed then return end
 	local k = input.KeyCode
 	if k == Enum.KeyCode.RightControl then
 		if State.Stealth then setStealth(false); return end
@@ -4237,57 +4313,6 @@ function setDashRun(on)
 	if notify then notify("闪电冲刺：开始加速（越跑越快）") end
 end
 
--- ---------- 闪电尖兵大招：点击闪电突进（限距 800 米 · 冷却 1 秒 · 起终点雷暴特效）----------
-SparkTPCd = 0
-function sparkFx(at)
-	pcall(function()
-		local att = Instance.new("Part")
-		att.Size = Vector3.new(1, 1, 1)
-		att.Anchored = true
-		att.CanCollide = false
-		att.Transparency = 1
-		att.CFrame = CFrame.new(at)
-		att.Parent = Workspace
-		local pe = Instance.new("ParticleEmitter")
-		pe.Color = ColorSequence.new(Color3.fromRGB(150, 210, 255))
-		pe.LightEmission = 1
-		pe.Rate = 0
-		pe.Lifetime = NumberRange.new(0.5)
-		pe.Speed = NumberRange.new(55)
-		pe.Parent = att
-		pe:Emit(70)
-		tspawn(function()
-			twait(1.4)
-			if att and att.Parent then att:Destroy() end
-		end)
-	end)
-end
--- 大招本体：屏幕坐标 → 射线找落点 → 限距内瞬间移动并放雷暴特效（冷却中/太远/没落点都会拦截）
-function sparkBlink(scrPos)
-	if not (HRP and HRP.Parent) then return end
-	local now = tick()
-	if SparkTPCd > 0 and now < SparkTPCd then
-		if notify then notify("闪电尖兵冷却中…") end
-		return
-	end
-	local ray = Cam:ViewportPointToRay(scrPos.X, scrPos.Y)
-	local params = RaycastParams.new()
-	params.FilterDescendantsInstances = { LP.Character }
-	local res = Workspace:Raycast(ray.Origin, ray.Direction * 2000, params)
-	if not res then return end
-	local target = res.Position + Vector3.new(0, 3, 0)
-	local dist = (target - HRP.Position).Magnitude
-	if dist > 800 then
-		if notify then notify("闪电尖兵：目标太远了（" .. math.floor(dist + 0.5) .. " 米）") end
-		return
-	end
-	SparkTPCd = now + 1
-	sparkFx(HRP.Position)
-	HRP.CFrame = CFrame.new(target)
-	sparkFx(target)
-	if notify then notify("⚡ 闪电突进 · " .. math.floor(dist + 0.5) .. " 米") end
-end
-
 function danceAll()
 	local n, idx = 0, 0
 	local targets = {}
@@ -4366,252 +4391,6 @@ function setWing(i)
 	if notify then notify("已装备：" .. st.name) end
 end
 
--- ---------- 商城装饰系统（Roblox 商城 · 客户端本地装扮，只有自己看得见）----------
-DecoParts, DecoActive, DecoCloth, DecoOrig, DecoSearch, DecoCat = {}, {}, {}, {}, "", "全部"
-DecoBtns, DecoChips = {}, {}
--- Roblox 商城分类（10 个真实分类 + 顶部「全部」标签 + 「玩具」趣味功能）
-DECO_CATS = { "头饰", "头发", "眼睛", "上衣", "经典上衣", "连衣裙", "裙子", "经典裤子", "丝袜", "鞋子" }
-DECO_TABS = { "全部", "头饰", "头发", "眼睛", "上衣", "经典上衣", "连衣裙", "裙子", "经典裤子", "丝袜", "鞋子", "玩具" }
-function dPart(size, off, color, mat, shape)
-	local p = Instance.new("Part")
-	p.Name = "HonDeco"
-	p.Anchored = true
-	p.CanCollide = false
-	p.CastShadow = false
-	p.Size = size
-	p.Color = color or Color3.fromRGB(220, 220, 220)
-	p.Material = mat or Enum.Material.SmoothPlastic
-	if shape then p.Shape = shape end
-	p.TopSurface = Enum.SurfaceType.Smooth
-	p.BottomSurface = Enum.SurfaceType.Smooth
-	p.Parent = Workspace
-	return { P = p, Off = off }
-end
-
--- ===== 商城装饰库（Roblox 商城分类：头饰/头发/眼睛/上衣/经典上衣/连衣裙/裙子/经典裤子/丝袜/鞋子）=====
-DECO_ITEMS = {
-	-- 头饰（Part 拼在头顶）
-	{ cat = "头饰", name = "棒球帽", icon = "🧢", price = 25, build = function() return {
-		dPart(Vector3.new(1.0, 0.36, 1.0), CFrame.new(0, 2.24, 0), Color3.fromRGB(45, 80, 150)),
-		dPart(Vector3.new(0.92, 0.08, 0.5), CFrame.new(0, 2.06, 0.62), Color3.fromRGB(40, 72, 138)),
-		dPart(Vector3.new(0.3, 0.3, 0.1), CFrame.new(0, 2.44, -0.5), Color3.fromRGB(40, 72, 138)) } end },
-	{ cat = "头饰", name = "礼帽", icon = "🎩", price = 75, build = function() return {
-		dPart(Vector3.new(0.78, 0.72, 0.78), CFrame.new(0, 2.4, 0), Color3.fromRGB(30, 30, 36)),
-		dPart(Vector3.new(1.24, 0.08, 1.24), CFrame.new(0, 2.05, 0), Color3.fromRGB(30, 30, 36)),
-		dPart(Vector3.new(0.84, 0.16, 0.84), CFrame.new(0, 2.12, 0), Color3.fromRGB(160, 40, 48)) } end },
-	{ cat = "头饰", name = "王冠", icon = "👑", price = 250, build = function() return {
-		dPart(Vector3.new(0.9, 0.16, 0.9), CFrame.new(0, 2.2, 0), Color3.fromRGB(240, 205, 90), Enum.Material.Metal),
-		dPart(Vector3.new(0.14, 0.3, 0.14), CFrame.new(0, 2.42, 0), Color3.fromRGB(255, 220, 110), Enum.Material.Neon),
-		dPart(Vector3.new(0.14, 0.34, 0.14), CFrame.new(-0.3, 2.4, 0), Color3.fromRGB(240, 205, 90), Enum.Material.Metal),
-		dPart(Vector3.new(0.14, 0.34, 0.14), CFrame.new(0.3, 2.4, 0), Color3.fromRGB(240, 205, 90), Enum.Material.Metal),
-		dPart(Vector3.new(0.1, 0.1, 0.1), CFrame.new(0, 2.32, 0.46), Color3.fromRGB(200, 60, 80), Enum.Material.Neon) } end },
-	{ cat = "头饰", name = "猫耳", icon = "🐱", price = 45, build = function() return {
-		dPart(Vector3.new(0.32, 0.38, 0.14), CFrame.new(-0.3, 2.42, 0.05), Color3.fromRGB(235, 140, 55)),
-		dPart(Vector3.new(0.32, 0.38, 0.14), CFrame.new(0.3, 2.42, 0.05), Color3.fromRGB(235, 140, 55)),
-		dPart(Vector3.new(0.16, 0.22, 0.16), CFrame.new(-0.3, 2.4, 0.1), Color3.fromRGB(250, 200, 210)),
-		dPart(Vector3.new(0.16, 0.22, 0.16), CFrame.new(0.3, 2.4, 0.1), Color3.fromRGB(250, 200, 210)) } end },
-	{ cat = "头饰", name = "巫师帽", icon = "🧙", price = 120, build = function() return {
-		dPart(Vector3.new(1.12, 0.06, 1.12), CFrame.new(0, 2.16, 0), Color3.fromRGB(80, 55, 145)),
-		dPart(Vector3.new(0.72, 1.05, 0.72), CFrame.new(0, 2.66, 0), Color3.fromRGB(80, 55, 145)),
-		dPart(Vector3.new(0.72, 0.1, 0.72), CFrame.new(0, 2.2, 0) * CFrame.Angles(0, 0, math.rad(4)), Color3.fromRGB(250, 220, 120)),
-		dPart(Vector3.new(0.16, 0.16, 0.16), CFrame.new(0, 3.2, 0), Color3.fromRGB(255, 215, 90), Enum.Material.Neon) } end },
-	{ cat = "头饰", name = "兔耳", icon = "🐰", price = 45, build = function() return {
-		dPart(Vector3.new(0.22, 0.72, 0.14), CFrame.new(-0.25, 2.6, 0), Color3.fromRGB(245, 245, 250)),
-		dPart(Vector3.new(0.22, 0.72, 0.14), CFrame.new(0.25, 2.6, 0), Color3.fromRGB(245, 245, 250)),
-		dPart(Vector3.new(0.1, 0.5, 0.16), CFrame.new(-0.25, 2.6, 0.06), Color3.fromRGB(250, 190, 205)),
-		dPart(Vector3.new(0.1, 0.5, 0.16), CFrame.new(0.25, 2.6, 0.06), Color3.fromRGB(250, 190, 205)) } end },
-	{ cat = "头饰", name = "恶魔牛角", icon = "🐮", price = 60, build = function() return {
-		dPart(Vector3.new(0.16, 0.55, 0.16), CFrame.new(-0.32, 2.34, 0) * CFrame.Angles(0, 0, math.rad(24)), Color3.fromRGB(225, 215, 195)),
-		dPart(Vector3.new(0.16, 0.55, 0.16), CFrame.new(0.32, 2.34, 0) * CFrame.Angles(0, 0, math.rad(-24)), Color3.fromRGB(225, 215, 195)),
-		dPart(Vector3.new(0.12, 0.12, 0.12), CFrame.new(-0.4, 2.6, 0), Color3.fromRGB(200, 60, 60), Enum.Material.Neon),
-		dPart(Vector3.new(0.12, 0.12, 0.12), CFrame.new(0.4, 2.6, 0), Color3.fromRGB(200, 60, 60), Enum.Material.Neon) } end },
-	{ cat = "头饰", name = "头戴耳机", icon = "🎧", price = 80, build = function() return {
-		dPart(Vector3.new(1.06, 0.1, 0.16), CFrame.new(0, 2.42, -0.05), Color3.fromRGB(35, 35, 42)),
-		dPart(Vector3.new(0.28, 0.42, 0.28), CFrame.new(-0.52, 2.2, 0), Color3.fromRGB(55, 55, 65)),
-		dPart(Vector3.new(0.28, 0.42, 0.28), CFrame.new(0.52, 2.2, 0), Color3.fromRGB(55, 55, 65)),
-		dPart(Vector3.new(0.1, 0.1, 0.1), CFrame.new(-0.52, 2.2, 0.15), Color3.fromRGB(120, 230, 255), Enum.Material.Neon),
-		dPart(Vector3.new(0.1, 0.1, 0.1), CFrame.new(0.52, 2.2, 0.15), Color3.fromRGB(120, 230, 255), Enum.Material.Neon) } end },
-	{ cat = "头饰", name = "蝴蝶结", icon = "🎀", price = 35, build = function() return {
-		dPart(Vector3.new(0.3, 0.3, 0.16), CFrame.new(-0.42, 2.28, 0.05) * CFrame.Angles(0, 0, math.rad(28)), Color3.fromRGB(240, 130, 170)),
-		dPart(Vector3.new(0.3, 0.3, 0.16), CFrame.new(0.42, 2.28, 0.05) * CFrame.Angles(0, 0, math.rad(-28)), Color3.fromRGB(240, 130, 170)),
-		dPart(Vector3.new(0.18, 0.18, 0.14), CFrame.new(0, 2.28, 0.08), Color3.fromRGB(220, 100, 145)),
-		dPart(Vector3.new(0.08, 0.24, 0.08), CFrame.new(-0.58, 2.2, 0.05), Color3.fromRGB(240, 130, 170)),
-		dPart(Vector3.new(0.08, 0.24, 0.08), CFrame.new(0.58, 2.2, 0.05), Color3.fromRGB(240, 130, 170)) } end },
-	-- 头发（Part 拼在头顶）
-	{ cat = "头发", name = "干练短发", icon = "✂️", price = 15, build = function() return {
-		dPart(Vector3.new(1.25, 0.4, 1.2), CFrame.new(0, 2.05, 0.02), Color3.fromRGB(40, 34, 30)),
-		dPart(Vector3.new(0.35, 0.5, 0.3), CFrame.new(-0.6, 1.95, 0.1), Color3.fromRGB(40, 34, 30)),
-		dPart(Vector3.new(0.35, 0.5, 0.3), CFrame.new(0.6, 1.95, 0.1), Color3.fromRGB(40, 34, 30)),
-		dPart(Vector3.new(1.15, 0.22, 0.3), CFrame.new(0, 1.72, -0.5), Color3.fromRGB(40, 34, 30)) } end },
-	{ cat = "头发", name = "银色长发", icon = "💠", price = 40, build = function() return {
-		dPart(Vector3.new(1.3, 0.4, 1.25), CFrame.new(0, 2.05, 0.02), Color3.fromRGB(215, 220, 230)),
-		dPart(Vector3.new(0.4, 1.1, 0.4), CFrame.new(-0.65, 1.6, 0.15), Color3.fromRGB(205, 210, 222)),
-		dPart(Vector3.new(0.4, 1.1, 0.4), CFrame.new(0.65, 1.6, 0.15), Color3.fromRGB(205, 210, 222)),
-		dPart(Vector3.new(1.2, 1.2, 0.35), CFrame.new(0, 1.5, -0.45), Color3.fromRGB(200, 206, 220)) } end },
-	{ cat = "头发", name = "双马尾", icon = "🎀", price = 50, build = function() return {
-		dPart(Vector3.new(1.25, 0.4, 1.2), CFrame.new(0, 2.05, 0.02), Color3.fromRGB(160, 90, 180)),
-		dPart(Vector3.new(0.45, 0.45, 0.45), CFrame.new(-0.72, 2.25, 0.05), Color3.fromRGB(170, 95, 190)),
-		dPart(Vector3.new(0.45, 0.45, 0.45), CFrame.new(0.72, 2.25, 0.05), Color3.fromRGB(170, 95, 190)),
-		dPart(Vector3.new(0.3, 1.2, 0.3), CFrame.new(-0.85, 1.75, 0.05), Color3.fromRGB(160, 90, 180)),
-		dPart(Vector3.new(0.3, 1.2, 0.3), CFrame.new(0.85, 1.75, 0.05), Color3.fromRGB(160, 90, 180)) } end },
-	{ cat = "头发", name = "刺猬头", icon = "🦔", price = 15, build = function() return {
-		dPart(Vector3.new(1.25, 0.35, 1.2), CFrame.new(0, 2.0, 0.02), Color3.fromRGB(35, 35, 40)),
-		dPart(Vector3.new(0.18, 0.45, 0.18), CFrame.new(0, 2.35, -0.3), Color3.fromRGB(35, 35, 40)),
-		dPart(Vector3.new(0.18, 0.45, 0.18), CFrame.new(-0.4, 2.3, -0.15), Color3.fromRGB(35, 35, 40)),
-		dPart(Vector3.new(0.18, 0.45, 0.18), CFrame.new(0.4, 2.3, -0.15), Color3.fromRGB(35, 35, 40)),
-		dPart(Vector3.new(0.18, 0.45, 0.18), CFrame.new(-0.75, 2.15, 0.1), Color3.fromRGB(35, 35, 40)),
-		dPart(Vector3.new(0.18, 0.45, 0.18), CFrame.new(0.75, 2.15, 0.1), Color3.fromRGB(35, 35, 40)) } end },
-	{ cat = "头发", name = "金色大波浪", icon = "👱", price = 60, build = function() return {
-		dPart(Vector3.new(1.3, 0.42, 1.24), CFrame.new(0, 2.06, 0.02), Color3.fromRGB(230, 195, 90)),
-		dPart(Vector3.new(0.42, 1.15, 0.42), CFrame.new(-0.66, 1.62, 0.14), Color3.fromRGB(226, 190, 85)),
-		dPart(Vector3.new(0.42, 1.15, 0.42), CFrame.new(0.66, 1.62, 0.14), Color3.fromRGB(226, 190, 85)),
-		dPart(Vector3.new(1.22, 1.3, 0.36), CFrame.new(0, 1.48, -0.44), Color3.fromRGB(222, 186, 82)),
-		dPart(Vector3.new(0.3, 0.3, 0.3), CFrame.new(0, 2.32, 0.3), Color3.fromRGB(235, 200, 95)) } end },
-	{ cat = "头发", name = "蓝团子头", icon = "🔵", price = 45, build = function() return {
-		dPart(Vector3.new(1.24, 0.4, 1.2), CFrame.new(0, 2.05, 0.02), Color3.fromRGB(90, 140, 220)),
-		dPart(Vector3.new(0.5, 0.5, 0.5), CFrame.new(-0.55, 2.5, 0), Color3.fromRGB(100, 150, 230), Enum.PartType.Ball),
-		dPart(Vector3.new(0.5, 0.5, 0.5), CFrame.new(0.55, 2.5, 0), Color3.fromRGB(100, 150, 230), Enum.PartType.Ball),
-		dPart(Vector3.new(0.1, 0.3, 0.1), CFrame.new(-0.55, 2.75, 0), Color3.fromRGB(255, 215, 90), Enum.Material.Neon),
-		dPart(Vector3.new(0.1, 0.3, 0.1), CFrame.new(0.55, 2.75, 0), Color3.fromRGB(255, 215, 90), Enum.Material.Neon) } end },
-	-- 眼睛（Part 拼在头前：R15 头中心约在 HRP 上 1.5）
-	{ cat = "眼睛", name = "星瞳眼", icon = "⭐", price = 30, build = function() return {
-		dPart(Vector3.new(0.2, 0.2, 0.14), CFrame.new(-0.22, 1.42, 0.44), Color3.fromRGB(250, 250, 252), Enum.PartType.Ball),
-		dPart(Vector3.new(0.2, 0.2, 0.14), CFrame.new(0.22, 1.42, 0.44), Color3.fromRGB(250, 250, 252), Enum.PartType.Ball),
-		dPart(Vector3.new(0.09, 0.09, 0.06), CFrame.new(-0.22, 1.42, 0.53), Color3.fromRGB(255, 210, 80), Enum.Material.Neon),
-		dPart(Vector3.new(0.09, 0.09, 0.06), CFrame.new(0.22, 1.42, 0.53), Color3.fromRGB(255, 210, 80), Enum.Material.Neon) } end },
-	{ cat = "眼睛", name = "心形眼", icon = "💗", price = 40, build = function() return {
-		dPart(Vector3.new(0.2, 0.2, 0.14), CFrame.new(-0.22, 1.42, 0.44), Color3.fromRGB(250, 250, 252), Enum.PartType.Ball),
-		dPart(Vector3.new(0.2, 0.2, 0.14), CFrame.new(0.22, 1.42, 0.44), Color3.fromRGB(250, 250, 252), Enum.PartType.Ball),
-		dPart(Vector3.new(0.12, 0.12, 0.06), CFrame.new(-0.22, 1.42, 0.53), Color3.fromRGB(255, 90, 130), Enum.Material.Neon),
-		dPart(Vector3.new(0.12, 0.12, 0.06), CFrame.new(0.22, 1.42, 0.53), Color3.fromRGB(255, 90, 130), Enum.Material.Neon) } end },
-	{ cat = "眼睛", name = "赛博竖瞳", icon = "💠", price = 55, build = function() return {
-		dPart(Vector3.new(0.2, 0.2, 0.14), CFrame.new(-0.22, 1.42, 0.44), Color3.fromRGB(20, 22, 30), Enum.PartType.Ball),
-		dPart(Vector3.new(0.2, 0.2, 0.14), CFrame.new(0.22, 1.42, 0.44), Color3.fromRGB(20, 22, 30), Enum.PartType.Ball),
-		dPart(Vector3.new(0.05, 0.17, 0.05), CFrame.new(-0.22, 1.42, 0.53), Color3.fromRGB(120, 240, 255), Enum.Material.Neon),
-		dPart(Vector3.new(0.05, 0.17, 0.05), CFrame.new(0.22, 1.42, 0.53), Color3.fromRGB(120, 240, 255), Enum.Material.Neon) } end },
-	{ cat = "眼睛", name = "血瞳眼", icon = "🔴", price = 35, build = function() return {
-		dPart(Vector3.new(0.2, 0.2, 0.14), CFrame.new(-0.22, 1.42, 0.44), Color3.fromRGB(245, 240, 235), Enum.PartType.Ball),
-		dPart(Vector3.new(0.2, 0.2, 0.14), CFrame.new(0.22, 1.42, 0.44), Color3.fromRGB(245, 240, 235), Enum.PartType.Ball),
-		dPart(Vector3.new(0.1, 0.13, 0.05), CFrame.new(-0.22, 1.42, 0.53), Color3.fromRGB(220, 45, 50), Enum.Material.Neon),
-		dPart(Vector3.new(0.1, 0.13, 0.05), CFrame.new(0.22, 1.42, 0.53), Color3.fromRGB(220, 45, 50), Enum.Material.Neon) } end },
-	{ cat = "眼睛", name = "闪光眼", icon = "✨", price = 50, build = function() return {
-		dPart(Vector3.new(0.2, 0.2, 0.14), CFrame.new(-0.22, 1.42, 0.44), Color3.fromRGB(250, 250, 252), Enum.PartType.Ball),
-		dPart(Vector3.new(0.2, 0.2, 0.14), CFrame.new(0.22, 1.42, 0.44), Color3.fromRGB(250, 250, 252), Enum.PartType.Ball),
-		dPart(Vector3.new(0.09, 0.11, 0.05), CFrame.new(-0.22, 1.42, 0.53), Color3.fromRGB(80, 150, 240)),
-		dPart(Vector3.new(0.09, 0.11, 0.05), CFrame.new(0.22, 1.42, 0.53), Color3.fromRGB(80, 150, 240)),
-		dPart(Vector3.new(0.04, 0.04, 0.03), CFrame.new(-0.18, 1.47, 0.55), Color3.fromRGB(255, 255, 255), Enum.Material.Neon),
-		dPart(Vector3.new(0.04, 0.04, 0.03), CFrame.new(0.26, 1.47, 0.55), Color3.fromRGB(255, 255, 255), Enum.Material.Neon) } end },
-	{ cat = "眼睛", name = "闪电瞳", icon = "⚡", price = 65, build = function() return {
-		dPart(Vector3.new(0.2, 0.2, 0.14), CFrame.new(-0.22, 1.42, 0.44), Color3.fromRGB(250, 250, 252), Enum.PartType.Ball),
-		dPart(Vector3.new(0.2, 0.2, 0.14), CFrame.new(0.22, 1.42, 0.44), Color3.fromRGB(250, 250, 252), Enum.PartType.Ball),
-		dPart(Vector3.new(0.05, 0.09, 0.04), CFrame.new(-0.25, 1.44, 0.54), Color3.fromRGB(255, 215, 60), Enum.Material.Neon),
-		dPart(Vector3.new(0.05, 0.09, 0.04), CFrame.new(-0.19, 1.38, 0.54), Color3.fromRGB(255, 215, 60), Enum.Material.Neon),
-		dPart(Vector3.new(0.05, 0.09, 0.04), CFrame.new(0.25, 1.44, 0.54), Color3.fromRGB(255, 215, 60), Enum.Material.Neon),
-		dPart(Vector3.new(0.05, 0.09, 0.04), CFrame.new(0.19, 1.38, 0.54), Color3.fromRGB(255, 215, 60), Enum.Material.Neon) } end },
-	-- 上衣（躯干 + 手臂换色）
-	{ cat = "上衣", name = "白衬衫", icon = "👔", price = 20, cloth = { UpperTorso = Color3.fromRGB(245, 245, 250), LowerTorso = Color3.fromRGB(235, 235, 240), LeftUpperArm = Color3.fromRGB(245, 245, 250), LeftLowerArm = Color3.fromRGB(245, 245, 250), RightUpperArm = Color3.fromRGB(245, 245, 250), RightLowerArm = Color3.fromRGB(245, 245, 250) } },
-	{ cat = "上衣", name = "黑卫衣", icon = "👕", price = 35, cloth = { UpperTorso = Color3.fromRGB(35, 38, 45), LowerTorso = Color3.fromRGB(30, 33, 40), LeftUpperArm = Color3.fromRGB(35, 38, 45), LeftLowerArm = Color3.fromRGB(35, 38, 45), RightUpperArm = Color3.fromRGB(35, 38, 45), RightLowerArm = Color3.fromRGB(35, 38, 45) } },
-	{ cat = "上衣", name = "蓝夹克", icon = "🧥", price = 55, cloth = { UpperTorso = Color3.fromRGB(45, 85, 150), LowerTorso = Color3.fromRGB(40, 75, 135), LeftUpperArm = Color3.fromRGB(45, 85, 150), LeftLowerArm = Color3.fromRGB(45, 85, 150), RightUpperArm = Color3.fromRGB(45, 85, 150), RightLowerArm = Color3.fromRGB(45, 85, 150) } },
-	{ cat = "上衣", name = "红T恤", icon = "🩳", price = 15, cloth = { UpperTorso = Color3.fromRGB(190, 55, 55), LowerTorso = Color3.fromRGB(175, 48, 48), LeftUpperArm = Color3.fromRGB(190, 55, 55), LeftLowerArm = Color3.fromRGB(190, 55, 55), RightUpperArm = Color3.fromRGB(190, 55, 55), RightLowerArm = Color3.fromRGB(190, 55, 55) } },
-	{ cat = "上衣", name = "绿卫衣", icon = "🥑", price = 35, cloth = { UpperTorso = Color3.fromRGB(60, 120, 70), LowerTorso = Color3.fromRGB(52, 108, 62), LeftUpperArm = Color3.fromRGB(60, 120, 70), LeftLowerArm = Color3.fromRGB(60, 120, 70), RightUpperArm = Color3.fromRGB(60, 120, 70), RightLowerArm = Color3.fromRGB(60, 120, 70) } },
-	{ cat = "上衣", name = "紫毛衣", icon = "🧶", price = 40, cloth = { UpperTorso = Color3.fromRGB(120, 80, 160), LowerTorso = Color3.fromRGB(110, 72, 150), LeftUpperArm = Color3.fromRGB(120, 80, 160), LeftLowerArm = Color3.fromRGB(120, 80, 160), RightUpperArm = Color3.fromRGB(120, 80, 160), RightLowerArm = Color3.fromRGB(120, 80, 160) } },
-	-- 经典上衣（Roblox Classic 系：素色底衫）
-	{ cat = "经典上衣", name = "经典白T", icon = "🤍", price = 10, cloth = { UpperTorso = Color3.fromRGB(248, 248, 248), LowerTorso = Color3.fromRGB(240, 240, 240), LeftUpperArm = Color3.fromRGB(248, 248, 248), LeftLowerArm = Color3.fromRGB(248, 248, 248), RightUpperArm = Color3.fromRGB(248, 248, 248), RightLowerArm = Color3.fromRGB(248, 248, 248) } },
-	{ cat = "经典上衣", name = "经典灰T", icon = "🩶", price = 10, cloth = { UpperTorso = Color3.fromRGB(150, 150, 155), LowerTorso = Color3.fromRGB(142, 142, 148), LeftUpperArm = Color3.fromRGB(150, 150, 155), LeftLowerArm = Color3.fromRGB(150, 150, 155), RightUpperArm = Color3.fromRGB(150, 150, 155), RightLowerArm = Color3.fromRGB(150, 150, 155) } },
-	{ cat = "经典上衣", name = "黑背心", icon = "🖤", price = 18, cloth = { UpperTorso = Color3.fromRGB(28, 28, 32), LowerTorso = Color3.fromRGB(28, 28, 32) } },
-	{ cat = "经典上衣", name = "深蓝Polo", icon = "💙", price = 22, cloth = { UpperTorso = Color3.fromRGB(35, 55, 100), LowerTorso = Color3.fromRGB(32, 50, 92), LeftUpperArm = Color3.fromRGB(35, 55, 100), LeftLowerArm = Color3.fromRGB(35, 55, 100), RightUpperArm = Color3.fromRGB(35, 55, 100), RightLowerArm = Color3.fromRGB(35, 55, 100) } },
-	{ cat = "经典上衣", name = "棕毛衣", icon = "🟤", price = 25, cloth = { UpperTorso = Color3.fromRGB(120, 85, 55), LowerTorso = Color3.fromRGB(112, 78, 50), LeftUpperArm = Color3.fromRGB(120, 85, 55), LeftLowerArm = Color3.fromRGB(120, 85, 55), RightUpperArm = Color3.fromRGB(120, 85, 55), RightLowerArm = Color3.fromRGB(120, 85, 55) } },
-	{ cat = "经典上衣", name = "浅蓝条纹衫", icon = "📘", price = 28, cloth = { UpperTorso = Color3.fromRGB(150, 190, 230), LowerTorso = Color3.fromRGB(140, 180, 220), LeftUpperArm = Color3.fromRGB(150, 190, 230), LeftLowerArm = Color3.fromRGB(150, 190, 230), RightUpperArm = Color3.fromRGB(150, 190, 230), RightLowerArm = Color3.fromRGB(150, 190, 230) } },
-	-- 连衣裙（躯干换色 + Part 拼裙摆）
-	{ cat = "连衣裙", name = "红丝绒连衣裙", icon = "❤️", price = 90, cloth = { UpperTorso = Color3.fromRGB(150, 35, 45), LowerTorso = Color3.fromRGB(140, 30, 40) },
-		build = function() return {
-		dPart(Vector3.new(1.5, 0.9, 1.05), CFrame.new(0, -0.5, 0.02), Color3.fromRGB(150, 35, 45), Enum.Material.Fabric),
-		dPart(Vector3.new(1.45, 0.8, 1.0), CFrame.new(0, -1.1, 0.02), Color3.fromRGB(140, 30, 40), Enum.Material.Fabric),
-		dPart(Vector3.new(1.4, 0.7, 0.95), CFrame.new(0, -1.7, 0.02), Color3.fromRGB(132, 26, 36), Enum.Material.Fabric) } end },
-	{ cat = "连衣裙", name = "蓝纱连衣裙", icon = "💙", price = 85, cloth = { UpperTorso = Color3.fromRGB(80, 130, 200), LowerTorso = Color3.fromRGB(72, 122, 190) },
-		build = function() return {
-		dPart(Vector3.new(1.5, 0.9, 1.05), CFrame.new(0, -0.5, 0.02), Color3.fromRGB(80, 130, 200), Enum.Material.Fabric),
-		dPart(Vector3.new(1.45, 0.8, 1.0), CFrame.new(0, -1.1, 0.02), Color3.fromRGB(72, 122, 190), Enum.Material.Fabric),
-		dPart(Vector3.new(1.4, 0.7, 0.95), CFrame.new(0, -1.7, 0.02), Color3.fromRGB(65, 115, 180), Enum.Material.Fabric) } end },
-	{ cat = "连衣裙", name = "粉礼服裙", icon = "🩷", price = 120, cloth = { UpperTorso = Color3.fromRGB(235, 150, 185), LowerTorso = Color3.fromRGB(228, 140, 175) },
-		build = function() return {
-		dPart(Vector3.new(1.55, 1.0, 1.1), CFrame.new(0, -0.55, 0.02), Color3.fromRGB(235, 150, 185), Enum.Material.Fabric),
-		dPart(Vector3.new(1.5, 1.0, 1.05), CFrame.new(0, -1.3, 0.02), Color3.fromRGB(228, 140, 175), Enum.Material.Fabric),
-		dPart(Vector3.new(1.42, 0.9, 1.0), CFrame.new(0, -2.0, 0.02), Color3.fromRGB(220, 130, 165), Enum.Material.Fabric) } end },
-	{ cat = "连衣裙", name = "女仆装", icon = "🍥", price = 150, cloth = { UpperTorso = Color3.fromRGB(40, 40, 48), LowerTorso = Color3.fromRGB(40, 40, 48), LeftUpperArm = Color3.fromRGB(245, 245, 250), LeftLowerArm = Color3.fromRGB(245, 245, 250), RightUpperArm = Color3.fromRGB(245, 245, 250), RightLowerArm = Color3.fromRGB(245, 245, 250) },
-		build = function() return {
-		dPart(Vector3.new(1.5, 0.95, 1.05), CFrame.new(0, -0.55, 0.02), Color3.fromRGB(40, 40, 48), Enum.Material.Fabric),
-		dPart(Vector3.new(1.35, 0.75, 0.95), CFrame.new(0, -1.25, 0.02), Color3.fromRGB(245, 245, 250), Enum.Material.Fabric),
-		dPart(Vector3.new(1.3, 0.6, 0.9), CFrame.new(0, -1.8, 0.02), Color3.fromRGB(38, 38, 46), Enum.Material.Fabric) } end },
-	{ cat = "连衣裙", name = "婚纱", icon = "🤍", price = 200, cloth = { UpperTorso = Color3.fromRGB(250, 250, 252), LowerTorso = Color3.fromRGB(245, 245, 248) },
-		build = function() return {
-		dPart(Vector3.new(1.55, 1.0, 1.1), CFrame.new(0, -0.55, 0.02), Color3.fromRGB(250, 250, 252), Enum.Material.Fabric),
-		dPart(Vector3.new(1.5, 1.0, 1.05), CFrame.new(0, -1.3, 0.02), Color3.fromRGB(246, 246, 250), Enum.Material.Fabric),
-		dPart(Vector3.new(1.42, 0.9, 1.0), CFrame.new(0, -2.0, 0.02), Color3.fromRGB(242, 242, 248), Enum.Material.Fabric) } end },
-	{ cat = "连衣裙", name = "JK制服裙", icon = "🎒", price = 95, cloth = { UpperTorso = Color3.fromRGB(245, 245, 250), LowerTorso = Color3.fromRGB(240, 240, 245), LeftUpperArm = Color3.fromRGB(245, 245, 250), LeftLowerArm = Color3.fromRGB(245, 245, 250), RightUpperArm = Color3.fromRGB(245, 245, 250), RightLowerArm = Color3.fromRGB(245, 245, 250) },
-		build = function() return {
-		dPart(Vector3.new(1.45, 0.75, 1.0), CFrame.new(0, -0.45, 0.02), Color3.fromRGB(60, 75, 110), Enum.Material.Fabric),
-		dPart(Vector3.new(1.4, 0.65, 0.95), CFrame.new(0, -1.0, 0.02), Color3.fromRGB(55, 70, 105), Enum.Material.Fabric),
-		dPart(Vector3.new(0.9, 0.5, 0.06), CFrame.new(0, -0.3, 0.5), Color3.fromRGB(190, 60, 70), Enum.Material.Fabric) } end },
-	-- 裙子（Part 拼裙摆，不改上衣）
-	{ cat = "裙子", name = "百褶短裙", icon = "🩳", price = 40, build = function() return {
-		dPart(Vector3.new(1.45, 0.75, 1.0), CFrame.new(0, -0.35, 0.02), Color3.fromRGB(60, 60, 75), Enum.Material.Fabric),
-		dPart(Vector3.new(1.45, 0.75, 1.0), CFrame.new(0, -0.7, 0.02), Color3.fromRGB(52, 52, 66), Enum.Material.Fabric),
-		dPart(Vector3.new(1.45, 0.75, 1.0), CFrame.new(0, -1.05, 0.02), Color3.fromRGB(60, 60, 75), Enum.Material.Fabric) } end },
-	{ cat = "裙子", name = "粉色长裙", icon = "🩷", price = 60, build = function() return {
-		dPart(Vector3.new(1.5, 1.5, 1.1), CFrame.new(0, -0.4, 0.02), Color3.fromRGB(240, 160, 190), Enum.Material.Fabric),
-		dPart(Vector3.new(1.45, 1.5, 1.05), CFrame.new(0, -0.95, 0.02), Color3.fromRGB(232, 145, 178), Enum.Material.Fabric),
-		dPart(Vector3.new(1.4, 1.5, 1.0), CFrame.new(0, -1.5, 0.02), Color3.fromRGB(225, 132, 168), Enum.Material.Fabric) } end },
-	{ cat = "裙子", name = "黑色短裙", icon = "🖤", price = 40, build = function() return {
-		dPart(Vector3.new(1.45, 0.8, 1.0), CFrame.new(0, -0.35, 0.02), Color3.fromRGB(32, 32, 40), Enum.Material.Fabric),
-		dPart(Vector3.new(1.4, 0.7, 0.95), CFrame.new(0, -0.85, 0.02), Color3.fromRGB(26, 26, 34), Enum.Material.Fabric) } end },
-	{ cat = "裙子", name = "红格纹裙", icon = "🟥", price = 55, build = function() return {
-		dPart(Vector3.new(1.45, 0.75, 1.0), CFrame.new(0, -0.4, 0.02), Color3.fromRGB(180, 50, 55), Enum.Material.Fabric),
-		dPart(Vector3.new(1.4, 0.7, 0.95), CFrame.new(0, -0.9, 0.02), Color3.fromRGB(170, 45, 50), Enum.Material.Fabric),
-		dPart(Vector3.new(1.5, 0.1, 0.3), CFrame.new(0, -0.05, 0.3), Color3.fromRGB(240, 230, 220), Enum.Material.Fabric) } end },
-	{ cat = "裙子", name = "粉蓬蓬裙", icon = "🌸", price = 70, build = function() return {
-		dPart(Vector3.new(1.55, 0.6, 1.1), CFrame.new(0, -0.35, 0.02), Color3.fromRGB(245, 175, 205), Enum.Material.Fabric),
-		dPart(Vector3.new(1.5, 0.6, 1.05), CFrame.new(0, -0.75, 0.02), Color3.fromRGB(238, 165, 198), Enum.Material.Fabric),
-		dPart(Vector3.new(1.4, 0.6, 0.98), CFrame.new(0, -1.15, 0.02), Color3.fromRGB(230, 155, 190), Enum.Material.Fabric),
-		dPart(Vector3.new(1.3, 0.5, 0.9), CFrame.new(0, -1.5, 0.02), Color3.fromRGB(222, 145, 182), Enum.Material.Fabric) } end },
-	{ cat = "裙子", name = "白长纱裙", icon = "🥀", price = 75, build = function() return {
-		dPart(Vector3.new(1.5, 0.7, 1.05), CFrame.new(0, -0.4, 0.02), Color3.fromRGB(235, 238, 245), Enum.Material.Fabric),
-		dPart(Vector3.new(1.48, 1.2, 1.03), CFrame.new(0, -1.1, 0.02), Color3.fromRGB(228, 232, 242), Enum.Material.Fabric),
-		dPart(Vector3.new(1.42, 1.2, 0.98), CFrame.new(0, -1.9, 0.02), Color3.fromRGB(220, 225, 238), Enum.Material.Fabric) } end },
-	-- 经典裤子（腿部换色）
-	{ cat = "经典裤子", name = "黑长裤", icon = "👖", price = 25, cloth = { LeftUpperLeg = Color3.fromRGB(40, 42, 50), LeftLowerLeg = Color3.fromRGB(40, 42, 50), RightUpperLeg = Color3.fromRGB(40, 42, 50), RightLowerLeg = Color3.fromRGB(40, 42, 50) } },
-	{ cat = "经典裤子", name = "蓝牛仔", icon = "🫐", price = 35, cloth = { LeftUpperLeg = Color3.fromRGB(55, 85, 135), LeftLowerLeg = Color3.fromRGB(55, 85, 135), RightUpperLeg = Color3.fromRGB(55, 85, 135), RightLowerLeg = Color3.fromRGB(55, 85, 135) } },
-	{ cat = "经典裤子", name = "卡其裤", icon = "🟫", price = 25, cloth = { LeftUpperLeg = Color3.fromRGB(150, 130, 85), LeftLowerLeg = Color3.fromRGB(150, 130, 85), RightUpperLeg = Color3.fromRGB(150, 130, 85), RightLowerLeg = Color3.fromRGB(150, 130, 85) } },
-	{ cat = "经典裤子", name = "灰运动裤", icon = "🩶", price = 30, cloth = { LeftUpperLeg = Color3.fromRGB(95, 98, 108), LeftLowerLeg = Color3.fromRGB(88, 92, 102), RightUpperLeg = Color3.fromRGB(95, 98, 108), RightLowerLeg = Color3.fromRGB(88, 92, 102) } },
-	{ cat = "经典裤子", name = "迷彩裤", icon = "🌲", price = 40, cloth = { LeftUpperLeg = Color3.fromRGB(70, 85, 55), LeftLowerLeg = Color3.fromRGB(62, 78, 48), RightUpperLeg = Color3.fromRGB(70, 85, 55), RightLowerLeg = Color3.fromRGB(62, 78, 48) } },
-	{ cat = "经典裤子", name = "白裤子", icon = "🤍", price = 25, cloth = { LeftUpperLeg = Color3.fromRGB(242, 242, 246), LeftLowerLeg = Color3.fromRGB(238, 238, 242), RightUpperLeg = Color3.fromRGB(242, 242, 246), RightLowerLeg = Color3.fromRGB(238, 238, 242) } },
-	-- 丝袜（腿部换色：过膝袜只换小腿、丝袜换全腿）
-	{ cat = "丝袜", name = "黑丝袜", icon = "🖤", price = 20, cloth = { LeftUpperLeg = Color3.fromRGB(42, 42, 52), LeftLowerLeg = Color3.fromRGB(42, 42, 52), RightUpperLeg = Color3.fromRGB(42, 42, 52), RightLowerLeg = Color3.fromRGB(42, 42, 52) } },
-	{ cat = "丝袜", name = "白丝袜", icon = "🤍", price = 20, cloth = { LeftUpperLeg = Color3.fromRGB(245, 245, 250), LeftLowerLeg = Color3.fromRGB(245, 245, 250), RightUpperLeg = Color3.fromRGB(245, 245, 250), RightLowerLeg = Color3.fromRGB(245, 245, 250) } },
-	{ cat = "丝袜", name = "过膝白袜", icon = "🧦", price = 18, cloth = { LeftLowerLeg = Color3.fromRGB(248, 248, 252), RightLowerLeg = Color3.fromRGB(248, 248, 252) } },
-	{ cat = "丝袜", name = "及膝黑袜", icon = "📏", price = 18, cloth = { LeftLowerLeg = Color3.fromRGB(38, 38, 48), RightLowerLeg = Color3.fromRGB(38, 38, 48) } },
-	{ cat = "丝袜", name = "渔网灰袜", icon = "🕸️", price = 30, cloth = { LeftUpperLeg = Color3.fromRGB(75, 75, 85), LeftLowerLeg = Color3.fromRGB(75, 75, 85), RightUpperLeg = Color3.fromRGB(75, 75, 85), RightLowerLeg = Color3.fromRGB(75, 75, 85) } },
-	{ cat = "丝袜", name = "粉紫长袜", icon = "💜", price = 25, cloth = { LeftUpperLeg = Color3.fromRGB(215, 150, 220), LeftLowerLeg = Color3.fromRGB(215, 150, 220), RightUpperLeg = Color3.fromRGB(215, 150, 220), RightLowerLeg = Color3.fromRGB(215, 150, 220) } },
-	-- 鞋子（换脚色 + Part 拼鞋）
-	{ cat = "鞋子", name = "黑皮鞋", icon = "👞", price = 45, cloth = { LeftFoot = Color3.fromRGB(35, 32, 32), RightFoot = Color3.fromRGB(35, 32, 32) } },
-	{ cat = "鞋子", name = "白球鞋", icon = "👟", price = 35, cloth = { LeftFoot = Color3.fromRGB(240, 242, 248), RightFoot = Color3.fromRGB(240, 242, 248) } },
-	{ cat = "鞋子", name = "红靴子", icon = "🥾", price = 50, cloth = { LeftFoot = Color3.fromRGB(170, 45, 45), RightFoot = Color3.fromRGB(170, 45, 45) } },
-	{ cat = "鞋子", name = "高跟鞋", icon = "👠", price = 90, build = function() return {
-		dPart(Vector3.new(0.34, 0.16, 0.55), CFrame.new(-0.22, -1.42, 0.12), Color3.fromRGB(190, 45, 60), Enum.Material.Metal),
-		dPart(Vector3.new(0.34, 0.16, 0.55), CFrame.new(0.22, -1.42, 0.12), Color3.fromRGB(190, 45, 60), Enum.Material.Metal),
-		dPart(Vector3.new(0.07, 0.34, 0.07), CFrame.new(-0.22, -1.62, -0.06), Color3.fromRGB(190, 45, 60)),
-		dPart(Vector3.new(0.07, 0.34, 0.07), CFrame.new(0.22, -1.62, -0.06), Color3.fromRGB(190, 45, 60)) } end },
-	{ cat = "鞋子", name = "厚底运动鞋", icon = "👟", price = 60, build = function() return {
-		dPart(Vector3.new(0.4, 0.28, 0.62), CFrame.new(-0.22, -1.38, 0.14), Color3.fromRGB(240, 240, 245)),
-		dPart(Vector3.new(0.4, 0.28, 0.62), CFrame.new(0.22, -1.38, 0.14), Color3.fromRGB(240, 240, 245)),
-		dPart(Vector3.new(0.4, 0.1, 0.62), CFrame.new(-0.22, -1.56, 0.14), Color3.fromRGB(60, 130, 220)),
-		dPart(Vector3.new(0.4, 0.1, 0.62), CFrame.new(0.22, -1.56, 0.14), Color3.fromRGB(60, 130, 220)) } end },
-	{ cat = "鞋子", name = "长筒靴", icon = "🥾", price = 110, build = function() return {
-		dPart(Vector3.new(0.42, 1.1, 0.46), CFrame.new(-0.22, -0.62, 0.04), Color3.fromRGB(85, 55, 35), Enum.Material.Fabric),
-		dPart(Vector3.new(0.42, 1.1, 0.46), CFrame.new(0.22, -0.62, 0.04), Color3.fromRGB(85, 55, 35), Enum.Material.Fabric),
-		dPart(Vector3.new(0.46, 0.16, 0.6), CFrame.new(-0.22, -1.24, 0.12), Color3.fromRGB(70, 45, 28)),
-		dPart(Vector3.new(0.46, 0.16, 0.6), CFrame.new(0.22, -1.24, 0.12), Color3.fromRGB(70, 45, 28)) } end },
-}
 
 -- ---------- 玩具系统（参考 GitHub 外国开源 Admin：Fate's Admin / Infinite Yield 的经典 FE 命令）----------
 -- 玩具也是商城商品：cat = "玩具"，点击卡片即启停；全部本地实现，只有自己看得见
@@ -4680,7 +4459,7 @@ function toyToggle(it)
 	if notify then notify((on and "已开启：" or "已关闭：") .. it.name) end
 end
 function toyStopAll()
-	for _, it in ipairs(DECO_ITEMS) do
+	for _, it in ipairs(TOY_DEFS) do
 		if it.toy and ToyOn[it.name] and it.on then pcall(it.on, false) end
 	end
 	ToyOn = {}
@@ -4688,8 +4467,8 @@ function toyStopAll()
 end
 -- 重生后重挂（火花/火焰/烟雾挂在角色部件上，换角色要重新挂；on(true) 自带清理，可重复调用）
 function toyReapplyAll()
-	if not (ToyOn and next(ToyOn) and DECO_ITEMS) then return end
-	for _, it in ipairs(DECO_ITEMS) do
+	if not (ToyOn and next(ToyOn) and TOY_DEFS) then return end
+	for _, it in ipairs(TOY_DEFS) do
 		if it.toy and ToyOn[it.name] and it.on then pcall(it.on, true) end
 	end
 end
@@ -4856,68 +4635,32 @@ TOY_DEFS = {
 		end
 	end },
 }
-for _, t in ipairs(TOY_DEFS) do table.insert(DECO_ITEMS, t) end
 
-function decoUnwear(cat)
-	local it = DecoActive[cat]
-	if not it then return end
-	if it.build then
-		for i = #DecoParts, 1, -1 do
-			if DecoParts[i].Cat == cat then
-				pcall(function() DecoParts[i].P:Destroy() end)
-				table.remove(DecoParts, i)
-			end
-		end
-	end
-	if DecoOrig[cat] then
-		local ch = LP and LP.Character
-		if ch then
-			for name, col in pairs(DecoOrig[cat]) do
-				local p = ch:FindFirstChild(name)
-				if p and p:IsA("BasePart") then p.Color = col end
-			end
-		end
-	end
-	DecoCloth[cat] = nil
-	DecoOrig[cat] = nil
-	DecoActive[cat] = nil
-end
-function decoWear(item)
-	if not item then return end
-	decoUnwear(item.cat)
-	DecoActive[item.cat] = item
-	if item.build then
-		for _, d in ipairs(item.build()) do
-			d.Cat = item.cat
-			table.insert(DecoParts, d)
-		end
-	end
-	if item.cloth then
-		local ch = LP and LP.Character
-		if ch then
-			DecoCloth[item.cat] = {}
-			DecoOrig[item.cat] = {}
-			for name, col in pairs(item.cloth) do
-				local p = ch:FindFirstChild(name)
-				if p and p:IsA("BasePart") then
-					DecoOrig[item.cat][name] = p.Color
-					DecoCloth[item.cat][name] = col
-				end
-			end
-		end
-	end
-	if notify then notify("已装扮：" .. item.name) end
-end
-function decoUnwearAll()
-	for _, c in ipairs(DECO_CATS) do decoUnwear(c) end
-	if next(ToyOn or {}) then toyStopAll() end
-	if notify then notify("已卸下全部装扮") end
-end
 
--- ---------- 装扮页 UI ----------
+
+
+-- ===== 娱乐页追加：三个新趣味功能 + 翅膀 + 玩具（原装扮页拆除后搬来）=====
+label({ Text = "新 玩 法 NEW FUN", Font = Enum.Font.GothamBold, TextSize = 11,
+	TextColor3 = Color3.fromRGB(120, 129, 152), Size = UDim2.new(1, 0, 0, 18),
+	Position = UDim2.new(0, 2, 0, 1252), TextXAlignment = Enum.TextXAlignment.Left }, PageFun)
+EjectBtn = new("TextButton", { Text = "🚀 弹射升空 EJECT", Font = Enum.Font.GothamBold, TextSize = 11,
+	TextColor3 = Mode().Accent, BackgroundColor3 = Color3.fromRGB(255, 255, 255), BackgroundTransparency = 0.9,
+	BorderSizePixel = 0, AutoButtonColor = false,
+	Size = UDim2.new(1, 0, 0, 36), Position = UDim2.new(0, 0, 0, 1276), Parent = PageFun })
+corner(EjectBtn, 10)
+table.insert(FunBtns, EjectBtn)
+bindClick(EjectBtn, "弹射升空", ejectUp)
+PlayDeadTgl = makeToggle(PageFun, 1320, "装死倒地 PLAY DEAD", "当场躺平装死，再点站起来", false, function(v)
+	setPlayDead(v)
+end, true)
+NeonGlowTgl = makeToggle(PageFun, 1368, "霓虹发光 NEON GLOW", "全身变色流光，关掉自动还原", false, function(v)
+	setNeonGlow(v)
+end, true)
+
+-- 翅膀（原装扮页搬来）
 label({ Text = "翅 膀 WINGS", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Color3.fromRGB(120, 129, 152), Size = UDim2.new(1, 0, 0, 18),
-	Position = UDim2.new(0, 2, 0, 552), TextXAlignment = Enum.TextXAlignment.Left }, PageDeco)
+	Position = UDim2.new(0, 2, 0, 1416), TextXAlignment = Enum.TextXAlignment.Left }, PageFun)
 for i, st in ipairs(WING_STYLES) do
 	local col = (i - 1) % 2
 	local row = math.floor((i - 1) / 2)
@@ -4925,8 +4668,7 @@ for i, st in ipairs(WING_STYLES) do
 		TextColor3 = Mode().Accent, BackgroundColor3 = Color3.fromRGB(255, 255, 255),
 		BackgroundTransparency = 0.9, BorderSizePixel = 0, AutoButtonColor = false,
 		Size = UDim2.new(0.5, -4, 0, 34),
-		Position = UDim2.new(col == 0 and 0 or 0.5, col == 0 and 0 or 4, 0, 576 + row * 40),
-		Parent = PageDeco })
+		Position = UDim2.new(col == 0 and 0 or 0.5, col == 0 and 0 or 4, 0, 1440 + row * 40), Parent = PageFun })
 	corner(b, 8)
 	table.insert(FunBtns, b)
 	bindClick(b, st.name, function() setWing(i) end)
@@ -4934,130 +4676,68 @@ end
 local NoWingBtn = new("TextButton", { Text = "收起翅膀", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Color3.fromRGB(255, 108, 118), BackgroundColor3 = Color3.fromRGB(255, 255, 255),
 	BackgroundTransparency = 0.9, BorderSizePixel = 0, AutoButtonColor = false,
-	Size = UDim2.new(1, 0, 0, 32), Position = UDim2.new(0, 0, 0, 736), Parent = PageDeco })
+	Size = UDim2.new(1, 0, 0, 32), Position = UDim2.new(0, 0, 0, 1600), Parent = PageFun })
 corner(NoWingBtn, 8)
 table.insert(FunBtns, NoWingBtn)
 bindClick(NoWingBtn, "收起翅膀", function() clearWings() end)
+makeSlider(PageFun, "翅膀大小", 1640, 40, 220, 100, " %", function(v) WingSizeV = v / 100 end, false)
 
-makeSlider(PageDeco, "翅膀大小", 776, 40, 220, 100, " %", function(v) WingSizeV = v / 100 end, false)
-label({ Text = "翅膀：点一下装备，再点「收起翅膀」卸下；大小可滑", Font = Enum.Font.Gotham, TextSize = 10,
-	TextColor3 = Color3.fromRGB(120, 129, 152), Position = UDim2.new(0, 2, 0, 826),
-	Size = UDim2.new(1, -4, 0, 26), TextWrapped = true,
-	TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top }, PageDeco)
-label({ Text = "ROBLOX 商城 AVATAR SHOP · 本地装扮仅自己可见", Font = Enum.Font.GothamBold, TextSize = 11,
+-- 玩具（原装扮页「玩具」分类搬来：点卡片即开即关，纯本地特效）
+label({ Text = "玩 具 TOYS · 点卡片即开即关", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Color3.fromRGB(120, 129, 152), Size = UDim2.new(1, 0, 0, 18),
-	Position = UDim2.new(0, 2, 0, 0), TextXAlignment = Enum.TextXAlignment.Left }, PageDeco)
--- 分类标签（Roblox 商城式 chips：全部 / 头饰 / 头发 / 眼睛 / 上衣 / 经典上衣 / 连衣裙 / 裙子 / 经典裤子 / 丝袜 / 鞋子）
-for i, tab in ipairs(DECO_TABS) do
-	local col = (i - 1) % 6
-	local row = math.floor((i - 1) / 6)
-	local chip = new("TextButton", { Text = tab, Font = Enum.Font.GothamBold, TextSize = 10,
-		TextColor3 = DecoCat == tab and Mode().Accent or Color3.fromRGB(200, 208, 224),
-		BackgroundColor3 = Color3.fromRGB(255, 255, 255),
-		BackgroundTransparency = DecoCat == tab and 0.85 or 0.94, BorderSizePixel = 0, AutoButtonColor = false,
-		Size = UDim2.new(0, 72, 0, 20),
-		Position = UDim2.new(0, col * 75, 0, 22 + row * 24), Parent = PageDeco })
-	corner(chip, 6)
-	table.insert(DecoChips, chip)
-	table.insert(FunBtns, chip)
-	bindClick(chip, "商城分类 " .. tab, function()
-		DecoCat = tab
-		decoRefresh()
-	end)
+	Position = UDim2.new(0, 2, 0, 1692), TextXAlignment = Enum.TextXAlignment.Left }, PageFun)
+ToyBtns = {}
+local function toyRefresh()
+	for _, b in ipairs(ToyBtns) do
+		if b and b.Parent then b:Destroy() end
+	end
+	ToyBtns = {}
+	local shown = 0
+	for _, it in ipairs(TOY_DEFS) do
+		shown = shown + 1
+		local col = (shown - 1) % 2
+		local row = math.floor((shown - 1) / 2)
+		local on = ToyOn[it.name]
+		local card = new("TextButton", { Text = "", Font = Enum.Font.Gotham, TextSize = 11,
+			TextColor3 = Color3.fromRGB(226, 233, 248),
+			BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+			BackgroundTransparency = on and 0.86 or 0.93, BorderSizePixel = 0, AutoButtonColor = false,
+			Size = UDim2.new(0.5, -4, 0, 54), Position = UDim2.new(col == 0 and 0 or 0.5, col == 0 and 0 or 4, 0, 1716 + row * 60), Parent = PageFun })
+		corner(card, 8)
+		if on then new("UIStroke", { Color = Mode().Accent, Transparency = 0.4, Thickness = 1.5, Parent = card }) end
+		table.insert(ToyBtns, card)
+		local ib = new("Frame", { Size = UDim2.new(0, 38, 0, 38), Position = UDim2.new(0, 8, 0, 8),
+			BackgroundColor3 = Color3.fromRGB(255, 255, 255), BackgroundTransparency = 0.88,
+			BorderSizePixel = 0, Parent = card })
+		corner(ib, 8)
+		label({ Text = it.icon or "🎁", Font = Enum.Font.GothamBold, TextSize = 18,
+			Size = UDim2.new(1, 0, 1, 0), TextColor3 = Color3.fromRGB(238, 243, 255) }, ib)
+		label({ Text = (on and "✓ " or "") .. it.name, Font = Enum.Font.GothamBold, TextSize = 11,
+			TextColor3 = on and Mode().Accent or Color3.fromRGB(226, 233, 248),
+			Size = UDim2.new(1, -56, 0, 16), Position = UDim2.new(0, 54, 0, 7),
+			TextXAlignment = Enum.TextXAlignment.Left }, card)
+		label({ Text = on and "✨ 开启中 · 点击关闭" or "玩具 · 点击开启", Font = Enum.Font.Gotham, TextSize = 9,
+			TextColor3 = on and Mode().Accent or Color3.fromRGB(140, 200, 255),
+			Size = UDim2.new(1, -56, 0, 14), Position = UDim2.new(0, 54, 0, 28),
+			TextXAlignment = Enum.TextXAlignment.Left }, card)
+		bindClick(card, it.name, function()
+			toyToggle(it)
+			toyRefresh()
+		end)
+	end
 end
-local DecoSearchBox = new("TextBox", { PlaceholderText = "搜索商品…", Text = "", Font = Enum.Font.Gotham, TextSize = 11,
-	TextColor3 = Color3.fromRGB(238, 243, 255), PlaceholderColor3 = Color3.fromRGB(110, 118, 140),
-	BackgroundColor3 = Color3.fromRGB(255, 255, 255), BackgroundTransparency = 0.92,
-	BorderSizePixel = 0, ClearTextOnFocus = false,
-	Size = UDim2.new(0.58, -4, 0, 30), Position = UDim2.new(0, 0, 0, 76), Parent = PageDeco })
-corner(DecoSearchBox, 8)
-local DecoClearBtn = new("TextButton", { Text = "卸下全部", Font = Enum.Font.GothamBold, TextSize = 11,
+ToyAllOffBtn = new("TextButton", { Text = "全部关闭 TOYS OFF", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Color3.fromRGB(255, 108, 118), BackgroundColor3 = Color3.fromRGB(255, 255, 255),
 	BackgroundTransparency = 0.9, BorderSizePixel = 0, AutoButtonColor = false,
-	Size = UDim2.new(0.42, 0, 0, 30), Position = UDim2.new(0.58, 4, 0, 76), Parent = PageDeco })
-corner(DecoClearBtn, 8)
-table.insert(FunBtns, DecoClearBtn)
-local DecoListWrap = new("Frame", { Size = UDim2.new(1, 0, 0, 424), Position = UDim2.new(0, 0, 0, 112),
-	BackgroundColor3 = Color3.fromRGB(20, 23, 33), BackgroundTransparency = 0.25,
-	BorderSizePixel = 0, ClipsDescendants = true, Parent = PageDeco })
-corner(DecoListWrap, 10)
-new("UIStroke", { Color = Modes[1].Accent, Transparency = 0.75, Thickness = 1, Parent = DecoListWrap })
-local DecoList = new("ScrollingFrame", { Size = UDim2.new(1, -8, 1, -8), Position = UDim2.new(0, 4, 0, 4),
-	BackgroundTransparency = 1, BorderSizePixel = 0, ScrollBarThickness = 4,
-	ScrollBarImageTransparency = 0.5, CanvasSize = UDim2.new(0, 0, 0, 0), Parent = DecoListWrap })
-function decoRefresh()
-	for _, c in ipairs(DecoList:GetChildren()) do
-		if c:IsA("TextButton") or c:IsA("TextLabel") or c:IsA("Frame") then c:Destroy() end
-	end
-	DecoBtns = {}
-	for _, c in ipairs(DecoChips) do
-		local on = (c.Text == DecoCat)
-		c.BackgroundTransparency = on and 0.85 or 0.94
-		c.TextColor3 = on and Mode().Accent or Color3.fromRGB(200, 208, 224)
-	end
-	local kw = string.lower(DecoSearch or "")
-	local shown = 0
-	for _, it in ipairs(DECO_ITEMS) do
-		if (DecoCat == "全部" or it.cat == DecoCat)
-			and (kw == "" or string.find(string.lower(it.name), kw, 1, true)
-			or string.find(string.lower(it.cat), kw, 1, true)) then
-			shown = shown + 1
-			local col = (shown - 1) % 2
-			local row = math.floor((shown - 1) / 2)
-			local on = it.toy and ToyOn[it.name] or (DecoActive[it.cat] == it)
-			local card = new("TextButton", { Text = "", Font = Enum.Font.Gotham, TextSize = 11,
-				TextColor3 = Color3.fromRGB(226, 233, 248),
-				BackgroundColor3 = Color3.fromRGB(255, 255, 255),
-				BackgroundTransparency = on and 0.86 or 0.93, BorderSizePixel = 0, AutoButtonColor = false,
-				Size = UDim2.new(0, 222, 0, 54), Position = UDim2.new(0, col * 228, 0, row * 60), Parent = DecoList })
-			corner(card, 8)
-			if on then new("UIStroke", { Color = Mode().Accent, Transparency = 0.4, Thickness = 1.5, Parent = card }) end
-			table.insert(DecoBtns, card)
-			local ib = new("Frame", { Size = UDim2.new(0, 38, 0, 38), Position = UDim2.new(0, 8, 0, 8),
-				BackgroundColor3 = Color3.fromRGB(255, 255, 255), BackgroundTransparency = 0.88,
-				BorderSizePixel = 0, Parent = card })
-			corner(ib, 8)
-			label({ Text = it.icon or "🎁", Font = Enum.Font.GothamBold, TextSize = 18,
-				Size = UDim2.new(1, 0, 1, 0), TextColor3 = Color3.fromRGB(238, 243, 255) }, ib)
-			label({ Text = (on and "✓ " or "") .. it.name, Font = Enum.Font.GothamBold, TextSize = 11,
-				TextColor3 = on and Mode().Accent or Color3.fromRGB(226, 233, 248),
-				Size = UDim2.new(1, -56, 0, 16), Position = UDim2.new(0, 54, 0, 7),
-				TextXAlignment = Enum.TextXAlignment.Left }, card)
-			local sub
-			if it.toy then
-				sub = on and "✨ 开启中 · 点击关闭" or "玩具 · 点击开启"
-			else
-				sub = on and "已装备 · 点击卸下" or ("R$ " .. tostring(it.price or 0))
-			end
-			label({ Text = sub, Font = Enum.Font.Gotham, TextSize = 9,
-				TextColor3 = on and Mode().Accent or (it.toy and Color3.fromRGB(140, 200, 255) or Color3.fromRGB(255, 205, 100)),
-				Size = UDim2.new(1, -56, 0, 14), Position = UDim2.new(0, 54, 0, 28),
-				TextXAlignment = Enum.TextXAlignment.Left }, card)
-			bindClick(card, it.name, function()
-				if it.toy then
-					toyToggle(it)
-				elseif DecoActive[it.cat] == it then
-					decoUnwear(it.cat)
-				else
-					decoWear(it)
-				end
-				decoRefresh()
-			end)
-		end
-	end
-	DecoList.CanvasSize = UDim2.new(0, 0, 0, math.max(math.ceil(shown / 2) * 60, 1))
-end
-DecoSearchBox:GetPropertyChangedSignal("Text"):Connect(function()
-	DecoSearch = DecoSearchBox.Text
-	decoRefresh()
-end)
-bindClick(DecoClearBtn, "卸下全部装扮", function() decoUnwearAll(); decoRefresh() end)
-decoRefresh()
-label({ Text = "商城商品全部免费（本地装扮只有你自己看得见）；换角色 / 重生后自动重扮。衣服 / 裤子 / 丝袜 / 鞋子类直接给身体部件换色。「玩具」分类是 8 种真实好玩的本地特效（烟花连发 / 火花 / 火焰 / 烟雾 / 魔毯 / 跳舞 / 气球 / 环绕），点卡片即开即关。", Font = Enum.Font.Gotham, TextSize = 10,
-	TextColor3 = Color3.fromRGB(120, 129, 152), Position = UDim2.new(0, 2, 0, 856),
-	Size = UDim2.new(1, -4, 0, 40), TextWrapped = true,
-	TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top }, PageDeco)
-
+	Size = UDim2.new(1, 0, 0, 32), Position = UDim2.new(0, 0, 0, 1962), Parent = PageFun })
+corner(ToyAllOffBtn, 8)
+table.insert(FunBtns, ToyAllOffBtn)
+bindClick(ToyAllOffBtn, "玩具全部关闭", function() toyStopAll(); toyRefresh() end)
+toyRefresh()
+label({ Text = "玩具全部是本地特效，只有自己看得见；重生后自动重挂；UNLOAD 会一并清掉。", Font = Enum.Font.Gotham, TextSize = 10,
+	TextColor3 = Color3.fromRGB(120, 129, 152), Position = UDim2.new(0, 2, 0, 2002),
+	Size = UDim2.new(1, -4, 0, 26), TextWrapped = true,
+	TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top }, PageFun)
 
 -- ---------- 独立飞行 / 自动连跳 ----------
 -- 之前这两项写在引擎主循环里，一旦「启用引擎」关闭就整段不执行 → 表现为「开了没用」。
@@ -5263,7 +4943,6 @@ function updateTopBar()
 	if State.EspPlayer then table.insert(list, "透视") end
 	if State.Rainbow then table.insert(list, "彩虹") end
 	if State.Spin then table.insert(list, "自转") end
-	if State.Freecam then table.insert(list, "自由视角") end
 	if State.LowGravity then table.insert(list, "反重力") end
 	if State.AntiRagdoll then table.insert(list, "防布娃娃") end
 	if State.GfxNight then table.insert(list, "夜视") end
@@ -5461,7 +5140,12 @@ function setBg(on)
 			tspawn(function() pcall(function() ContentProvider:PreloadAsync({ BgImg }) end) end)
 		end
 	end
-	if BgImg then BgImg.Visible = on end
+	if BgImg then
+		BgImg.Visible = on
+		-- 复用分支也要刷新透明度：读档恢复的 BgAlpha、滑块调过的值都得作用到已有图上
+		-- （此前只设 Visible，恢复存档或切预设后透明度丢成旧值——「透明度没有用」的最后一环）
+		if on then BgImg.ImageTransparency = BgAlpha or 0.45 end
+	end
 	if notify then notify(on and "背景图已开启" or "背景图已关闭") end
 end
 -- 切换背景预设（设置页 chips；点击即换图并存档，重启/换服不丢）
@@ -5520,6 +5204,8 @@ function animRow(title, y, onPick, onPick0)
 	bindClick(b, title, function()
 		idx = (idx % #ANIM_STYLES) + 1
 		b.Text = ANIM_STYLES[idx] .. "  ▾"
+		-- 切走神威时立刻停掉正在播放的动画，不然「选了不要动画，动画还在放」
+		if idx ~= 1 then stopKamui() end
 		onPick(idx)
 	end)
 end
@@ -5560,13 +5246,60 @@ animRow("启动动画样式", 184, function(i) AnimStyleIdx = i; animSave(); if 
 animRow("删除动画样式", 232, function(i) CloseAnimIdx = i; animSave(); if notify then notify("删除动画：" .. ANIM_STYLES[i]) end end,
 	function() return CloseAnimIdx or 1 end)
 
-makeSlider(PageSet, "面板缩放", 290, 60, 140, 100, " %", function(v)
-	pcall(function() if MainScale then MainScale.Scale = v / 100 end end)
+-- UI 偏好存档：字体大小 / 面板缩放 / 背景图透明（本地文件 + 跨服务器双保险，和动画样式同一套机制）
+-- 用户要求「脚本设置里面增加个自动保存」——这三项改完即存，换服/重进不恢复默认
+PREF_FILE = "HonSpeedHub_Pref.json"
+PrefFontScale, PrefPanelScale, PrefBgAlpha = nil, nil, nil
+function prefSave()
+	local d = { fs = PrefFontScale, ps = PrefPanelScale, ba = PrefBgAlpha }
+	local ok, json = pcall(function() return HttpService:JSONEncode(d) end)
+	if not ok or not json then return end
+	pcall(function() if writefile then writefile(PREF_FILE, json) end end)
+	pcall(function() TeleportService:SetTeleportSetting("HON_PREF", json) end)
+end
+function prefLoad()
+	local d = nil
+	pcall(function()
+		if isfile and readfile and isfile(PREF_FILE) then
+			local ok, x = pcall(function() return HttpService:JSONDecode(readfile(PREF_FILE)) end)
+			if ok and type(x) == "table" then d = x end
+		end
+	end)
+	if not d then
+		pcall(function()
+			local raw = TeleportService:GetTeleportSetting("HON_PREF")
+			if raw and raw ~= "" then
+				local ok, x = pcall(function() return HttpService:JSONDecode(raw) end)
+				if ok and type(x) == "table" then d = x end
+			end
+		end)
+	end
+	if not d then return end
+	if type(d.fs) == "number" then PrefFontScale = math.clamp(d.fs, 0.7, 1.6) end
+	if type(d.ps) == "number" then PrefPanelScale = math.clamp(d.ps, 0.6, 1.4) end
+	if type(d.ba) == "number" then PrefBgAlpha = math.clamp(d.ba, 0, 1) end
+end
+prefLoad()
+local psDef = PrefPanelScale and math.floor(PrefPanelScale * 100 + 0.5) or 100
+local fsDef = PrefFontScale and math.floor(PrefFontScale * 100 + 0.5) or 100
+local baDef = PrefBgAlpha and math.floor(PrefBgAlpha * 100 + 0.5) or 45
+PanelScaleSlider = makeSlider(PageSet, "面板缩放", 290, 60, 140, math.clamp(psDef, 60, 140), " %", function(v)
+	PrefPanelScale = v / 100
+	pcall(function() if MainScale then MainScale.Scale = PrefPanelScale end end)
+	prefSave()
 end, false)
-makeSlider(PageSet, "字体大小", 346, 70, 160, 100, " %", function(v) applyFontScale(v / 100) end, false)
-makeSlider(PageSet, "背景图透明", 402, 0, 100, 45, " %", function(v)
-	BgAlpha = v / 100
+FontSlider = makeSlider(PageSet, "字体大小", 346, 70, 160, math.clamp(fsDef, 70, 160), " %", function(v)
+	PrefFontScale = v / 100
+	applyFontScale(v / 100)
+	prefSave()
+end, false)
+BgAlphaSlider = makeSlider(PageSet, "背景图透明", 402, 0, 100, math.clamp(baDef, 0, 100), " %", function(v)
+	PrefBgAlpha = v / 100
+	BgAlpha = PrefBgAlpha
 	if BgImg then BgImg.ImageTransparency = BgAlpha end
+	-- 背景图开关关着时 BgImg 还是 nil，调了没反应——明确提示，别让用户以为又坏了
+	if not BgImg and notify then notify("先打开下方「面板背景图」开关，透明度才生效", Color3.fromRGB(255, 205, 110)) end
+	prefSave()
 end, false)
 
 BgTgl = makeToggle(PageSet, 458, "面板背景图", "用你给的图当面板背景", false, function(v) setBg(v) end, true)
@@ -5676,38 +5409,87 @@ end
 
 -- ---------- 画质修改（独立页，原「材质修改」关掉搬到这里）----------
 GfxFx = nil
+-- 画质还原机制：每个「关闭类」功能第一次开启时记录游戏原始值，关闭时原样还原。
+-- 旧版直接写死值（雾 FogEnd=500 / 阴影 true / 粒子 Enabled=true），游戏原本不是这个值就被改坏，
+-- 且 ColorCorrectionEffect 挂在 Lighting 里退出脚本也不清——下次启动画面残留，用户只能开画质覆盖，
+-- 这就是「画质必须每次启动都开启，不开就出 bug」的根因
+GfxOrigShadow, GfxOrigFog = nil, nil
+GfxOrigParts, GfxOrigDecals = {}, {}
 function gfxLight()
 	if not Lighting then Lighting = game:GetService("Lighting") end
 	return Lighting
 end
 function setGfxShadows(on)
-	pcall(function() gfxLight().GlobalShadows = not on end)
+	local L = gfxLight()
+	if on then
+		if GfxOrigShadow == nil then GfxOrigShadow = L.GlobalShadows end
+		pcall(function() L.GlobalShadows = false end)
+	else
+		-- 注意：不能用 (GfxOrigShadow ~= nil) and GfxOrigShadow or true——
+		-- GfxOrigShadow = false 时该链会错误求值为 true，把游戏原本的关阴影强制打开
+		if GfxOrigShadow ~= nil then
+			pcall(function() L.GlobalShadows = GfxOrigShadow end)
+		else
+			pcall(function() L.GlobalShadows = true end)
+		end
+		GfxOrigShadow = nil
+	end
 end
 function setGfxFog(on)
-	pcall(function()
-		if on then gfxLight().FogEnd = 100000; gfxLight().FogStart = 0
-		else gfxLight().FogEnd = 500; gfxLight().FogStart = 0 end
-	end)
+	local L = gfxLight()
+	if on then
+		if GfxOrigFog == nil then GfxOrigFog = { S = L.FogStart, E = L.FogEnd } end
+		pcall(function() L.FogEnd = 100000; L.FogStart = 0 end)
+	else
+		if GfxOrigFog then
+			pcall(function() L.FogStart = GfxOrigFog.S; L.FogEnd = GfxOrigFog.E end)
+			GfxOrigFog = nil
+		end
+	end
 end
 function setGfxParticles(on)
 	pcall(function()
-		for _, o in ipairs(Workspace:GetDescendants()) do
-			if o:IsA("ParticleEmitter") or o:IsA("Trail") or o:IsA("Beam")
-				or o:IsA("Smoke") or o:IsA("Fire") or o:IsA("Sparkles") then
-				o.Enabled = not on
+		if on then
+			for _, o in ipairs(Workspace:GetDescendants()) do
+				if (o:IsA("ParticleEmitter") or o:IsA("Trail") or o:IsA("Beam")
+					or o:IsA("Smoke") or o:IsA("Fire") or o:IsA("Sparkles"))
+					and GfxOrigParts[o] == nil then
+					GfxOrigParts[o] = o.Enabled
+					o.Enabled = false
+				end
 			end
+		else
+			for o, e in pairs(GfxOrigParts) do
+				if o and o.Parent then pcall(function() o.Enabled = e end) end
+			end
+			GfxOrigParts = {}
 		end
 	end)
 end
 function setGfxDecal(on)
 	pcall(function()
-		for _, o in ipairs(Workspace:GetDescendants()) do
-			if o:IsA("Decal") or o:IsA("Texture") then o.Transparency = on and 1 or 0 end
+		if on then
+			for _, o in ipairs(Workspace:GetDescendants()) do
+				if (o:IsA("Decal") or o:IsA("Texture")) and GfxOrigDecals[o] == nil then
+					GfxOrigDecals[o] = o.Transparency
+					o.Transparency = 1
+				end
+			end
+		else
+			for o, t in pairs(GfxOrigDecals) do
+				if o and o.Parent then pcall(function() o.Transparency = t end) end
+			end
+			GfxOrigDecals = {}
 		end
 	end)
 end
 function setGfxBright(v)
 	pcall(function()
+		-- 100% = 无效果：直接销毁效果而不是留一个 Brightness=0 的 ColorCorrection 赖在 Lighting 里
+		if v == 100 then
+			if GfxFx then GfxFx:Destroy(); GfxFx = nil end
+			return
+		end
 		if not GfxFx then
 			GfxFx = Instance.new("ColorCorrectionEffect")
 			GfxFx.Parent = gfxLight()
@@ -5717,6 +5499,10 @@ function setGfxBright(v)
 end
 function setGfxSat(v)
 	pcall(function()
+		if v == 100 then
+			if GfxFx then GfxFx:Destroy(); GfxFx = nil end
+			return
+		end
 		if not GfxFx then
 			GfxFx = Instance.new("ColorCorrectionEffect")
 			GfxFx.Parent = gfxLight()
@@ -5821,21 +5607,87 @@ function gfxAllNightOff()
 	end
 end
 
+-- 画质存档（本地文件 + 跨服务器双保险）：4 个关闭类开关 + 亮度/饱和度 + 3 个夜视类开关。
+-- 修「画质必须每次启动都开启，不开就出 bug」：设置现在自动记忆，且退出脚本时彻底清理特效残留
+GFX_FILE = "HonSpeedHub_Gfx.json"
+function gfxSave()
+	local d = {
+		sh = State.GfxShadow, fo = State.GfxFog, pa = State.GfxParticle, de = State.GfxDecal,
+		br = GfxBrightSlider and GfxBrightSlider.GetValue() or 100,
+		sa = GfxSatSlider and GfxSatSlider.GetValue() or 100,
+		ni = State.GfxNight, sn = State.GfxSuperNight, nf = State.GfxNoFog,
+	}
+	local ok, json = pcall(function() return HttpService:JSONEncode(d) end)
+	if not ok or not json then return end
+	pcall(function() if writefile then writefile(GFX_FILE, json) end end)
+	pcall(function() TeleportService:SetTeleportSetting("HON_GFX", json) end)
+end
+function gfxLoad()
+	local d = nil
+	pcall(function()
+		if isfile and readfile and isfile(GFX_FILE) then
+			local ok, x = pcall(function() return HttpService:JSONDecode(readfile(GFX_FILE)) end)
+			if ok and type(x) == "table" then d = x end
+		end
+	end)
+	if not d then
+		pcall(function()
+			local raw = TeleportService:GetTeleportSetting("HON_GFX")
+			if raw and raw ~= "" then
+				local ok, x = pcall(function() return HttpService:JSONDecode(raw) end)
+				if ok and type(x) == "table" then d = x end
+			end
+		end)
+	end
+	if not d then return end
+	local function bool(v) return v == true end
+	State.GfxShadow, State.GfxFog = bool(d.sh), bool(d.fo)
+	State.GfxParticle, State.GfxDecal = bool(d.pa), bool(d.de)
+	State.GfxNight, State.GfxSuperNight, State.GfxNoFog = bool(d.ni), bool(d.sn), bool(d.nf)
+	local br, sa = 100, 100
+	if type(d.br) == "number" then br = math.clamp(math.floor(d.br), 0, 200) end
+	if type(d.sa) == "number" then sa = math.clamp(math.floor(d.sa), 0, 200) end
+	-- 同步开关 UI（silent，不重复触发 onChange）
+	for _, t in ipairs(ToggleRegistry) do
+		local ti = t._title
+		if ti == "关闭阴影" then pcall(function() t.Set(State.GfxShadow, true) end)
+		elseif ti == "关闭雾气" then pcall(function() t.Set(State.GfxFog, true) end)
+		elseif ti == "关闭粒子特效" then pcall(function() t.Set(State.GfxParticle, true) end)
+		elseif ti == "隐藏贴花/纹理" then pcall(function() t.Set(State.GfxDecal, true) end)
+		elseif ti == "普通夜视" then pcall(function() t.Set(State.GfxNight, true) end)
+		elseif ti == "超级夜视" then pcall(function() t.Set(State.GfxSuperNight, true) end)
+		elseif ti == "彻底去雾" then pcall(function() t.Set(State.GfxNoFog, true) end)
+		end
+	end
+	if GfxBrightSlider then pcall(function() GfxBrightSlider.Set(br) end) end
+	if GfxSatSlider then pcall(function() GfxSatSlider.Set(sa) end) end
+	-- 应用到游戏（夜视三个互斥显示上按存档原样套，冲突时以最后一个为准）
+	pcall(setGfxShadows, State.GfxShadow)
+	pcall(setGfxFog, State.GfxFog)
+	pcall(setGfxParticles, State.GfxParticle)
+	pcall(setGfxDecal, State.GfxDecal)
+	pcall(setGfxBright, br)
+	pcall(setGfxSat, sa)
+	if State.GfxNight then pcall(setGfxNight, true) end
+	if State.GfxSuperNight then pcall(setGfxSuperNight, true) end
+	if State.GfxNoFog then pcall(setGfxNoFog, true) end
+end
+
 label({ Text = "画 质 修 改 GRAPHICS", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Color3.fromRGB(120, 129, 152), Size = UDim2.new(1, 0, 0, 18),
 	Position = UDim2.new(0, 2, 0, 0), TextXAlignment = Enum.TextXAlignment.Left }, PageGfx)
-makeToggle(PageGfx, 24,  "关闭阴影", "关掉全局阴影，帧数明显提升", false, function(v) State.GfxShadow = v; setGfxShadows(v) end)
-makeToggle(PageGfx, 72,  "关闭雾气", "视野更清楚", false, function(v) State.GfxFog = v; setGfxFog(v) end)
-makeToggle(PageGfx, 120, "关闭粒子特效", "烟/火/拖尾/光束全关", false, function(v) State.GfxParticle = v; setGfxParticles(v) end)
-makeToggle(PageGfx, 168, "隐藏贴花/纹理", "墙面图案去掉，更干净", false, function(v) State.GfxDecal = v; setGfxDecal(v) end)
-makeSlider(PageGfx, "亮度", 226, 0, 200, 100, " %", function(v) setGfxBright(v) end, false)
-makeSlider(PageGfx, "饱和度", 282, 0, 200, 100, " %", function(v) setGfxSat(v) end, false)
+makeToggle(PageGfx, 24,  "关闭阴影", "关掉全局阴影，帧数明显提升", false, function(v) State.GfxShadow = v; setGfxShadows(v); gfxSave() end)
+makeToggle(PageGfx, 72,  "关闭雾气", "视野更清楚", false, function(v) State.GfxFog = v; setGfxFog(v); gfxSave() end)
+makeToggle(PageGfx, 120, "关闭粒子特效", "烟/火/拖尾/光束全关", false, function(v) State.GfxParticle = v; setGfxParticles(v); gfxSave() end)
+makeToggle(PageGfx, 168, "隐藏贴花/纹理", "墙面图案去掉，更干净", false, function(v) State.GfxDecal = v; setGfxDecal(v); gfxSave() end)
+GfxBrightSlider = makeSlider(PageGfx, "亮度", 226, 0, 200, 100, " %", function(v) setGfxBright(v); gfxSave() end, false)
+GfxSatSlider = makeSlider(PageGfx, "饱和度", 282, 0, 200, 100, " %", function(v) setGfxSat(v); gfxSave() end, false)
 label({ Text = "夜 视 与 环 境 NIGHT VISION", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Color3.fromRGB(120, 129, 152), Size = UDim2.new(1, 0, 0, 18),
 	Position = UDim2.new(0, 2, 0, 330), TextXAlignment = Enum.TextXAlignment.Left }, PageGfx)
-makeToggle(PageGfx, 354, "普通夜视", "夜里全亮 · 阴影全关", false, function(v) State.GfxNight = v; setGfxNight(v) end)
-makeToggle(PageGfx, 402, "超级夜视", "超高亮度 · 正午光感", false, function(v) State.GfxSuperNight = v; setGfxSuperNight(v) end)
-makeToggle(PageGfx, 450, "彻底去雾", "连 Atmosphere 雾霾一起清", false, function(v) State.GfxNoFog = v; setGfxNoFog(v) end)
+makeToggle(PageGfx, 354, "普通夜视", "夜里全亮 · 阴影全关", false, function(v) State.GfxNight = v; setGfxNight(v); gfxSave() end)
+makeToggle(PageGfx, 402, "超级夜视", "超高亮度 · 正午光感", false, function(v) State.GfxSuperNight = v; setGfxSuperNight(v); gfxSave() end)
+makeToggle(PageGfx, 450, "彻底去雾", "连 Atmosphere 雾霾一起清", false, function(v) State.GfxNoFog = v; setGfxNoFog(v); gfxSave() end)
 local GfxNightOffBtn = new("TextButton", { Text = "关闭所有夜视/去雾", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Color3.fromRGB(255, 190, 120), BackgroundColor3 = Color3.fromRGB(255, 255, 255),
 	BackgroundTransparency = 0.9, BorderSizePixel = 0, AutoButtonColor = false,
@@ -5856,7 +5708,17 @@ bindClick(GfxResetBtn, "恢复画质", function()
 	setGfxShadows(false); setGfxFog(false); setGfxParticles(false); setGfxDecal(false)
 	setGfxBright(100); setGfxSat(100)
 	gfxAllNightOff()
-	if notify then notify("画质已恢复默认") end
+	-- 同步 4 个画质开关 + 2 个滑条的 UI（silent）
+	for _, t in ipairs(ToggleRegistry) do
+		local ti = t._title
+		if ti == "关闭阴影" or ti == "关闭雾气" or ti == "关闭粒子特效" or ti == "隐藏贴花/纹理" then
+			pcall(function() t.Set(false, true) end)
+		end
+	end
+	if GfxBrightSlider then pcall(function() GfxBrightSlider.Set(100) end) end
+	if GfxSatSlider then pcall(function() GfxSatSlider.Set(100) end) end
+	gfxSave()
+	if notify then notify("画质已恢复默认（已存档）") end
 end)
 
 -- ---------- 雷达 ----------
@@ -5864,13 +5726,14 @@ end)
 -- 军事雷达样式：世界坐标固定（上 = 世界 -Z，右 = 世界 +X），自己居中并显示朝向，
 -- 带旋转扫描线与半程刻度圈；屏幕右上角创建，动态避开右上角功能列表 TopBarFrame
 RadarFrame, RadarSelf, RadarSelfDir, RadarSweep, RadarSweepAng = nil, nil, nil, nil, 0
-RadarDots, RadarMode, RadarTimer, RadarNpcCache = {}, 1, 0, {}
+RadarDots, RadarWalls, RadarMode, RadarTimer, RadarNpcCache = {}, {}, 1, 0, {}
 function buildRadar()
 	if RadarFrame then return end
 	-- 初始位置在右上角，精确避让 TopBar 在 updateRadar 里每帧计算
 	RadarFrame = new("Frame", { Name = "HonRadar", Size = UDim2.new(0, 168, 0, 168),
 		Position = UDim2.new(1, -184, 0, 8), BackgroundColor3 = Color3.fromRGB(10, 14, 20),
-		BackgroundTransparency = 0.35, BorderSizePixel = 0, Visible = false, Parent = Gui })
+		BackgroundTransparency = 0.35, BorderSizePixel = 0, Visible = false,
+		ClipsDescendants = true, Parent = Gui })
 	corner(RadarFrame, 84)
 	new("UIStroke", { Color = Mode().Accent, Transparency = 0.6, Thickness = 1.5, Parent = RadarFrame })
 	-- 十字线
@@ -5883,18 +5746,31 @@ function buildRadar()
 		Position = UDim2.new(0.5, 0, 0.5, 0), BackgroundTransparency = 1, BorderSizePixel = 0, Parent = RadarFrame })
 	corner(ring, 39)
 	new("UIStroke", { Color = Mode().Accent, Transparency = 0.85, Thickness = 1, Parent = ring })
-	-- 旋转扫描线（军事雷达标志）
-	RadarSweep = new("Frame", { Size = UDim2.new(0, 1, 0, 78), AnchorPoint = Vector2.new(0.5, 1),
+	-- 旋转扫描线：直径线 + 两端渐隐。
+	-- 旧版是 1×78 底边贴中心的「木棍」——Frame.Rotation 绕自身几何中心旋转，
+	-- 底端点会绕偏心点公转，看起来就是一根棍子在乱晃。直径线绕真正的中心转，稳定
+	RadarSweep = new("Frame", { Size = UDim2.new(0, 2, 0, 156), AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.new(0.5, 0, 0.5, 0), BackgroundColor3 = Mode().Accent,
 		BackgroundTransparency = 0.35, BorderSizePixel = 0, Parent = RadarFrame })
-	-- 自己：中心点 + 朝向小三角（尖朝上 = 世界 -Z 方向）
+	new("UIGradient", {
+		Rotation = 90,
+		Transparency = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 0.92),
+			NumberSequenceKeypoint.new(0.5, 0.3),
+			NumberSequenceKeypoint.new(1, 0.92),
+		}),
+		Parent = RadarSweep })
+	-- 自己：中心圆点（世界固定：上 = -Z，右 = +X）
 	RadarSelf = new("Frame", { Size = UDim2.new(0, 8, 0, 8), AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.new(0.5, 0, 0.5, 0), BackgroundColor3 = Color3.fromRGB(120, 255, 160),
 		BorderSizePixel = 0, Parent = RadarFrame })
 	corner(RadarSelf, 4)
-	RadarSelfDir = new("Frame", { Size = UDim2.new(0, 4, 0, 9), AnchorPoint = Vector2.new(0.5, 1),
-		Position = UDim2.new(0.5, 0, 0.5, -3), BackgroundColor3 = Color3.fromRGB(120, 255, 160),
-		BackgroundTransparency = 0.25, BorderSizePixel = 0, Parent = RadarFrame })
+	-- 自己朝向短线：位置每帧沿朝向计算（不用 Rotation——Frame 绕自身几何中心旋转，
+	-- 底边贴中心时端点绕偏心点公转，就是中心点上方乱飘的「小绿方块」）
+	RadarSelfDir = new("Frame", { Size = UDim2.new(0, 3, 0, 13), AnchorPoint = Vector2.new(0.5, 0.5),
+		BackgroundColor3 = Color3.fromRGB(120, 255, 160), BackgroundTransparency = 0.1,
+		BorderSizePixel = 0, Parent = RadarFrame })
+	corner(RadarSelfDir, 1.5)
 end
 function updateRadar(dt)
 	if not State.Radar then if RadarFrame then RadarFrame.Visible = false end return end
@@ -5927,25 +5803,37 @@ function updateRadar(dt)
 						n = n + 1
 					end
 				end
-				if RadarMode == 1 then
-					-- 可互动物：带 ProximityPrompt / ClickDetector 的 BasePart
-					local hasPrompt = o:FindFirstChildOfClass("ProximityPrompt") or o:FindFirstChildOfClass("ClickDetector")
-					local part = o:IsA("BasePart") and o or nil
-					if hasPrompt and part and not seen[o] then
+			if RadarMode == 1 then
+				-- 可互动物：带 ProximityPrompt / ClickDetector 的 BasePart
+				local hasPrompt = o:FindFirstChildOfClass("ProximityPrompt") or o:FindFirstChildOfClass("ClickDetector")
+				local part = o:IsA("BasePart") and o or nil
+				if hasPrompt and part and not seen[o] then
+					seen[o] = true
+					table.insert(RadarNpcCache, { P = part, C = Color3.fromRGB(120, 200, 255) })
+					n = n + 1
+				end
+				-- 墙壁：大块 BasePart（任一边 ≥ 12 studs）画成「长边中轴线」线段——
+				-- 墙延伸到哪里线画到哪里，墙由多个 Part 拼成（L 形 / 拐弯）时线段自然接成折线
+				if o:IsA("BasePart") and not seen[o] then
+					local s = o.Size
+					if s and (s.X >= 12 or s.Y >= 12 or s.Z >= 12) then
 						seen[o] = true
-						table.insert(RadarNpcCache, { P = part, C = Color3.fromRGB(120, 200, 255) })
-						n = n + 1
-					end
-					-- 建筑：大块 BasePart（任一边 ≥ 12 studs，避免收进家具/角色零件）
-					if o:IsA("BasePart") and not seen[o] then
-						local s = o.Size
-						if s and (s.X >= 12 or s.Y >= 12 or s.Z >= 12) then
-							seen[o] = true
-							table.insert(RadarNpcCache, { P = o, C = Color3.fromRGB(168, 178, 198) })
+						local cf = o.CFrame
+						local wv, ln
+						if s.X >= s.Z then wv, ln = cf.RightVector, s.X else wv, ln = -cf.LookVector, s.Z end
+						-- 世界水平方向 → 雷达屏幕方向（屏幕 X = 世界 X，屏幕 Y = -世界 Z）
+						local dx, dy = wv.X, -wv.Z
+						local m = math.sqrt(dx * dx + dy * dy)
+						if m > 0.001 then
+							table.insert(RadarNpcCache, {
+								P = o, C = Color3.fromRGB(150, 168, 196), W = true,
+								DX = dx / m, DY = dy / m, Len = math.min(ln, 130),
+							})
 							n = n + 1
 						end
 					end
 				end
+			end
 			end
 		end)
 	end
@@ -5960,28 +5848,53 @@ function updateRadar(dt)
 	local RANGE, RR = 220, 78
 	local myPos = HRP.Position
 	local myLook = HRP.CFrame.LookVector
-	-- 自己朝向三角：屏幕方向 = (myLook.X, -myLook.Z)，朝上为 0°
+	-- 自己朝向短线：从中心沿世界朝向伸出（屏幕方向 = (look.X, -look.Z)），不用 Rotation
 	if RadarSelfDir then
-		RadarSelfDir.Rotation = math.deg(math.atan2(myLook.X, -myLook.Z))
-	end
-	for i, it in ipairs(pts) do
-		local dot = RadarDots[i]
-		if not dot then
-			dot = new("Frame", { Size = UDim2.new(0, 7, 0, 7), AnchorPoint = Vector2.new(0.5, 0.5),
-				BackgroundColor3 = it.C, BorderSizePixel = 0, Parent = RadarFrame })
-			corner(dot, 3.5)
-			RadarDots[i] = dot
+		local lx, ly = myLook.X, myLook.Z
+		local m = math.sqrt(lx * lx + ly * ly)
+		if m > 0.001 then
+			RadarSelfDir.Position = UDim2.new(0.5, lx / m * 10, 0.5, -ly / m * 10)
 		end
-		dot.Visible = true
-		dot.BackgroundColor3 = it.C
+	end
+	local nDot, nWall = 0, 0
+	for i, it in ipairs(pts) do
 		local d = it.P.Position - myPos
 		local dist = math.sqrt(d.X * d.X + d.Z * d.Z)
 		-- 世界固定：屏幕上 = 世界 -Z，屏幕右 = 世界 +X
 		local ang = math.atan2(d.X, -d.Z)
 		local k = math.min(dist / RANGE, 1) * RR
-		dot.Position = UDim2.new(0.5, math.sin(ang) * k, 0.5, -math.cos(ang) * k)
+		local px, py = math.sin(ang) * k, -math.cos(ang) * k
+		if it.W then
+			-- 墙壁线段：AnchorPoint 贴中点，Rotation = 线段屏幕方向，粗细 2px
+			nWall = nWall + 1
+			local seg = RadarWalls[nWall]
+			if not seg then
+				seg = new("Frame", { Size = UDim2.new(0, 10, 0, 2), AnchorPoint = Vector2.new(0.5, 0.5),
+					BackgroundColor3 = it.C, BackgroundTransparency = 0.15,
+					BorderSizePixel = 0, Parent = RadarFrame })
+				RadarWalls[nWall] = seg
+			end
+			seg.Visible = true
+			seg.BackgroundColor3 = it.C
+			seg.Size = UDim2.new(0, it.Len, 0, 2)
+			seg.Position = UDim2.new(0.5, px, 0.5, py)
+			seg.Rotation = math.deg(math.atan2(it.DY, it.DX))
+		else
+			nDot = nDot + 1
+			local dot = RadarDots[nDot]
+			if not dot then
+				dot = new("Frame", { Size = UDim2.new(0, 5, 0, 5), AnchorPoint = Vector2.new(0.5, 0.5),
+					BackgroundColor3 = it.C, BorderSizePixel = 0, Parent = RadarFrame })
+				corner(dot, 2.5)
+				RadarDots[nDot] = dot
+			end
+			dot.Visible = true
+			dot.BackgroundColor3 = it.C
+			dot.Position = UDim2.new(0.5, px, 0.5, py)
+		end
 	end
-	for i = #pts + 1, #RadarDots do RadarDots[i].Visible = false end
+	for i = nDot + 1, #RadarDots do RadarDots[i].Visible = false end
+	for i = nWall + 1, #RadarWalls do RadarWalls[i].Visible = false end
 end
 
 function notify(msg, col)
@@ -6015,7 +5928,7 @@ function buildSearchIndex()
 	for _, sl in ipairs(AllSliders) do
 		if sl.Row then table.insert(SearchItems, { Obj = sl.Row, Text = sl.TitleText or "" }) end
 	end
-	for _, list in ipairs({ ToolBtns, FunBtns, MoreBtns, UtilBtns, UiBtns, DecoBtns }) do
+	for _, list in ipairs({ ToolBtns, FunBtns, MoreBtns, UtilBtns, UiBtns, ToyBtns }) do
 		for _, b in ipairs(list) do table.insert(SearchItems, { Obj = b, Text = b.Text }) end
 	end
 end
@@ -6088,24 +6001,19 @@ end
 function stealthHideGame()
 	StealthHiddenGui = {}
 	for _, g in ipairs(PG:GetChildren()) do
-		-- 除了我们自己的，全部收起来（包括注入器在 Roblox 内建的界面）
+		-- 除了我们自己的，PlayerGui 下的全部收起来（含注入器做在 PlayerGui 里的界面）。
+		-- Roblox 系统 UI（CoreGui：聊天/排行榜/菜单/顶栏）不隐藏——录屏也要有系统 UI
 		if g:IsA("ScreenGui") and g ~= Gui and g.Enabled then
 			g.Enabled = false
 			table.insert(StealthHiddenGui, g)
 		end
 	end
-	-- 有些注入器把图标做成 CoreGui 里的东西，这里也一并尝试隐藏
-	pcall(function() StarterGui:SetCore("TopbarEnabled", false) end)
-	pcall(function() StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, false) end)
-	pcall(function() StarterGui:SetCore("TopbarEnabled", false) end)
 end
 function stealthShowGame()
 	for _, g in ipairs(StealthHiddenGui) do
 		if g and g.Parent then g.Enabled = true end
 	end
 	StealthHiddenGui = {}
-	pcall(function() StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, true) end)
-	pcall(function() StarterGui:SetCore("TopbarEnabled", true) end)
 end
 -- ---------- 隐身录屏：冻结除「加速」外的所有功能，退出后原样恢复 ----------
 StealthFrozen = nil
@@ -6162,77 +6070,6 @@ RunService.Heartbeat:Connect(function(dt)
 		end
 	end
 end)
-if KEY_SYSTEM and not Authed then
-	local KeyWin = new("Frame", {
-		Name = "HonKeyWin", Size = UDim2.new(0, 300, 0, 236),
-		Position = UDim2.new(0.5, -150, 0.5, -118),
-		BackgroundColor3 = Color3.fromRGB(13, 15, 23), BackgroundTransparency = 0.04,
-		BorderSizePixel = 0, Active = true, Parent = Gui,
-	})
-	corner(KeyWin, 18)
-	local ks = new("UIStroke", { Color = Modes[1].Accent, Transparency = 0.45, Thickness = 1, Parent = KeyWin })
-	new("UIGradient", { Rotation = 90, Transparency = NumberSequence.new({
-		NumberSequenceKeypoint.new(0, 0.05), NumberSequenceKeypoint.new(1, 1) }), Parent = KeyWin })
-	label({ Text = "HON SPEED HUB", Font = Enum.Font.GothamBold, TextSize = 20,
-		TextColor3 = Color3.fromRGB(238, 243, 255), Position = UDim2.new(0, 0, 0, 26),
-		Size = UDim2.new(1, 0, 0, 24), TextXAlignment = Enum.TextXAlignment.Center }, KeyWin)
-	label({ Text = "请输入卡密以启用", Font = Enum.Font.Gotham, TextSize = 11,
-		TextColor3 = Color3.fromRGB(140, 149, 172), Position = UDim2.new(0, 0, 0, 54),
-		Size = UDim2.new(1, 0, 0, 16), TextXAlignment = Enum.TextXAlignment.Center }, KeyWin)
-	local KeyBox = new("TextBox", { PlaceholderText = "卡密", Text = "",
-		Font = Enum.Font.GothamBold, TextSize = 14, TextColor3 = Color3.fromRGB(238, 243, 255),
-		PlaceholderColor3 = Color3.fromRGB(105, 113, 134),
-		BackgroundColor3 = Color3.fromRGB(255, 255, 255), BackgroundTransparency = 0.92,
-		BorderSizePixel = 0, ClearTextOnFocus = false,
-		Position = UDim2.new(0, 30, 0, 84), Size = UDim2.new(1, -60, 0, 40), Parent = KeyWin })
-	corner(KeyBox, 10)
-	local OkBtn = new("TextButton", { Text = "验 证", Font = Enum.Font.GothamBold, TextSize = 13,
-		TextColor3 = Color3.fromRGB(255, 255, 255), BackgroundColor3 = Modes[1].Accent,
-		BorderSizePixel = 0, AutoButtonColor = false,
-		Position = UDim2.new(0, 30, 0, 136), Size = UDim2.new(1, -60, 0, 40), Parent = KeyWin })
-	corner(OkBtn, 10)
-	local KeyTip = label({ Text = "", Font = Enum.Font.Gotham, TextSize = 10,
-		TextColor3 = Color3.fromRGB(255, 108, 118), Position = UDim2.new(0, 0, 0, 186),
-		Size = UDim2.new(1, 0, 0, 16), TextXAlignment = Enum.TextXAlignment.Center }, KeyWin)
-	local function tryKey()
-		local k = tostring(KeyBox.Text or ""):gsub("^%s+", ""):gsub("%s+$", "")
-		if k == "" then KeyTip.Text = "请输入卡密"; return end
-		if k == MASTER_KEY or VALID_KEYS[k] then
-			Authed = true
-			if KEY_REMEMBER then
-				pcall(function() TeleportService:SetTeleportSetting("HON_KEY_OK", true) end)
-			end
-			KeyTip.TextColor3 = Color3.fromRGB(120, 230, 150)
-			KeyTip.Text = "验证成功，正在载入…"
-			if notify then notify("卡密验证通过，欢迎使用 HON SPEED HUB", Color3.fromRGB(120, 230, 150)) end
-			twait(0.35)
-			KeyWin:Destroy()
-			Main.Visible = true
-			TweenService:Create(Main, TweenInfo.new(0.45, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-				Size = UDim2.new(0, PANEL_W, 0, PANEL_H) }):Play()
-		else
-			KeyTip.Text = "卡密无效"
-			TweenService:Create(KeyBox, TweenInfo.new(0.1), { Position = UDim2.new(0, 22, 0, 84) }):Play()
-			twait(0.1)
-			TweenService:Create(KeyBox, TweenInfo.new(0.1), { Position = UDim2.new(0, 38, 0, 84) }):Play()
-			twait(0.1)
-			TweenService:Create(KeyBox, TweenInfo.new(0.1), { Position = UDim2.new(0, 30, 0, 84) }):Play()
-		end
-	end
-	OkBtn.MouseButton1Click:Connect(tryKey)
-	KeyBox.FocusLost:Connect(function(enter) if enter then tryKey() end end)
-	local ClearBtn = new("TextButton", { Text = "清除本机记录", Font = Enum.Font.Gotham, TextSize = 10,
-		TextColor3 = Color3.fromRGB(120, 129, 152), BackgroundTransparency = 1,
-		BorderSizePixel = 0, AutoButtonColor = false,
-		Position = UDim2.new(0, 0, 0, 212), Size = UDim2.new(1, 0, 0, 18), Parent = KeyWin })
-	ClearBtn.MouseButton1Click:Connect(function()
-		pcall(function() TeleportService:SetTeleportSetting("HON_KEY_OK", false) end)
-		KeyTip.TextColor3 = Color3.fromRGB(140, 149, 172)
-		KeyTip.Text = "已清除，下次需要重新输入"
-	end)
-	Main.Visible = false
-	Mini.Visible = false
-end
 -- ---------- 新功能的每帧驱动（黑洞 / 变车 / 防摔落 / HUD 附加信息）----------
 pcall(function() RunService:UnbindFromRenderStep("HonFunLoop") end)
 RunService:BindToRenderStep("HonFunLoop", 9995, function(dt)
@@ -6312,22 +6149,24 @@ RunService:BindToRenderStep("HonFunLoop", 9995, function(dt)
 			end
 		end)
 	end
-	if #DecoParts > 0 and HRP and HRP.Parent then
-		pcall(function()
-			local base = HRP.CFrame
-			for _, d in ipairs(DecoParts) do
-				if d.P and d.P.Parent then d.P.CFrame = base * d.Off end
-			end
-		end)
+	-- 三个新趣味功能的每帧驱动
+	if State.PlayDead and Humanoid and Humanoid.Parent then
+		Humanoid.PlatformStand = true
 	end
-	do
-		local ch = LP and LP.Character
-		if ch then
-			for _, map in pairs(DecoCloth) do
-				for name, col in pairs(map) do
-					local p = ch:FindFirstChild(name)
-					if p and p:IsA("BasePart") and p.Color ~= col then p.Color = col end
-				end
+	if State.NeonGlow then
+		-- 重生重挂：旧备份里的部件已销毁（换角色）就重建备份
+		if NeonBackup then
+			local alive = false
+			for p, _ in pairs(NeonBackup) do
+				if p and p.Parent then alive = true break end
+			end
+			if not alive then NeonBackup = nil; pcall(setNeonGlow, true) end
+		end
+		if NeonBackup then
+			NeonHue = ((NeonHue or 0) + dt * 0.15) % 1
+			local col = hsv2rgb(NeonHue, 0.85, 1)
+			for p, _ in pairs(NeonBackup) do
+				if p and p.Parent then p.Material = Enum.Material.Neon; p.Color = col end
 			end
 		end
 	end
@@ -6481,6 +6320,16 @@ step("触屏可见", updateTouchVisibility)
 SetTab(1)
 pcall(applyTouchDrag)
 pcall(updateTopBar)
+-- 恢复 UI 偏好（字体/面板缩放/背景透明度）：必须在 setBg 之前应用 BgAlpha，
+-- 这样开场自动加载的背景图一建出来就是保存的透明度；playOpenAnim 之前应用缩放，
+-- 保证「缩放弹出」动画的起点就是恢复后的比例
+pcall(function()
+	if PrefFontScale then applyFontScale(PrefFontScale) end
+	if PrefPanelScale and MainScale then MainScale.Scale = PrefPanelScale end
+	if PrefBgAlpha ~= nil then BgAlpha = PrefBgAlpha end
+end)
+-- 恢复画质设置（关阴影/雾气/粒子/贴花 + 亮度/饱和度 + 夜视类）：改一次就记住，不用每次启动重开
+if type(gfxLoad) == "function" then pcall(gfxLoad) end
 if type(bgLoad) == "function" then pcall(bgLoad) end
 if BgAuto then pcall(setBg, true) end
 -- 开场：神威空间扭曲展开
@@ -6544,4 +6393,4 @@ tspawn(function()
 		end)
 	end
 end)
-_pr("[HON SPEED HUB] v5.40 已加载 · 完整文件约 6548 行 · 若你的脚本远大于此行数说明粘贴重复了")
+_pr("[HON SPEED HUB] v5.42 已加载 · 完整文件约 6397 行 · 若你的脚本远大于此行数说明粘贴重复了")
