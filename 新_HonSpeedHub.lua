@@ -1,5 +1,5 @@
 local _pr = (type(print) == "function") and print or (type(warn) == "function" and warn) or function() end
-_pr("[HON SPEED HUB] 载入中 · v5.42 · 若只看到这一行说明文件在中途中断")
+_pr("[HON SPEED HUB] 载入中 · v5.43 · 若只看到这一行说明文件在中途中断")
 local twait  = (type(task) == "table" and task.wait)  or wait  or function() end
 local tspawn = (type(task) == "table" and task.spawn) or spawn or function(f, ...) return f(...) end
 if type(twait) ~= "function" then twait = function() end end
@@ -201,7 +201,7 @@ label({ Text = "HON SPEED HUB", Font = Enum.Font.GothamBold, TextSize = 21,
 	TextColor3 = Color3.fromRGB(238, 243, 255),
 	Position = UDim2.new(0, 36, 0, 16), Size = UDim2.new(0, 200, 0, 24),
 	TextXAlignment = Enum.TextXAlignment.Left }, Header)
-label({ Text = "Universal Hub  ·  W / V / CF  ·  v5.42", Font = Enum.Font.Gotham, TextSize = 11,
+label({ Text = "Universal Hub  ·  W / V / CF  ·  v5.43", Font = Enum.Font.Gotham, TextSize = 11,
 	TextColor3 = Color3.fromRGB(140, 149, 172),
 	Position = UDim2.new(0, 36, 0, 42), Size = UDim2.new(0, 240, 0, 16),
 	TextXAlignment = Enum.TextXAlignment.Left }, Header)
@@ -241,6 +241,14 @@ iconBtn("×", -34, Color3.fromRGB(255, 108, 118), function()
 end)
 -- ---------- 更新公告 ----------
 CHANGELOG = {
+	{ v = "v5.43", t = {
+		"重大修复 · 「背景图怎么没用」根因清除（三项全修）：① https 直链加载失败静默无痕——Roblox 的 ImageLabel 对执行器不支持的 https 图片不报错也不留痕，用户对着空面板猜；现在建图后 2.5 秒检测 IsLoaded，还没加载就明说「https 直链不被支持，请用图片 ID 框」，指明确实兜底路径；② 开关与画面不同步——「启动时自动加载背景」开了、背景也显示了，设置页开关却还是关的（按默认 false 建的），用户手一滑又给关掉；启动恢复后同步 BgTgl 视觉；③ 顺手修一个藏了很久的 off-by-one：「rbxassetid:」是 11 个字符，守卫写成 sub(img,1,12) 永远匹配不上，图片 ID 一直被当 https 送进预下载/失败检测——ID 图加载稍慢就误报「https 不被支持」，指错路。另：背景预设提示在开着时直接标注「没显示就用下方图片 ID 框」，setBg 增加 quiet 参数，启动恢复不再弹通知刷屏",
+		"重大新增 · 面板边框（照参考源码模式）：设置页新增「面板边框」开关 + 「边框样式」循环（彩虹 / 红色 / 蓝色 / 主题色）。彩虹模式挂 RunService:BindToRenderStep(「HonBorder」) 走 HSV 色环（复用 hsv2rgb，不依赖 Color3.fromHSV），关闭或切静态色立即解绑不留野循环；「主题色」跟随引擎主题色，换引擎 / 换 UI 风格都同步；开关与样式自动存档（HonSpeedHub_Pref.json + HON_PREF 双保险）",
+		"重大新增 · 界面框架切换（设置页「界面框架 UI FRAMEWORK」，注意不是上面的「UI 风格」换肤）：自制 UI / WindUI 整套界面库二选一。WindUI 加载走 _G.WindUI 优先、其次 loadstring + HttpGet 拉 dist/main.lua，构建时每个组件单独 pcall 隔离（单个组件炸不拖垮整个界面），加载或构建任何一步失败自动回退自制 UI 并明示原因，绝不留白屏；WindUI 侧完整镜像 7 个标签（引擎 / 辅助 / 视觉 / 传送 / 娱乐 / 画质 / 设置）80+ 组件——三大引擎、速度顺滑、全部常用开关、坐标传送输入框、弹射升空、8 款翅膀、玩具全量、画质 7 项、背景预设/图片 ID、UNLOAD，以及「切回自制 UI」入口；框架选择自动存档，换服自动恢复；UNLOAD 时 WindUI 窗口一并收掉",
+		"重要修复 · makeToggle 的 _last 从「创建时快照」改为实时同步：此前用户在自制 UI 里点过关的开关，切到 WindUI 后那边显示的还是创建默认值，和实际功能状态对不上；现在点击 / Set 都同步 _last，WindUI 构建时读到的是当前真实状态",
+		"改进 · 设置页布局重排（新增框架 + 边框两组）：启动动画以下全部下移 162px，逐项核对无死空；PAGE_H[10] 900 → 1200 与内容实际高度对齐；底部说明补上「界面框架 / 边框已自动存档」",
+		"实测 · mock 全量回归 13 个测试文件全绿：新增 test_ui_framework（60+ 断言：框架回退 / 假库完整构建 / 开关滑条接线 / 边框开关样式彩虹循环 / 背景失败检测与 rbxassetid 不误报 / PREF fw/bo/bm 存档往返与越界 clamp）；76 开关 + 164 按钮触发 0 报错",
+	}},
 	{ v = "v5.42", t = {
 		"重要修复 · 设置页三项自动保存全部落地：字体大小 / 面板收缩 / 面板透明度改完即存（本地 HonSpeedHub_Pref.json + 跨服务器 HON_PREF 双保险），重启 / 换服自动恢复；顺差修掉两个真 bug——①「面板收缩没有用」的实锤：MainScale 从来没被创建，全脚本 10 处 if MainScale then 全是空跑，已补 new UIScale；② 透明度关闭态下拖滑条不生效，已闭环（关着时提示先开「面板背景图」开关，开启后实时刷新 ImageTransparency）",
 		"改进 · 启动 / 关闭动画样式互斥：播放神威漩涡时再点别的样式，旧协程立即停账清碎片，不再出现两个动画叠加或旧碎片残留；动画样式选择本身也已自动存档",
@@ -549,7 +557,7 @@ do
 end
 local PageHost = new("Frame", { Name = "Content", Size = UDim2.new(0, 464, 0, 336), Position = UDim2.new(0, 180, 0, 84),
 	BackgroundTransparency = 1, BorderSizePixel = 0, ClipsDescendants = true, Parent = Main })
-local PAGE_H = { 620, 380, 500, 680, 600, 2040, 560, 660, 1260, 900, 1080 }
+local PAGE_H = { 620, 380, 500, 680, 600, 2040, 560, 660, 1260, 1200, 1080 }
 PageList = {}
 local function mkPage(i, visible)
 	return new("ScrollingFrame", { Name = "Page" .. tostring(i),
@@ -700,14 +708,17 @@ local function makeToggle(parent, y, title, sub, initial, onChange, keep)
 	corner(kb, 9)
 	local on = initial
 	local lastVal = initial
+	local api   -- 前向声明：点击/Set 里要顺手同步 _last（WindUI 构建时读当前值用）
 	local function paint(v)
 		TweenService:Create(sw, TWEEN_FAST, { BackgroundColor3 = v and Mode().Accent or Color3.fromRGB(70, 74, 90) }):Play()
 		TweenService:Create(kb, TWEEN_FAST, { Position = v and UDim2.new(1, -21, 0.5, -9) or UDim2.new(0, 3, 0.5, -9) }):Play()
 	end
-	sw.MouseButton1Click:Connect(function() on = not on; lastVal = on; paint(on); onChange(on) end)
-	local api = {
+	-- _last 必须是实时值：用户在自制 UI 里点过关的开关，切到 WindUI 时那边要显示当前状态，
+	-- 不能还是创建时的快照（此前切框架后 WindUI 开关全是默认值，和实际功能状态对不上）
+	sw.MouseButton1Click:Connect(function() on = not on; lastVal = on; api._last = on; paint(on); onChange(on) end)
+	api = {
 		Row = row, Stroke = stroke, Title = t1, Sub = t2, Switch = sw,
-		Set = function(v, silent) on = v; lastVal = v; paint(on); if not silent then onChange(on) end end,
+		Set = function(v, silent) on = v; lastVal = v; api._last = v; paint(on); if not silent then onChange(on) end end,
 		Refresh = function() if on then paint(true) end end,
 		Dim = function(dim)
 			TweenService:Create(row, TWEEN_SOFT, { BackgroundTransparency = dim and 0.75 or 0.35 }):Play()
@@ -1213,7 +1224,7 @@ end)
 local CurPosBtn = new("TextButton", { Text = "填入当前", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Color3.fromRGB(190, 198, 220), BackgroundColor3 = Color3.fromRGB(255, 255, 255),
 	BackgroundTransparency = 0.9, BorderSizePixel = 0, AutoButtonColor = false,
-	Size = UDim2.new(0.38, 0, 0, 32), Position = UDim2.new(0.62, 4, 0, 528), PageTp })
+	Size = UDim2.new(0.38, 0, 0, 32), Position = UDim2.new(0.62, 4, 0, 528), Parent = PageTp })
 corner(CurPosBtn, 8)
 table.insert(ToolBtns, CurPosBtn)
 bindClick(CurPosBtn, "填入当前坐标", function()
@@ -2044,7 +2055,7 @@ fxIndex = 1
 FxBtn = new("TextButton", { Text = "画面特效：OFF", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Mode().Accent, BackgroundColor3 = Color3.fromRGB(255, 255, 255), BackgroundTransparency = 0.9,
 	BorderSizePixel = 0, AutoButtonColor = false,
-	Size = UDim2.new(1, 0, 0, 36), Position = UDim2.new(0, 0, 0, 430), PageMore })
+	Size = UDim2.new(1, 0, 0, 36), Position = UDim2.new(0, 0, 0, 430), Parent = PageMore })
 corner(FxBtn, 10)
 table.insert(MoreBtns, FxBtn)
 FxBtn.MouseButton1Click:Connect(function() applyScreenFx() end)
@@ -2852,6 +2863,8 @@ function SetMode(i)
 	for _, o in ipairs(PadBtns) do TweenService:Create(o.Stroke, TWEEN_SOFT, { Color = m.Accent }):Play() end
 	for _, b in ipairs(ToolBtns) do TweenService:Create(b, TWEEN_SOFT, { TextColor3 = m.Accent }):Play() end
 	for _, b in ipairs(FunBtns) do TweenService:Create(b, TWEEN_SOFT, { TextColor3 = m.Accent }):Play() end
+	-- 边框是「主题色」时跟着引擎主题色走（彩虹/红/蓝是固定色，不跟）
+	if BorderOn and BorderMode == 4 and MainStroke then MainStroke.Color = m.Accent end
 	for _, b in ipairs(MoreBtns) do TweenService:Create(b, TWEEN_SOFT, { TextColor3 = m.Accent }):Play() end
 	for _, b in ipairs(UtilBtns) do TweenService:Create(b, TWEEN_SOFT, { TextColor3 = m.Accent }):Play() end
 	for _, b in ipairs(UiBtns) do TweenService:Create(b, TWEEN_SOFT, { TextColor3 = m.Accent }):Play() end
@@ -3208,9 +3221,11 @@ function unloadScript()
 		end
 	end)
 	for _, nm in ipairs({ "HonFunLoop", "HonFlyJump", "HonFov", "HonKamui",
-		"HonUILayout", "HonPadMove", "HonFakeSync", "HonDance" }) do
+		"HonUILayout", "HonPadMove", "HonFakeSync", "HonDance", "HonBorder" }) do
 		pcall(function() RunService:UnbindFromRenderStep(nm) end)
 	end
+	-- WindUI 界面也要收：用户可能在 WindUI 框架里点的关闭
+	pcall(function() if windDestroy then windDestroy() end end)
 	pcall(function() if Gui then Gui.Enabled = false end end)
 	pcall(function() if Gui then Gui:Destroy() end end)
 	_pr("[HON SPEED HUB] 已彻底关闭")
@@ -5105,6 +5120,8 @@ function applyUiStyle(i)
 		end
 		if Glow and st.glowColor then Glow.BackgroundColor3 = st.glowColor end
 	end)
+	-- 边框开着且是「主题色」时边框色优先：不然换个皮肤，描边色就被样式覆盖回白色
+	if BorderOn and BorderMode == 4 and MainStroke then MainStroke.Color = Mode().Accent end
 	if notify then notify("UI 样式：" .. st.name) end
 end
 
@@ -5120,10 +5137,56 @@ function applyFontScale(sc)
 	end)
 end
 
+-- ===== 面板边框（照参考源码的模式：开关 + 样式循环，彩虹模式挂渲染循环）=====
+-- 描边本体就是 Main 自带的 MainStroke；开关只切它的 Enabled，样式决定颜色。
+-- 透明度/粗细继续归 UI 样式管（applyUiStyle），两边不打架
+BORDER_STYLES = { "彩虹", "红色", "蓝色", "主题色" }
+BorderOn, BorderMode = true, 4
+function setBorder(on, quiet)
+	BorderOn = on and true or false
+	pcall(function() if MainStroke then MainStroke.Enabled = BorderOn end end)
+	if BorderOn then
+		setBorderMode(BorderMode, true)
+	else
+		-- 关边框必须解绑彩虹循环，不然颜色还在变，只是被 Enabled 藏住——白烧帧
+		pcall(function() RunService:UnbindFromRenderStep("HonBorder") end)
+	end
+	if notify and not quiet then notify(BorderOn and ("面板边框已开启 · " .. BORDER_STYLES[BorderMode]) or "面板边框已关闭") end
+end
+function setBorderMode(m, quiet)
+	BorderMode = math.clamp(math.floor(m or 1), 1, #BORDER_STYLES)
+	if not BorderOn then
+		if notify and not quiet then notify("边框样式：" .. BORDER_STYLES[BorderMode] .. " · 打开边框开关后生效") end
+		return
+	end
+	if BorderMode == 1 then
+		-- 彩虹：渲染循环里走 HSV 色环（复用 hsv2rgb，不依赖 Color3.fromHSV，执行器/mock 都稳）
+		pcall(function() RunService:UnbindFromRenderStep("HonBorder") end)
+		pcall(function()
+			RunService:BindToRenderStep("HonBorder", 2001, function()
+				if not (BorderOn and MainStroke and MainStroke.Parent) then
+					-- 边框被关/面板被销毁时自己解绑，不留野循环
+					pcall(function() RunService:UnbindFromRenderStep("HonBorder") end)
+					return
+				end
+				MainStroke.Color = hsv2rgb((tick() * 0.15) % 1, 0.85, 1)
+			end)
+		end)
+	else
+		pcall(function() RunService:UnbindFromRenderStep("HonBorder") end)
+		local c = Mode().Accent
+		if BorderMode == 2 then c = Color3.fromRGB(255, 70, 82) end
+		if BorderMode == 3 then c = Color3.fromRGB(80, 160, 255) end
+		pcall(function() if MainStroke then MainStroke.Color = c end end)
+	end
+	if notify and not quiet then notify("边框样式：" .. BORDER_STYLES[BorderMode]) end
+end
+
 -- 背景图：图片来源优先级 = 自定义 ID / 预设链接 > 默认 URL。
 -- Roblox 的 ImageLabel 最稳的是 rbxassetid:// 图片 ID；https 直链靠 ContentProvider 下载（部分执行器不支持），
 -- 所以除默认 URL 外提供「自定义 ID」输入框 + 11 张预设，显示不了就用 ID 框兜底
-function setBg(on)
+-- quiet = true 时不弹通知（启动时静默恢复用，免得开场通知刷屏）
+function setBg(on, quiet)
 	BgOn = on
 	local img = BgImgSrc or BG_URL
 	if on and (not BgImg or BgImg.Image ~= img) then
@@ -5135,9 +5198,22 @@ function setBg(on)
 				ScaleType = Enum.ScaleType.Crop, ZIndex = 0, Parent = Main })
 			corner(BgImg, 18)
 		end)
-		-- https 图片丢给 ContentProvider 预下载（协程里跑不卡界面），提高执行器里的加载成功率
-		if BgImg and type(img) == "string" and string.sub(img, 1, 12) ~= "rbxassetid:" then
+		-- https 图片丢给 ContentProvider 预下载（协程里跑不卡界面），提高执行器里的加载成功率。
+		-- 注意 "rbxassetid:" 是 11 个字符（r-b-x-a-s-s-e-t-i-d-:），此前写成 sub(...,1,12)
+		-- 永远匹配不上，rbxassetid 图片也被当成 https 送进 PreloadAsync/失败检测—— ID 图片
+		-- 加载稍慢就误报「https 直链不被支持」，指错路
+		if BgImg and type(img) == "string" and string.sub(img, 1, 11) ~= "rbxassetid:" then
 			tspawn(function() pcall(function() ContentProvider:PreloadAsync({ BgImg }) end) end)
+			-- https 直链失败检测：Roblox 的 ImageLabel 对执行器不支持的 https 图片是静默不显示
+			-- （不报错也不留痕），用户完全看不出所以然——2.5 秒后还没 IsLoaded 就明说，
+			-- 引导改用最稳的「图片 ID」框。判据用 == false 而非 not：mock/旧执行器读不到
+			-- IsLoaded 时是 nil，不能误报
+			tspawn(function()
+				twait(2.5)
+				if BgImg and BgImg.Parent and BgImg.IsLoaded == false then
+					if notify then notify("背景图加载失败：https 直链不被支持，请用「图片 ID」框填数字 ID", Color3.fromRGB(255, 205, 110)) end
+				end
+			end)
 		end
 	end
 	if BgImg then
@@ -5146,7 +5222,7 @@ function setBg(on)
 		-- （此前只设 Visible，恢复存档或切预设后透明度丢成旧值——「透明度没有用」的最后一环）
 		if on then BgImg.ImageTransparency = BgAlpha or 0.45 end
 	end
-	if notify then notify(on and "背景图已开启" or "背景图已关闭") end
+	if notify and not quiet then notify(on and "背景图已开启" or "背景图已关闭") end
 end
 -- 切换背景预设（设置页 chips；点击即换图并存档，重启/换服不丢）
 function setBgPreset(i)
@@ -5155,7 +5231,9 @@ function setBgPreset(i)
 	BgImgSrc = p.url
 	bgSave()
 	if BgOn then setBg(true) end
-	if notify then notify("背景预设：" .. p.name .. (BgOn and "" or " · 打开背景图开关后生效")) end
+	-- 预设全是 GitHub 直链，执行器里很可能加载不出来——提示里直接给兜底路径，
+	-- 别让用户对着黑面板猜「是不是又坏了」
+	if notify then notify("背景预设：" .. p.name .. (BgOn and " · 没显示就用下方图片 ID 框" or " · 打开背景图开关后生效")) end
 end
 -- 应用自定义图片 ID（输入框失焦时调用；识别任意文本里的第一串数字，自动补 rbxassetid:// 前缀）
 function applyBgId(text)
@@ -5168,6 +5246,290 @@ function applyBgId(text)
 	bgSave()
 	if BgOn then setBg(true) end
 	if notify then notify("背景图已应用 ID " .. id .. (BgOn and "" or " · 打开背景图开关后生效")) end
+end
+
+-- ===== 界面框架切换：自制 UI / WindUI（搬参考脚本的 WindUI 库）=====
+-- 用户原话：「在设置里加一个 UI 样式，注意不是 UI 风格，就是加一个 WindUI，
+-- 可以在自制和 windui 进行切换」。UI 风格 = 上面那 7 套皮肤（applyUiStyle）；
+-- 界面框架 = 整套界面库，这里是二选一切换， WindUI 加载/构建任何一步失败都
+-- 自动回退自制 UI，绝不给用户留白屏
+FW_NAMES = { "自制 UI", "WindUI" }
+UiFrameworkIdx, WindWin = 1, nil
+PrefFramework = nil
+-- 每个 WindUI 组件调用都过 windSafe：库里单个组件签名不符/字段缺失只废那一个，
+-- 不炸整个界面（更不会让用户回不去自制 UI）
+function windSafe(name, fn)
+	local ok, err = pcall(fn)
+	if not ok then _pr("[HON] WindUI 组件出错 " .. tostring(name) .. ": " .. tostring(err)) end
+	return ok
+end
+function windFetch()
+	-- 优先白嫖别人已经加载好的 _G.WindUI，没有就自己 loadstring 拉 dist/main.lua
+	local ok, lib = pcall(function() return _G.WindUI end)
+	if ok and lib then return lib end
+	if type(loadstring) ~= "function" then return nil end
+	local okSrc, src = pcall(function()
+		return game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua")
+	end)
+	if not okSrc or type(src) ~= "string" or src == "" then return nil end
+	local okLib, lib2 = pcall(function() return loadstring(src)() end)
+	if okLib and lib2 then return lib2 end
+	return nil
+end
+function windDestroy()
+	pcall(function()
+		if WindWin then
+			if WindWin.Close then WindWin:Close() end
+			if WindWin.Destroy then WindWin:Destroy() end
+		end
+	end)
+	WindWin = nil
+	-- 自制 UI 还活着（只是被隐藏），直接放出来
+	pcall(function() if Gui then Gui.Enabled = true end end)
+end
+-- 自制开关 → WindUI 开关：直接驱动原 toggle 的 Set(v)（非 silent），
+-- 完整复刻点击行为（onChange + 存档）。同名开关（如两个「反重力」）一起同步。
+-- 初值读实时 _last（makeToggle 里已做成实时同步），不另存镜像——用户在自制 UI
+-- 里点过关再切框架，WindUI 那边必须显示当前状态，不能是创建时的快照
+function windTglByTitle(tab, title, sub)
+	local list = {}
+	for _, t in ipairs(ToggleRegistry) do
+		if t._title == title and t.Set then table.insert(list, t) end
+	end
+	if #list == 0 then return end
+	windSafe("tgl:" .. title, function()
+		tab:Toggle({
+			Title = title, Desc = sub or "", Value = list[1]._last and true or false,
+			Callback = function(v)
+				for i, t in ipairs(list) do t.Set(v, i > 1) end
+			end,
+		})
+	end)
+end
+-- 自制滑条 → WindUI 滑条：走 Apply（非 silent，触发 onChange 的存档/生效逻辑），
+-- 初值取滑条当前值（GetValue），保证切框架前后显示一致
+function windSld(tab, api, title, mn, mx, def, step)
+	if not (api and api.Apply) then return end
+	local init = def
+	if api.GetValue then
+		local ok, v = pcall(api.GetValue)
+		if ok and type(v) == "number" then init = v end
+	end
+	windSafe("sld:" .. title, function()
+		tab:Slider({
+			Title = title, Step = step or 1,
+			Value = { Min = mn, Max = mx, Default = math.clamp(init, mn, mx) },
+			Callback = function(v) api.Apply(v) end,
+		})
+	end)
+end
+function windBtn(tab, title, sub, fn)
+	windSafe("btn:" .. title, function()
+		tab:Button({ Title = title, Desc = sub or "", Callback = function() pcall(fn) end })
+	end)
+end
+-- 照自制 UI 的页面结构搭一套 WindUI：引擎/辅助/视觉/传送/娱乐/画质/设置
+function windBuild(lib)
+	if not lib or not lib.CreateWindow then return false end
+	local W = nil
+	windSafe("CreateWindow", function()
+		W = lib:CreateWindow({
+			Title = "HonSpeedHub · WindUI",
+			Author = "极速驱动",
+			Icon = "solar:wind-bold",
+			Theme = "Dark",
+			ToggleKey = Enum.KeyCode.F,
+		})
+	end)
+	if not W then return false end
+	WindWin = W
+	windSafe("Tag", function() W:Tag({ Title = "v5.43", Color = "ElementBackground" }) end)
+	-- 引擎页
+	local tEng = nil
+	windSafe("Tab:引擎", function() tEng = W:Tab({ Title = "引擎", Icon = "gauge" }) end)
+	if tEng then
+		for i, m in ipairs(Modes) do
+			windBtn(tEng, m.Name, m.Desc, function() SetMode(i) end)
+		end
+		windSld(tEng, SpeedSlider, "速度 SPEED", Modes[1].Min, Modes[1].Max, State.Speed, 1)
+		windSld(tEng, SmoothSlider, "顺滑 SMOOTH", 1, 20, State.Smooth, 1)
+		windTglByTitle(tEng, "启用引擎", "F2 快捷键 · 隐身时仍保持")
+		windTglByTitle(tEng, "惯性滑行", "仅 V 引擎生效")
+		windTglByTitle(tEng, "防穿墙 / 沿墙滑动", "CF / V 引擎生效")
+		windTglByTitle(tEng, "瞬移闪现 TP", "仅 CF · 蓄力后整段位移")
+		windTglByTitle(tEng, "引擎描边 OUTLINE", "角色轮廓跟着引擎颜色")
+	end
+	-- 辅助页
+	local tAss = nil
+	windSafe("Tab:辅助", function() tAss = W:Tab({ Title = "辅助", Icon = "life-buoy" }) end)
+	if tAss then
+		windSld(tAss, JumpSlider, "跳跃力 JUMP", 16, 200, DEFAULT_JUMP, 1)
+		windTglByTitle(tAss, "启用跳跃增强", "逐帧回写防被重置")
+		windTglByTitle(tAss, "无限跳", "空中可反复起跳")
+		windTglByTitle(tAss, "反重力 LOW GRAVITY", "自由开关重力 · 关闭恢复默认")
+		windTglByTitle(tAss, "穿墙 NOCLIP", "关闭时还原碰撞体")
+		windTglByTitle(tAss, "反挂机 ANTI-AFK", "防止长时间无操作掉线")
+		windTglByTitle(tAss, "速度 HUD", "屏幕底部实时显示速度")
+		windTglByTitle(tAss, "飞行窗口 FLY", "打开小窗 + 右上角上下键")
+	end
+	-- 视觉页
+	local tEsp = nil
+	windSafe("Tab:视觉", function() tEsp = W:Tab({ Title = "视觉", Icon = "eye" }) end)
+	if tEsp then
+		windSld(tEsp, TranspSlider, "身体透明度", 0, 100, State.BodyTransp, 1)
+		windTglByTitle(tEsp, "玩家透视", "高亮 + 名称 / 距离 / 血量")
+		windTglByTitle(tEsp, "NPC 透视", "高亮所有非玩家人形")
+		windTglByTitle(tEsp, "交互物透视", "ProximityPrompt / ClickDetector")
+		windTglByTitle(tEsp, "秒交互", "HoldDuration=0 · 距离 30")
+		windTglByTitle(tEsp, "雷达 RADAR", "右上角 · 人/NPC/互动物/墙壁折线")
+		windTglByTitle(tEsp, "穿墙显示", "ESP 无视遮挡（任何厚度都能看到）")
+		windTglByTitle(tEsp, "隐藏身上方块 NO BLOCK", "配件 / 框选 / 名牌等附加物一起藏")
+	end
+	-- 传送页
+	local tTp = nil
+	windSafe("Tab:传送", function() tTp = W:Tab({ Title = "传送", Icon = "locate-fixed" }) end)
+	if tTp then
+		windSafe("Input:坐标", function()
+			tTp:Input({
+				Title = "传送到坐标", Desc = "填 X,Y,Z（可用逗号或空格分隔）",
+				Placeholder = "例如 100, 200, 300", Value = "",
+				Callback = function(text)
+					local x, y, z = string.match(tostring(text or ""), "(-?%d+%.?%d*)[,%s]+(-?%d+%.?%d*)[,%s]+(-?%d+%.?%d*)")
+					if not x then
+						if notify then notify("坐标格式不对：要三个数字，如 100, 200, 300") end
+						return
+					end
+					tpToPos(tonumber(x), tonumber(y), tonumber(z))
+				end,
+			})
+		end)
+		windTglByTitle(tTp, "点击传送", "开启后点地面即可瞬移过去")
+		windTglByTitle(tTp, "防坠落 ANTI-VOID", "掉出地图自动拉回安全点")
+		windTglByTitle(tTp, "闪电尖兵大招 SPARK ULT", "点击画面任意位置直接传送过去（照搬参考源码）")
+	end
+	-- 娱乐页
+	local tFun = nil
+	windSafe("Tab:娱乐", function() tFun = W:Tab({ Title = "娱乐", Icon = "gamepad-2" }) end)
+	if tFun then
+		windBtn(tFun, "弹射升空", "一键把自己炸上天（2.5s 冷却）", function() ejectUp() end)
+		for i, st in ipairs(WING_STYLES) do
+			windBtn(tFun, "翅膀 · " .. st.name, "点击穿戴 / 再点切换", function() setWing(i) end)
+		end
+		windBtn(tFun, "收起翅膀", "卸掉全部翅膀", function() clearWings() end)
+		for _, it in ipairs(TOY_DEFS) do
+			windSafe("toy:" .. it.name, function()
+				tFun:Toggle({
+					Title = (it.icon or "") .. " " .. it.name,
+					Value = ToyOn[it.name] and true or false,
+					Callback = function() toyToggle(it) end,
+				})
+			end)
+		end
+	end
+	-- 画质页
+	local tGfx = nil
+	windSafe("Tab:画质", function() tGfx = W:Tab({ Title = "画质", Icon = "sparkles" }) end)
+	if tGfx then
+		windSld(tGfx, GfxBrightSlider, "亮度", 0, 200, 100, 1)
+		windSld(tGfx, GfxSatSlider, "饱和度", 0, 200, 100, 1)
+		windTglByTitle(tGfx, "关闭阴影", "关掉全局阴影，帧数明显提升")
+		windTglByTitle(tGfx, "关闭雾气", "视野更清楚")
+		windTglByTitle(tGfx, "关闭粒子特效", "烟/火/拖尾/光束全关")
+		windTglByTitle(tGfx, "隐藏贴花/纹理", "墙面图案去掉，更干净")
+		windTglByTitle(tGfx, "普通夜视", "夜里全亮 · 阴影全关")
+		windTglByTitle(tGfx, "超级夜视", "超高亮度 · 正午光感")
+		windTglByTitle(tGfx, "彻底去雾", "连 Atmosphere 雾霾一起清")
+	end
+	-- 设置页（含切回自制 UI 的入口——用户在 WindUI 里也能回自制）
+	local tSet = nil
+	windSafe("Tab:设置", function() tSet = W:Tab({ Title = "设置", Icon = "settings" }) end)
+	if tSet then
+		windBtn(tSet, "切回自制 UI", "关闭 WindUI，恢复原来的界面", function() setUiFramework(1) end)
+		if BorderTgl and BorderTgl.Set then
+			windSafe("tgl:面板边框", function()
+				tSet:Toggle({
+					Title = "面板边框", Desc = "WindUI 自身界面边框由库里管，这里管自制 UI 的",
+					Value = BorderOn,
+					Callback = function(v) BorderOn = v; setBorder(v); prefSave() end,
+				})
+			end)
+		end
+		windSld(tSet, FontSlider, "字体大小", 70, 160, PrefFontScale and math.floor(PrefFontScale * 100 + 0.5) or 100, 1)
+		windSld(tSet, PanelScaleSlider, "面板缩放", 60, 140, PrefPanelScale and math.floor(PrefPanelScale * 100 + 0.5) or 100, 1)
+		windSld(tSet, BgAlphaSlider, "背景图透明", 0, 100, PrefBgAlpha and math.floor(PrefBgAlpha * 100 + 0.5) or 45, 1)
+		if BgTgl and BgTgl.Set then
+			windSafe("tgl:面板背景图", function()
+				tSet:Toggle({
+					Title = "面板背景图", Desc = "自制 UI 的背景图",
+					Value = BgOn,
+					Callback = function(v) BgTgl.Set(v) end,
+				})
+			end)
+		end
+		for i, p in ipairs(BgPresets) do
+			windBtn(tSet, "背景预设 · " .. p.name, "点击切换（没显示就用图片 ID）", function() setBgPreset(i) end)
+		end
+		windSafe("Input:图片ID", function()
+			tSet:Input({
+				Title = "背景图片 ID", Desc = "填数字 ID（rbxassetid），最稳的背景方式",
+				Placeholder = "例如 8237165", Value = "",
+				Callback = function(text) applyBgId(text) end,
+			})
+		end)
+		if RagTgl and RagTgl.Set then
+			windSafe("tgl:防布娃娃", function()
+				tSet:Toggle({
+					Title = "防布娃娃 ANTI RAGDOLL", Desc = "不会被打倒/摔倒（夜脚本同款）",
+					Value = RagTgl._last and true or false,
+					Callback = function(v) RagTgl.Set(v) end,
+				})
+			end)
+		end
+		windBtn(tSet, "换个服务器（随机重进）", "会重新加载脚本", function()
+			pcall(function()
+				if notify then notify("正在换服务器…") end
+				TeleportService:Teleport(game.PlaceId, LP)
+			end)
+		end)
+		windBtn(tSet, "彻底关闭脚本 UNLOAD", "关掉所有功能并销毁界面", function() unloadScript() end)
+	end
+	return true
+end
+function setUiFramework(i)
+	i = math.clamp(math.floor(i or 1), 1, #FW_NAMES)
+	if i == 2 then
+		local lib = windFetch()
+		if not lib then
+			UiFrameworkIdx = 1
+			if notify then notify("WindUI 加载失败（执行器不支持 loadstring/HttpGet），已回退自制 UI", Color3.fromRGB(255, 205, 110)) end
+			return false
+		end
+		if not windBuild(lib) then
+			UiFrameworkIdx = 1
+			if notify then notify("WindUI 界面构建失败，已回退自制 UI", Color3.fromRGB(255, 205, 110)) end
+			return false
+		end
+		UiFrameworkIdx = 2
+		pcall(function() if Gui then Gui.Enabled = false end end)
+		if notify then notify("已切换到 WindUI（按 F 开关界面）") end
+	else
+		windDestroy()
+		UiFrameworkIdx = 1
+		if notify then notify("已切回自制 UI") end
+	end
+	PrefFramework = UiFrameworkIdx
+	pcall(prefSave)
+	return true
+end
+-- 「当前框架」用按钮背景深浅标，不用文字色——SetMode 会把所有 FunBtns 的
+-- 文字染成主题色，用文字色标「当前」会被引擎切换冲掉
+function paintFwBtns()
+	for i, b in ipairs(FwBtns or {}) do
+		pcall(function()
+			b.Text = FW_NAMES[i] .. (i == UiFrameworkIdx and " · 当前" or "")
+			b.BackgroundTransparency = (i == UiFrameworkIdx) and 0.78 or 0.93
+		end)
+	end
 end
 
 label({ Text = "设 置 SETTINGS", Font = Enum.Font.GothamBold, TextSize = 11,
@@ -5186,6 +5548,46 @@ for i, st in ipairs(UI_STYLES) do
 	table.insert(FunBtns, b)
 	bindClick(b, st.name, function() UiStyleIdx = i; applyUiStyle(i) end)
 end
+
+-- UI 样式（框架）：整套界面库二选一——自制 UI / WindUI。注意跟上面的「UI 风格」
+-- 不是一回事：上面那排是换皮肤（applyUiStyle），这里换的是整套界面库
+label({ Text = "界面框架 UI FRAMEWORK · 切换整套界面", Font = Enum.Font.GothamBold, TextSize = 11,
+	TextColor3 = Color3.fromRGB(120, 129, 152), Size = UDim2.new(1, 0, 0, 18),
+	Position = UDim2.new(0, 2, 0, 178), TextXAlignment = Enum.TextXAlignment.Left }, PageSet)
+FwBtns = {}
+for i, nm in ipairs(FW_NAMES) do
+	local b = new("TextButton", { Text = nm, Font = Enum.Font.GothamBold, TextSize = 11,
+		TextColor3 = Mode().Accent, BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+		BackgroundTransparency = 0.9, BorderSizePixel = 0, AutoButtonColor = false,
+		Size = UDim2.new(0.5, -4, 0, 32),
+		Position = UDim2.new(i == 1 and 0 or 0.5, i == 1 and 0 or 4, 0, 196),
+		Parent = PageSet })
+	corner(b, 8)
+	table.insert(FunBtns, b)
+	table.insert(FwBtns, b)
+	bindClick(b, "界面框架" .. nm, function() setUiFramework(i) end)
+end
+paintFwBtns()
+
+-- 面板边框：开关 + 样式循环（彩虹/红/蓝/主题色，照参考源码那套模式）
+label({ Text = "面板边框 BORDER", Font = Enum.Font.GothamBold, TextSize = 11,
+	TextColor3 = Color3.fromRGB(120, 129, 152), Size = UDim2.new(1, 0, 0, 18),
+	Position = UDim2.new(0, 2, 0, 238), TextXAlignment = Enum.TextXAlignment.Left }, PageSet)
+BorderTgl = makeToggle(PageSet, 256, "面板边框", "面板外圈描边 · 样式在下面换", BorderOn, function(v)
+	setBorder(v)
+	prefSave()
+end, true)
+local BorderModeBtn = new("TextButton", { Text = "边框样式：" .. BORDER_STYLES[BorderMode] .. "  ▾", Font = Enum.Font.GothamBold, TextSize = 11,
+	TextColor3 = Mode().Accent, BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+	BackgroundTransparency = 0.9, BorderSizePixel = 0, AutoButtonColor = false,
+	Size = UDim2.new(1, 0, 0, 32), Position = UDim2.new(0, 0, 0, 304), Parent = PageSet })
+corner(BorderModeBtn, 8)
+table.insert(FunBtns, BorderModeBtn)
+bindClick(BorderModeBtn, "边框样式", function()
+	setBorderMode((BorderMode % #BORDER_STYLES) + 1)
+	BorderModeBtn.Text = "边框样式：" .. BORDER_STYLES[BorderMode] .. "  ▾"
+	prefSave()
+end)
 
 -- 启动 / 删除动画样式
 function animRow(title, y, onPick, onPick0)
@@ -5241,17 +5643,20 @@ function animLoad()
 	end
 end
 animLoad()
-animRow("启动动画样式", 184, function(i) AnimStyleIdx = i; animSave(); if notify then notify("启动动画：" .. ANIM_STYLES[i]) end end,
+animRow("启动动画样式", 346, function(i) AnimStyleIdx = i; animSave(); if notify then notify("启动动画：" .. ANIM_STYLES[i]) end end,
 	function() return AnimStyleIdx or 1 end)
-animRow("删除动画样式", 232, function(i) CloseAnimIdx = i; animSave(); if notify then notify("删除动画：" .. ANIM_STYLES[i]) end end,
+animRow("删除动画样式", 394, function(i) CloseAnimIdx = i; animSave(); if notify then notify("删除动画：" .. ANIM_STYLES[i]) end end,
 	function() return CloseAnimIdx or 1 end)
 
 -- UI 偏好存档：字体大小 / 面板缩放 / 背景图透明（本地文件 + 跨服务器双保险，和动画样式同一套机制）
 -- 用户要求「脚本设置里面增加个自动保存」——这三项改完即存，换服/重进不恢复默认
 PREF_FILE = "HonSpeedHub_Pref.json"
-PrefFontScale, PrefPanelScale, PrefBgAlpha = nil, nil, nil
+PrefFontScale, PrefPanelScale, PrefBgAlpha, PrefFramework = nil, nil, nil, nil
 function prefSave()
-	local d = { fs = PrefFontScale, ps = PrefPanelScale, ba = PrefBgAlpha }
+	-- fw = 界面框架（1 自制 / 2 WindUI），bo/bm = 面板边框开关与样式——
+	-- 和背景图一样本地文件 + 跨服务器双保险，重启/换服不恢复默认
+	local d = { fs = PrefFontScale, ps = PrefPanelScale, ba = PrefBgAlpha,
+		fw = UiFrameworkIdx or 1, bo = BorderOn and true or false, bm = BorderMode or 1 }
 	local ok, json = pcall(function() return HttpService:JSONEncode(d) end)
 	if not ok or not json then return end
 	pcall(function() if writefile then writefile(PREF_FILE, json) end end)
@@ -5278,22 +5683,25 @@ function prefLoad()
 	if type(d.fs) == "number" then PrefFontScale = math.clamp(d.fs, 0.7, 1.6) end
 	if type(d.ps) == "number" then PrefPanelScale = math.clamp(d.ps, 0.6, 1.4) end
 	if type(d.ba) == "number" then PrefBgAlpha = math.clamp(d.ba, 0, 1) end
+	if type(d.fw) == "number" and (d.fw == 1 or d.fw == 2) then PrefFramework = d.fw end
+	if type(d.bo) == "boolean" then BorderOn = d.bo end
+	if type(d.bm) == "number" then BorderMode = math.clamp(math.floor(d.bm), 1, #BORDER_STYLES) end
 end
 prefLoad()
 local psDef = PrefPanelScale and math.floor(PrefPanelScale * 100 + 0.5) or 100
 local fsDef = PrefFontScale and math.floor(PrefFontScale * 100 + 0.5) or 100
 local baDef = PrefBgAlpha and math.floor(PrefBgAlpha * 100 + 0.5) or 45
-PanelScaleSlider = makeSlider(PageSet, "面板缩放", 290, 60, 140, math.clamp(psDef, 60, 140), " %", function(v)
+PanelScaleSlider = makeSlider(PageSet, "面板缩放", 452, 60, 140, math.clamp(psDef, 60, 140), " %", function(v)
 	PrefPanelScale = v / 100
 	pcall(function() if MainScale then MainScale.Scale = PrefPanelScale end end)
 	prefSave()
 end, false)
-FontSlider = makeSlider(PageSet, "字体大小", 346, 70, 160, math.clamp(fsDef, 70, 160), " %", function(v)
+FontSlider = makeSlider(PageSet, "字体大小", 508, 70, 160, math.clamp(fsDef, 70, 160), " %", function(v)
 	PrefFontScale = v / 100
 	applyFontScale(v / 100)
 	prefSave()
 end, false)
-BgAlphaSlider = makeSlider(PageSet, "背景图透明", 402, 0, 100, math.clamp(baDef, 0, 100), " %", function(v)
+BgAlphaSlider = makeSlider(PageSet, "背景图透明", 564, 0, 100, math.clamp(baDef, 0, 100), " %", function(v)
 	PrefBgAlpha = v / 100
 	BgAlpha = PrefBgAlpha
 	if BgImg then BgImg.ImageTransparency = BgAlpha end
@@ -5302,12 +5710,12 @@ BgAlphaSlider = makeSlider(PageSet, "背景图透明", 402, 0, 100, math.clamp(b
 	prefSave()
 end, false)
 
-BgTgl = makeToggle(PageSet, 458, "面板背景图", "用你给的图当面板背景", false, function(v) setBg(v) end, true)
-BgAutoTgl = makeToggle(PageSet, 506, "启动时自动加载背景", "每次进游戏自动显示背景图", true, function(v) BgAuto = v; bgSave() end, true)
+BgTgl = makeToggle(PageSet, 620, "面板背景图", "用你给的图当面板背景", false, function(v) setBg(v) end, true)
+BgAutoTgl = makeToggle(PageSet, 668, "启动时自动加载背景", "每次进游戏自动显示背景图", true, function(v) BgAuto = v; bgSave() end, true)
 -- 背景预设 chips：11 张预设 3 列横排，点击即切换（并存档）
 label({ Text = "背景预设 BG PRESETS · 点击切换", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Color3.fromRGB(196, 204, 224), BackgroundTransparency = 1,
-	Size = UDim2.new(1, -4, 0, 16), Position = UDim2.new(0, 2, 0, 552),
+	Size = UDim2.new(1, -4, 0, 16), Position = UDim2.new(0, 2, 0, 714),
 	TextXAlignment = Enum.TextXAlignment.Left }, PageSet)
 BgPresetBtns = {}
 for i, p in ipairs(BgPresets) do
@@ -5316,7 +5724,7 @@ for i, p in ipairs(BgPresets) do
 		TextColor3 = Mode().Accent, BackgroundColor3 = Color3.fromRGB(255, 255, 255),
 		BackgroundTransparency = 0.9, BorderSizePixel = 0, AutoButtonColor = false,
 		Size = UDim2.new(1/3, -4, 0, 30),
-		Position = UDim2.new(col * (1/3), col == 0 and 0 or 2, 0, 570 + row * 34),
+		Position = UDim2.new(col * (1/3), col == 0 and 0 or 2, 0, 732 + row * 34),
 		Parent = PageSet })
 	corner(b, 8)
 	table.insert(BgPresetBtns, b)
@@ -5327,17 +5735,17 @@ BgIdBox = new("TextBox", { PlaceholderText = "图片 ID（如 8237165）· 留�
 	TextColor3 = Color3.fromRGB(238, 243, 255), PlaceholderColor3 = Color3.fromRGB(110, 118, 140),
 	BackgroundColor3 = Color3.fromRGB(255, 255, 255), BackgroundTransparency = 0.92,
 	BorderSizePixel = 0, ClearTextOnFocus = false,
-	Size = UDim2.new(1, 0, 0, 32), Position = UDim2.new(0, 0, 0, 710), Parent = PageSet })
+	Size = UDim2.new(1, 0, 0, 32), Position = UDim2.new(0, 0, 0, 872), Parent = PageSet })
 corner(BgIdBox, 8)
 BgIdBox.FocusLost:Connect(function() applyBgId(BgIdBox.Text) end)
 label({ Text = "上面 11 个预设是 GitHub 直链，Roblox 客户端会尝试下载（部分执行器不显示）；最稳的是图片 ID——浏览器开 create.roblox.com → Creations → Decals → 上传图片发布，拿数字 ID 填框，填一次自动存档，换服不丢。", Font = Enum.Font.Gotham, TextSize = 9,
 	TextColor3 = Color3.fromRGB(120, 129, 152), BackgroundTransparency = 1,
-	Position = UDim2.new(0, 2, 0, 746), Size = UDim2.new(1, -4, 0, 30), TextWrapped = true,
+	Position = UDim2.new(0, 2, 0, 908), Size = UDim2.new(1, -4, 0, 30), TextWrapped = true,
 	TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top }, PageSet)
 local FixBtn = new("TextButton", { Text = "恢复角色外观（修染色）", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Color3.fromRGB(150, 220, 255), BackgroundColor3 = Color3.fromRGB(255, 255, 255),
 	BackgroundTransparency = 0.9, BorderSizePixel = 0, AutoButtonColor = false,
-	Size = UDim2.new(1, 0, 0, 34), Position = UDim2.new(0, 0, 0, 782), Parent = PageSet })
+	Size = UDim2.new(1, 0, 0, 34), Position = UDim2.new(0, 0, 0, 944), Parent = PageSet })
 corner(FixBtn, 8)
 table.insert(FunBtns, FixBtn)
 bindClick(FixBtn, "恢复外观", function() fixCharacterLook() end)
@@ -5345,7 +5753,7 @@ bindClick(FixBtn, "恢复外观", function() fixCharacterLook() end)
 local ResetScaleBtn = new("TextButton", { Text = "重置身体比例", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Color3.fromRGB(255, 200, 120), BackgroundColor3 = Color3.fromRGB(255, 255, 255),
 	BackgroundTransparency = 0.9, BorderSizePixel = 0, AutoButtonColor = false,
-	Size = UDim2.new(1, 0, 0, 34), Position = UDim2.new(0, 0, 0, 822), Parent = PageSet })
+	Size = UDim2.new(1, 0, 0, 34), Position = UDim2.new(0, 0, 0, 984), Parent = PageSet })
 corner(ResetScaleBtn, 8)
 table.insert(FunBtns, ResetScaleBtn)
 bindClick(ResetScaleBtn, "重置比例", function()
@@ -5353,14 +5761,14 @@ bindClick(ResetScaleBtn, "重置比例", function()
 	if notify then notify("身体比例已重置为 100%") end
 end)
 
-RagTgl = makeToggle(PageSet, 866, "防布娃娃 ANTI RAGDOLL", "不会被打倒/摔倒（夜脚本同款）", false, function(v)
+RagTgl = makeToggle(PageSet, 1028, "防布娃娃 ANTI RAGDOLL", "不会被打倒/摔倒（夜脚本同款）", false, function(v)
 	syncRagTgls(v)
 end, true)
 
 local KillBtn = new("TextButton", { Text = "彻底关闭脚本 UNLOAD", Font = Enum.Font.GothamBold, TextSize = 12,
 	TextColor3 = Color3.fromRGB(255, 108, 118), BackgroundColor3 = Color3.fromRGB(255, 80, 90),
 	BackgroundTransparency = 0.82, BorderSizePixel = 0, AutoButtonColor = false,
-	Size = UDim2.new(1, 0, 0, 38), Position = UDim2.new(0, 0, 0, 952), Parent = PageSet })
+	Size = UDim2.new(1, 0, 0, 38), Position = UDim2.new(0, 0, 0, 1114), Parent = PageSet })
 corner(KillBtn, 8)
 table.insert(FunBtns, KillBtn)
 bindClick(KillBtn, "关闭脚本", function()
@@ -5371,7 +5779,7 @@ end)
 local SvBtn = new("TextButton", { Text = "换个服务器（随机重进）", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Mode().Accent, BackgroundColor3 = Color3.fromRGB(255, 255, 255),
 	BackgroundTransparency = 0.9, BorderSizePixel = 0, AutoButtonColor = false,
-	Size = UDim2.new(1, 0, 0, 34), Position = UDim2.new(0, 0, 0, 912), Parent = PageSet })
+	Size = UDim2.new(1, 0, 0, 34), Position = UDim2.new(0, 0, 0, 1074), Parent = PageSet })
 corner(SvBtn, 8)
 table.insert(FunBtns, SvBtn)
 bindClick(SvBtn, "换服务器", function()
@@ -5380,9 +5788,9 @@ bindClick(SvBtn, "换服务器", function()
 		TeleportService:Teleport(game.PlaceId, LP)
 	end)
 end)
-label({ Text = "换服务器会重新加载脚本；背景图（预设/ID）/ 动画样式 / 标点已自动存档，换服不丢；其他设置仅本次有效",
+label({ Text = "换服务器会重新加载脚本；背景图（预设/ID）/ 动画样式 / 标点 / 界面框架 / 边框已自动存档，换服不丢；其他设置仅本次有效",
 	Font = Enum.Font.Gotham, TextSize = 10, TextColor3 = Color3.fromRGB(132, 141, 163),
-	BackgroundTransparency = 1, Position = UDim2.new(0, 2, 0, 998),
+	BackgroundTransparency = 1, Position = UDim2.new(0, 2, 0, 1160),
 	Size = UDim2.new(1, -4, 0, 40), TextWrapped = true,
 	TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top }, PageSet)
 
@@ -6331,7 +6739,21 @@ end)
 -- 恢复画质设置（关阴影/雾气/粒子/贴花 + 亮度/饱和度 + 夜视类）：改一次就记住，不用每次启动重开
 if type(gfxLoad) == "function" then pcall(gfxLoad) end
 if type(bgLoad) == "function" then pcall(bgLoad) end
-if BgAuto then pcall(setBg, true) end
+-- BgTgl 开关视觉同步：存档里 auto=true，但开关是按默认 false 建的——不同步的话
+-- 「背景显示着、开关却关着」，用户手一滑又给关了，就是「背景图怎么没用」的错觉来源
+if BgAuto and BgTgl and BgTgl.Set then BgTgl.Set(true, true) end
+-- quiet 版：开场已经够热闹，别再弹一条「背景图已开启」
+if BgAuto then pcall(setBg, true, true) end
+-- 边框初始应用（静默）：开关/样式来自 prefLoad 读到的存档，主题色边框立即生效
+if BorderTgl and BorderTgl.Set then BorderTgl.Set(BorderOn, true) end
+if BorderModeBtn then BorderModeBtn.Text = "边框样式：" .. BORDER_STYLES[BorderMode] .. "  ▾" end
+pcall(setBorder, BorderOn, true)
+if paintFwBtns then paintFwBtns() end
+-- 界面框架恢复：上次用的 WindUI 就自动切回去。加载/构建任何一步失败都会在
+-- setUiFramework 里自动回退自制 UI，不会给用户留白屏
+if PrefFramework == 2 then
+	task.defer(function() pcall(setUiFramework, 2) end)
+end
 -- 开场：神威空间扭曲展开
 pcall(function() playOpenAnim() end)
 tspawn(function()
@@ -6393,4 +6815,4 @@ tspawn(function()
 		end)
 	end
 end)
-_pr("[HON SPEED HUB] v5.42 已加载 · 完整文件约 6397 行 · 若你的脚本远大于此行数说明粘贴重复了")
+_pr("[HON SPEED HUB] v5.43 已加载 · 完整文件约 6819 行 · 若你的脚本远大于此行数说明粘贴重复了")
