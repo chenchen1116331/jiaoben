@@ -1,5 +1,5 @@
 local _pr = (type(print) == "function") and print or (type(warn) == "function" and warn) or function() end
-_pr("[HON SPEED HUB] 载入中 · v5.43 · 若只看到这一行说明文件在中途中断")
+_pr("[HON SPEED HUB] 载入中 · v5.47 · 若只看到这一行说明文件在中途中断")
 local twait  = (type(task) == "table" and task.wait)  or wait  or function() end
 local tspawn = (type(task) == "table" and task.spawn) or spawn or function(f, ...) return f(...) end
 if type(twait) ~= "function" then twait = function() end end
@@ -99,10 +99,10 @@ local State = {
 	MoveGameUI = false, UILayoutLocked = false,
 	Stealth = false, StealthHideGame = true,
 	BlackHole = false, BlackHoleForce = 60, HeroFly = false, Car = false,
-	EngineOutline = true, Trail = false, CloneArmy = false, OrbitFx = false, HideBlock = false,
+	EngineOutline = true, Trail = false, CloneArmy = false, OrbitFx = false,
 	HeadRide = false, Shake = false, SpinCam = false, Magnet = false,
 	ThirdPerson = false, NoFall = false, ShowHP = false, ShowFunList = false,
-	AntiKB = false, AntiStun = false,
+	AntiKB = false, AntiStun = false, Countdown = false,
 	SafePos = nil,
 }
 function bindClick(btn, tag, fn)
@@ -180,6 +180,10 @@ local Main = new("Frame", {
 	BorderSizePixel = 0, ClipsDescendants = true, Active = true, Parent = Gui,
 })
 corner(Main, 18)
+-- v5.47： OrigMainSize 补上赋值——此前全文件 6 处 if OrigMainSize then Main.Size = OrigMainSize
+-- 全是空跑（变量从来没赋过值），关闭动画把面板宽×1.16 高×0.8 污染掉之后再也还原不回来，
+-- 就是「每动一下 UI 缩短变宽 / 重复收缩打开也出问题」的根因
+OrigMainSize = Main.Size
 -- 面板缩放：此前全脚本只有 10 处 if MainScale then 空跑（对象从未创建，「面板收缩没有用」的实锤）
 MainScale = new("UIScale", { Scale = 1, Parent = Main })
 local MainStroke = new("UIStroke", { Color = Color3.fromRGB(255, 255, 255), Transparency = 0.92, Thickness = 1, Parent = Main })
@@ -201,7 +205,7 @@ label({ Text = "HON SPEED HUB", Font = Enum.Font.GothamBold, TextSize = 21,
 	TextColor3 = Color3.fromRGB(238, 243, 255),
 	Position = UDim2.new(0, 36, 0, 16), Size = UDim2.new(0, 200, 0, 24),
 	TextXAlignment = Enum.TextXAlignment.Left }, Header)
-label({ Text = "Universal Hub  ·  W / V / CF  ·  v5.43", Font = Enum.Font.Gotham, TextSize = 11,
+label({ Text = "Universal Hub  ·  W / V / CF  ·  v5.47", Font = Enum.Font.Gotham, TextSize = 11,
 	TextColor3 = Color3.fromRGB(140, 149, 172),
 	Position = UDim2.new(0, 36, 0, 42), Size = UDim2.new(0, 240, 0, 16),
 	TextXAlignment = Enum.TextXAlignment.Left }, Header)
@@ -241,6 +245,42 @@ iconBtn("×", -34, Color3.fromRGB(255, 108, 118), function()
 end)
 -- ---------- 更新公告 ----------
 CHANGELOG = {
+	{ v = "v5.47", t = {
+		"重大改进 · ESP 字体放大 + 启动记忆（用户：「增加一个透视字体放大，因为字体太小了。就是我设置到那个字体，下次启动脚本的时候还是在那个字体的位置，就那个大小」）：视觉页新增「ESP 字体」滑条（60%~200%，默认 100%）——竖排三件套（盒子 / 名字 / 血条 / 距离 / 间距）整套按 EspFontScale 等比缩放，不是只放大字号；选定的倍数写存档（ef 字段，clamp 0.6~2），重启 / 换服自动恢复；WindUI 视觉页同步上架",
+		"重要修复 · ESP 厚墙远距透视不到（用户：「可能是墙壁特别厚，然后又特别远的地方它透视不到……我需要它不管在哪里，不管有什么阻挡都能透视到」）：名字 / 血条 / 距离文字牌此前 AlwaysOnTop 跟着「穿墙显示」开关走、MaxDistance 又是默认小值——墙一挡或稍远就整组消失；现在文字牌无条件最顶渲染（AlwaysOnTop=true），MaxDistance 拉到 100000，厚墙远距都不丢标签；角色高亮仍归「穿墙显示」开关管，行为不变",
+		"重大改进 · 关闭动画改成与开启完全对称的碎片扭曲（用户：「它是直接把面板就哐的一下横过来，然后消失了，我需要的是让它和开启一样变成碎片扭曲空间，然后再收回去」）：旧版关闭动画是 Rotation=10 + 宽×1.16 高×0.8 的横倒 tween，和开场的神威漩涡展开完全不搭；现在面板碎成 24 片、被黑洞吸回去再消失，开 / 关两端完全对称。顺手修掉「每动一下 UI 缩短变宽 / 重复收缩打开也出问题」的根因：OrigMainSize 从来没被赋值，全文件 6 处 if OrigMainSize then Main.Size = OrigMainSize 全是空跑——关闭动画把面板尺寸污染掉之后再也还原不回来，已补上 Main.Size 快照",
+		"重大新增 · 三主题屏幕特效（用户：「可爱风加点樱花特效，魔眼加点那种地狱的那种翅膀什么的呀，或者眼睛的那种，然后酷炫的也是加点科技风的」）：特效挂在 ScreenGui 全屏层，随「UI 样式」切换增删，render step「HonStyleFx」驱动——酷风 COOL = 科技扫描线 + 四角 HUD 支架；可爱风 CUTE = 18 片樱花飘落（摇摆 + 旋转 + 循环）；魔眼 3D = 地狱翅膀（3 层翼指绕肩扇动）+ 一双巨眼（瞳孔游移 + 定时眨眼）；切样式 / 卸载即时清理，不留野循环",
+		"重大改进 · 虚拟方向键整块拖动（用户：「我要的是拖动它，然后就中间那个我碰到哪里就轻轻碰向哪里……而不是把所有按键全部分散拖动」）：此前 8 个方向格各自独立拖动，轻轻一碰就拽得满屏飞；现在按住格子照常走路，手指挪出 12px 容忍区才停脚、改为拖动整个方向键（PadFrame 整体位移）；中心格小摇杆手感不变（轻碰定向 / 长按拖整块 / 正中心死区三者互不冲突）",
+		"重要改进 · 右上角提示全面收权（用户：「哪些功能开启后会在屏幕右上角给提示……把那个给关掉，都说了只有我开启。有娱乐功能的那里的那个功能列表显示，它才会显示在右上角」）：notify() 顶部加无色闸门——日常确认（不带色）一律不弹，右上角从此只归「功能列表显示」开关管；7 个警告 / 错误提示点补上统一的警示橙（角色还没加载 / 角色还没就绪 ×2 / 当前角色不支持缩放 / 保存失败：角色还没加载 / 没识别到有效图片 ID / 坐标格式不对），该响的警报一个不少；7 处唯一定过色的日常确认（引擎切换 / 帧率优化 / 咻起飞 / 霓虹发光 / 已固定 / 已恢复布局 / 已关闭全部）剥成无色不再刷屏；全文件剩余 23 处带色提示全是警告 / 错误 / 引导类",
+		"重大新增 · 加速小窗 SPEED WIN（用户：「再给弄个加速，做个小窗，可以在小窗上面切换速度和模式」）：引擎页新增「加速小窗」开关——屏幕左上角弹出 176×148 可拖动小窗：标题 + × 收起、W / V / CF 三模式按钮（当前模式高亮 + 主题色）、34px 速度大字、± 按钮（每次 ±10，顶到当前模式上限即停）；小窗调速度与主速度滑条双向实时同步，切引擎时模式高亮 / 速度范围 / 主题色全部跟着刷；× 收起时静默同步开关状态；WindUI 引擎页镜像上架",
+		"重大新增 · 标点传送小窗 WP WIN（用户：「然后那个标点传送也是」——加速小窗同款待遇）：传送页新增「标点小窗」开关——176×228 可拖动小窗：实时坐标条、「存此处」一键保存（自动命名「标点 N」）、标点列表（名字 + ☆ 选中 + 「去」传送，空列表有提示）、计数标签；小窗与主页面共享同一份标点数据，保存 / 选中 / 删除三个方向实时同步，☆ 选中后「去」直接传送；× 收起静默同步开关；WindUI 传送页镜像上架",
+		"重大新增 · 一键触碰所有可触碰物体（用户：「再增加个新功能，就是一键触碰所有可触碰的物体，就是整个服务器一键触碰所有可触碰的物体」）：视觉页新增「一键触碰所有可触碰物体」按钮——遍历 Workspace 全图，ProximityPrompt（fireproximityprompt）/ ClickDetector（fireclickdetector）/ Tool（Activate）三类全部触发，逐个 pcall 隔离，单个失败不拖垮整体；汇总成功计数并橙提示「已触发 N 个可触碰物体」；执行器没有扩展函数时自动降级不崩；WindUI 视觉页镜像上架",
+		"重要修复 · 引擎描边开关「点了不存在」（预存嵌套 bug）：OutlineTgl 的创建语句此前被意外包在「瞬移闪现 TP」开关的回调体内（缩进为 0 但 Lua 不管缩进）——加载时描边开关根本没被创建，用户点不到，只有手动开 / 关一次 TP 开关才会顺带创建出来；已改正回调结构，描边开关加载即存在。实测 toggle 注册表不再出现重复项（修复前 TP 每触发一次回调就多注册一个描边开关）",
+		"实测 · mock 全量回归 16 个测试文件全绿：新增 test_v547 十段专项（ESP 字体滑条缩放与存档记忆往返 / ESP 文字牌无条件最顶 + MaxDistance / 关闭动画碎片扭曲 + OrigMainSize 还原 / 三主题特效增删与渲染步绑定 / 方向键 12px 容忍整块拖（单格零位移·中心格不回退）/ 提示收权闸门 + 7 警告点带橙 + 日常确认不弹 / 加速小窗三模式·±·双向同步·clamp·收起同步·拖动 / 标点小窗存·选·删·去四向同步·拖动 / 一键触碰三类对象全触发·总数·降级不崩）；mock 基建修正——GetChildren 返回快照副本对齐真机语义（修掉遍历中 Destroy 隔项漏删），新增 fireproximityprompt / fireclickdetector / Tool:Activate 执行器扩展与 MockTouchFired 计数器；82 开关 + 168 按钮触发 0 报错",
+	}},
+	{ v = "v5.46", t = {
+		"重大改进 · WindUI 框架下背景图终于生效（学习夜脚本的窗口背景方案并借鉴）：此前切到 WindUI 后 11 张预设 / 透明度 / 开关全部失效——CreateWindow 从来没接过 Background，背景图只挂在自制 UI 的 ImageLabel 上，切框架等于背景全丢；现在 CreateWindow 直接吃 Background + BackgroundImageTransparency（没开就不传，走库默认），建完再补一层保险强制重写（防 UI 初始化不同步），新增 windSyncBg() 把开关 / 预设切换 / 图片 ID / 透明度滑条 / 框架切换五路全部实时同步到 WindUI 窗口，关背景时 BackgroundImage 清空；自制 UI 侧行为不变，两边互不干扰",
+		"改进 · WindUI 加载加重试（借鉴夜脚本 tryLoadWindUI）：HttpGet 偶发失败（网络抖动 / 限流）就整体回退自制 UI 太脆——改成最多 3 次尝试，任一成功即用，全失败才回退并明示",
+		"实测 · mock 全量回归 15 个测试文件全绿：扩展 test_ui_framework（CreateWindow 收到 Background / BackgroundImageTransparency / windSyncBg 开关·预设·ID·透明度四路同步 / 关背景清空 Image / 切框架自动应用 / 卸载体后不同步不崩）；79 开关 + 164 按钮 0 报错",
+	}},
+	{ v = "v5.45", t = {
+		"重大新增 · 工具页「倒计时器 COUNTDOWN」（用户：「在防坠落上面增加一个计时，开启之后屏幕生成一个小 UI，输入要计多少分钟，点确认之后就开始倒数，倒数到 0 的时候就在屏幕上提示时间到了，或者自己暂停和重置」）：开关一开屏幕顶部弹出可拖动小 UI——mm:ss 30px 大字（最后 10 秒染红）、分钟输入框、确认 / 暂停 / 重置三兄弟；输入 1 或 1.5 都认，空 / 0 / 非数字橙色提示不崩，上限 24 小时；倒数到 0 大字归零并弹「时间到了」；暂停冻结表针，重置回总时长；关开关收界面并停表。render step 里 tick，WindUI 传送页同步上架；工具页防坠落以下 9 个控件整体下移 48px，PAGE_H[5] 600 → 660 对齐无死空",
+		"重大改进 · 身上方块改内置自动清除（用户：「隐藏身上的方块没有用……开启隐身之后自动清除，因为它只有开启隐身才能让它显现，然后开启脚本如果出现方块自动清除而不是手动，所以把清除方块功能就可以去掉了，就在脚本内置一个自动开启的」）：视觉页删掉「隐藏身上方块 NO BLOCK」开关和「立即清除身上方块」按钮（含 WindUI 镜像），改为无感内置——启动 / 重生绑定角色自动清、开隐身录屏自动清、Stepped 维持循环每 30 帧持续压回游戏后加上来的附加物（配件 / 框选 / 名牌 / 高亮 / SurfaceGui 全覆盖），UNLOAD 时统一还原不留残",
+		"重要修复 · 「隐藏身上方块没有用」根因清除：Stepped 维持循环里写的是 hideBodyBlocks(false)——false 是还原分支，等于每 30 帧把刚藏起来的方块全部放出来，开开关也肉眼看不出来；已改为常开 hideBodyBlocks(true) 真压回（v5.43 加开关时引入的笔误，实测三处入口全部生效）",
+		"实测 · mock 全量回归 15 个测试文件全绿：新增 test_v545（倒计时开关显隐 / 确认起跑与非法输入拦截 / 倒数递减与 mm:ss 格式 / 最后 10 秒染红 / 暂停冻结 / 重置回总时长 / 到点「时间到了」通知 / 关开关停表 / 按钮接线；身上方块启动自动清 + 维持循环真压回 + 开隐身自动清 + 卸载体还原 + 手动开关已拆干净）；79 开关 + 164 按钮触发 0 报错",
+	}},
+	{ v = "v5.44", t = {
+		"重大改进 · 启动动画开关化（用户：「可开可关的按钮……不要动画切换了，就要那个」）：设置页删掉「启动动画样式 / 删除动画样式」两个 ▾ 循环按钮（4 样式互斥逻辑整层拆除），换成两个独立开关——开着才播神威漩涡展开动画，关掉面板直接显形不播；存档格式从样式序号 o/c 升级为布尔 on/co，旧档里的 4（不要动画）自动兼容为关",
+		"改进 · 字体默认拉到最大（用户：「给它那个字体默认拉到最大」）：无存档时启动即应用 160%（FontScaleV=1.6），字体滑条默认值与 WindUI 侧同步改为 160，有存档仍按存档恢复",
+		"重要改进 · 右上角提示窗收权（用户：「有的功能打开会自动生成一个提示窗，我不要让它生成，当我开启功能显示那个时候它才会生成」）：已开启功能清单从此只归「功能列表显示」开关管——不开功能列表显示，哪怕开着飞行穿墙夜视也天塌下来不弹",
+		"重大改进 · 透视 ESP 竖排重做（用户：「字体有点太小了……竖着摆，名字摆最上面，血条摆中间，距离摆最下面」）：Billboard 从 13px 单行「名字 距离 HP」挤一行改为 200×80 竖排三件套——名字 16px 最上、血条（深色底槽 + 按血量比例填充 + 数字压条）中间、距离 14px 最下；交互物没有血量，血条整组隐藏、距离上移到名字下方不留空档",
+		"重大改进 · 技能定身不暴露（用户：哥斯拉 VS 王者基多拉类技能必须把角色定在原地才能放，开着加速角色会动很容易暴露）：新增 skillRooted() 检测（PlatformStand / 锚定 / 本帧 WalkSpeed 被游戏写 0），三大引擎定身期间全部停手——W 引擎不把 WalkSpeed 抢回来、V/CF 引擎不做 CFrame 位移并清零蓄力速度，定身结束下一帧自动继续加速，不窜出不暴露",
+		"重大改进 · 虚拟方向键中心键小摇杆（用户：「中间那个键轻轻往右上角一摁就往右上角走……轻微触碰某个方向就往某个方向动，要不然中间不能按走路一卡一卡的」）：中心格触点相对格子中心的偏移量化成 8 向（阈值 ±30%），斜向（右上/左上/右下/左下）也能走；正中心死区留给长按拖动整块，走路与拖动互不冲突",
+		"重大改进 · 雷达朝向朝上 heading-up（用户：「让雷达上面人物跟着我的，让人物转，而不是让我转……在我中心前面放一个小三角形，那就是我看向哪里，让敌人 NPC 建筑开始旋转」）：自己永远是雷达中心一个点 + 正上方静态小三角（三角指的就是当前朝向），敌人 / NPC / 建筑按自己水平朝向反向旋转、绕着自己转；正上 / 正下看时水平分量为 0，保持上帧朝向不跳变",
+		"重大新增 · 画质页「一键提升帧率 · 降低卡顿」（用户：「这两个做成一个功能，降低贴图什么的，反正能提升帧率就行」）：阴影 / 粒子 / 贴图全关 + 地形装饰（草花灌木，大地图掉帧大头）+ 渲染质量压到 Level01，全部走已有画质通道——自动记原值、同步开关 UI、写存档，「恢复默认画质」一键还原；WindUI 画质页同步上架，另补「恢复默认画质」按钮",
+		"重要修复 · 「恢复默认画质」只调 setGfxX 却不同步 State：恢复后画面回来了，存档里却还是开着状态，下次启动又给关回去——State 四项（阴影/雾气/粒子/贴花）在 gfxReset 里显式归 false，实测存档往返与还原全链",
+		"实测 · mock 全量回归 14 个测试文件全绿：重写 test_anim（开关默认开 / 点击闸门生效 / on/co 存档往返 / 旧档 o=4 兼容为关）、test_bg 收权断言（未开功能列表时开着功能也不弹提示窗）、test_radar_new 改 heading-up 断言（正前方 NPC 恒在屏幕正上方、世界 +X 直墙旋转到屏幕左侧）、新增 test_v544（ESP 竖排三段结构 + 交互物隐藏血条 / 字体默认 1.6 与滑条 160 / 技能定身 W·V 双引擎不抢不动 / 中心键 8 向含斜向与死区 / 帧率优化与 gfxReset 还原全链含地形装饰与渲染质量）；79 开关 + 165 按钮触发 0 报错",
+	}},
 	{ v = "v5.43", t = {
 		"重大修复 · 「背景图怎么没用」根因清除（三项全修）：① https 直链加载失败静默无痕——Roblox 的 ImageLabel 对执行器不支持的 https 图片不报错也不留痕，用户对着空面板猜；现在建图后 2.5 秒检测 IsLoaded，还没加载就明说「https 直链不被支持，请用图片 ID 框」，指明确实兜底路径；② 开关与画面不同步——「启动时自动加载背景」开了、背景也显示了，设置页开关却还是关的（按默认 false 建的），用户手一滑又给关掉；启动恢复后同步 BgTgl 视觉；③ 顺手修一个藏了很久的 off-by-one：「rbxassetid:」是 11 个字符，守卫写成 sub(img,1,12) 永远匹配不上，图片 ID 一直被当 https 送进预下载/失败检测——ID 图加载稍慢就误报「https 不被支持」，指错路。另：背景预设提示在开着时直接标注「没显示就用下方图片 ID 框」，setBg 增加 quiet 参数，启动恢复不再弹通知刷屏",
 		"重大新增 · 面板边框（照参考源码模式）：设置页新增「面板边框」开关 + 「边框样式」循环（彩虹 / 红色 / 蓝色 / 主题色）。彩虹模式挂 RunService:BindToRenderStep(「HonBorder」) 走 HSV 色环（复用 hsv2rgb，不依赖 Color3.fromHSV），关闭或切静态色立即解绑不留野循环；「主题色」跟随引擎主题色，换引擎 / 换 UI 风格都同步；开关与样式自动存档（HonSpeedHub_Pref.json + HON_PREF 双保险）",
@@ -557,7 +597,7 @@ do
 end
 local PageHost = new("Frame", { Name = "Content", Size = UDim2.new(0, 464, 0, 336), Position = UDim2.new(0, 180, 0, 84),
 	BackgroundTransparency = 1, BorderSizePixel = 0, ClipsDescendants = true, Parent = Main })
-local PAGE_H = { 620, 380, 500, 680, 600, 2040, 560, 660, 1260, 1200, 1080 }
+local PAGE_H = { 620, 380, 500, 680, 660, 2040, 560, 660, 1260, 1200, 1080 }
 PageList = {}
 local function mkPage(i, visible)
 	return new("ScrollingFrame", { Name = "Page" .. tostring(i),
@@ -765,7 +805,7 @@ for i, m in ipairs(Modes) do
 	bindClick(card, "引擎" .. m.Id, function() SetMode(i) end)
 end
 local SpeedSlider  = makeSlider(PageEng, "速度 SPEED", 206, Modes[1].Min, Modes[1].Max, State.Speed, " sp",
-	function(v) State.Speed = v end, true, function(v) State.SpeedLocked = v end, true)
+	function(v) State.Speed = v; if speedWinRefresh then speedWinRefresh() end end, true, function(v) State.SpeedLocked = v end, true)
 local SmoothSlider = makeSlider(PageEng, "顺滑 SMOOTH", 258, 1, 20, State.Smooth, "",
 	function(v) State.Smooth = v end, false)
 local PowerToggle   = makeToggle(PageEng, 312, "启用引擎", "F2 快捷键 · 隐身时仍保持", true, function(v) State.Enabled = v end, true)
@@ -773,6 +813,8 @@ local InertiaToggle = makeToggle(PageEng, 360, "惯性滑行", "仅 V 引擎生�
 local SlideToggle   = makeToggle(PageEng, 408, "防穿墙 / 沿墙滑动", "CF / V 引擎生效", true, function(v) State.WallSlide = v end)
 local TeleportToggle = makeToggle(PageEng, 456, "瞬移闪现 TP", "仅 CF · 蓄力后整段位移", false, function(v)
 	State.CFTeleport = v
+	CFAccum = 0
+end)
 OutlineTgl = makeToggle(PageEng, 504, "引擎描边 OUTLINE", "角色轮廓跟着引擎颜色", true, function(v)
 	State.EngineOutline = v
 	if Highlight and Highlight.Parent then
@@ -780,7 +822,10 @@ OutlineTgl = makeToggle(PageEng, 504, "引擎描边 OUTLINE", "角色轮廓跟�
 		if v then Highlight.OutlineColor = Mode().Accent end
 	end
 end)
-	CFAccum = 0
+SpeedWinTgl = makeToggle(PageEng, 552, "加速小窗 SPEED WIN", "屏幕小窗 · 切模式 / 调速度，把手可拖动", false, function(v)
+	speedWinBuild()
+	if SpeedWin then SpeedWin.Visible = v end
+	if v then speedWinRefresh() end
 end)
 label({ Text = "辅 助 功 能", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Color3.fromRGB(120, 129, 152), Size = UDim2.new(1, 0, 0, 18),
@@ -841,26 +886,15 @@ bindClick(RadarModeBtn, "雷达模式", function()
 	RadarModeBtn.Text = (RadarMode == 1) and "雷达模式：全显 + 墙壁 ▾" or "雷达模式：仅人物 / NPC ▾"
 	if notify then notify((RadarMode == 1) and "雷达：全显（人 + NPC + 互动物 + 墙壁折线）" or "雷达：仅人物 / NPC（干净模式）") end
 end)
-EspDepthTgl  = makeToggle(PageEsp, 216, "穿墙显示", "ESP 无视遮挡（任何厚度都能看到）", true, function(v)
+EspDepthTgl  = makeToggle(PageEsp, 216, "穿墙显示", "角色高亮穿墙，名字/血条/距离永远可见", true, function(v)
 	State.EspDepth = v; refreshEspDepth()
 end)
 TranspSlider = makeSlider(PageEsp, "身体透明度", 264, 0, 100, 0, " %", function(v)
 	State.BodyTransp = v / 100
 end, false)
-BlockTgl = makeToggle(PageEsp, 406, "隐藏身上方块 NO BLOCK", "配件 / 框选 / 名牌等附加物一起藏", false, function(v)
-	State.HideBlock = v
-	hideBodyBlocks(v)
-end)
-local BlockBtn = new("TextButton", { Text = "立即清除身上方块", Font = Enum.Font.GothamBold, TextSize = 11,
-	TextColor3 = Mode().Accent, BackgroundColor3 = Color3.fromRGB(255, 255, 255), BackgroundTransparency = 0.9,
-	BorderSizePixel = 0, AutoButtonColor = false,
-	Size = UDim2.new(1, 0, 0, 34), Position = UDim2.new(0, 0, 0, 454), Parent = PageEsp })
-corner(BlockBtn, 10)
-table.insert(FunBtns, BlockBtn)
-bindClick(BlockBtn, "清除方块", function()
-	local n = hideBodyBlocks(true)
-	if notify then notify("已清除 " .. n .. " 个附加物") end
-end)
+-- v5.45：「隐藏身上方块」从手动开关/按钮改为脚本内置自动功能（用户：「开启脚本如果出现
+-- 方块自动清除而不是手动……把清除方块功能就可以去掉了，就在脚本内置一个自动开启的」）——
+-- 启动 / 重生 / 开隐身都会自动清，Stepped 维持循环持续压回游戏后加上来的附加物
 label({ Text = "触 屏 控 制", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Color3.fromRGB(120, 129, 152), Size = UDim2.new(1, 0, 0, 18),
 	Position = UDim2.new(0, 2, 0, 0), TextXAlignment = Enum.TextXAlignment.Left }, PageTouch)
@@ -872,7 +906,7 @@ PadTgl = makeToggle(PageTouch, 72, "虚拟方向键", "8 向 WASD · 长按中�
 	State.PadKeys = v
 	updateTouchVisibility()
 end)
-ToolGravTgl = makeToggle(PageTool, 502, "反重力 LOW GRAVITY", "和辅助页那个是同一个开关", false, function(v)
+ToolGravTgl = makeToggle(PageTool, 554, "反重力 LOW GRAVITY", "和辅助页那个是同一个开关", false, function(v)
 	State.LowGravity = v
 	pcall(function() Workspace.Gravity = v and (State.GravityValue or 40) or 196.2 end)
 	if notify then notify(v and "重力已降低" or "重力已恢复") end
@@ -883,7 +917,7 @@ function syncRagTgls(v)
 		if t._title == "防布娃娃 ANTI RAGDOLL" and t.Set then t.Set(v, true) end
 	end
 end
-ToolRagTgl = makeToggle(PageTool, 554, "防布娃娃 ANTI RAGDOLL", "不会被打倒 / 摔倒", false, function(v)
+ToolRagTgl = makeToggle(PageTool, 606, "防布娃娃 ANTI RAGDOLL", "不会被打倒 / 摔倒", false, function(v)
 	syncRagTgls(v)
 end)
 PadSizeSlider = makeSlider(PageTouch, "方向键大小", 120, 50, 200, 100, " %", function(v)
@@ -976,24 +1010,272 @@ toolBtn("传送", 62,    function() teleportTyped() end)
 toolBtn("传 TA", 124,  function() teleportToPlayer() end)
 toolBtn("观察", 186,   function() spectateTyped() end)
 toolBtn("重进", 248,   function() rejoinServer() end)
-AntiVoidTgl = makeToggle(PageTool, 152, "防坠落 ANTI-VOID", "掉出地图自动拉回安全点", false, function(v)
+-- ===== 倒计时器 COUNTDOWN（用户：「在防坠落上面增加一个计时，开启之后屏幕生成一个小 UI，
+-- 输入要计多少分钟，点确认开始倒数，到 0 提示时间到了，可暂停 / 重置」）=====
+-- 说明：纯界面小部件，不碰角色；Stepped 维持循环在 render step 里 tick
+CdTotal, CdRemain, CdRunning, CdPaused = 0, 0, false, false
+CdShownSec = -1
+function cdFmt(s)
+	s = math.max(0, math.floor(s + 0.5))
+	return string.format("%02d:%02d", math.floor(s / 60), s % 60)
+end
+function cdBuild()
+	if CdFrame then return end
+	CdFrame = new("Frame", { Name = "HonCountdown",
+		Size = UDim2.new(0, 176, 0, 126), Position = UDim2.new(0.5, -88, 0, 96),
+		BackgroundColor3 = Color3.fromRGB(16, 19, 28), BackgroundTransparency = 0.08,
+		BorderSizePixel = 0, Visible = false, Parent = Gui })
+	corner(CdFrame, 12)
+	new("UIStroke", { Color = Mode().Accent, Transparency = 0.5, Thickness = 1, Parent = CdFrame })
+	CdTitleL = label({ Text = "倒计时 COUNTDOWN", Font = Enum.Font.GothamBold, TextSize = 10,
+		TextColor3 = Color3.fromRGB(140, 148, 168), Position = UDim2.new(0, 12, 0, 8),
+		Size = UDim2.new(1, -24, 0, 14), TextXAlignment = Enum.TextXAlignment.Left }, CdFrame)
+	CdTimeL = label({ Text = "00:00", Font = Enum.Font.GothamBold, TextSize = 30,
+		TextColor3 = Color3.fromRGB(238, 243, 255), Position = UDim2.new(0, 4, 0, 24),
+		Size = UDim2.new(1, -8, 0, 36), TextXAlignment = Enum.TextXAlignment.Center }, CdFrame)
+	CdInput = new("TextBox", { Name = "CdMin", PlaceholderText = "分钟", Text = "",
+		Font = Enum.Font.Gotham, TextSize = 12, TextColor3 = Color3.fromRGB(226, 233, 248),
+		PlaceholderColor3 = Color3.fromRGB(105, 113, 134),
+		BackgroundColor3 = Color3.fromRGB(255, 255, 255), BackgroundTransparency = 0.92,
+		BorderSizePixel = 0, ClearTextOnFocus = false,
+		Size = UDim2.new(0, 152, 0, 24), Position = UDim2.new(0, 12, 0, 66), Parent = CdFrame })
+	corner(CdInput, 8)
+	CdOkBtn = new("TextButton", { Text = "确认", Font = Enum.Font.GothamBold, TextSize = 11,
+		TextColor3 = Mode().Accent, BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+		BackgroundTransparency = 0.88, BorderSizePixel = 0, AutoButtonColor = false,
+		Size = UDim2.new(0, 46, 0, 24), Position = UDim2.new(0, 12, 0, 96), Parent = CdFrame })
+	corner(CdOkBtn, 8)
+	CdPauseBtn = new("TextButton", { Text = "暂停", Font = Enum.Font.GothamBold, TextSize = 11,
+		TextColor3 = Mode().Accent, BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+		BackgroundTransparency = 0.88, BorderSizePixel = 0, AutoButtonColor = false,
+		Size = UDim2.new(0, 46, 0, 24), Position = UDim2.new(0, 65, 0, 96), Parent = CdFrame })
+	corner(CdPauseBtn, 8)
+	CdResetBtn = new("TextButton", { Text = "重置", Font = Enum.Font.GothamBold, TextSize = 11,
+		TextColor3 = Mode().Accent, BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+		BackgroundTransparency = 0.88, BorderSizePixel = 0, AutoButtonColor = false,
+		Size = UDim2.new(0, 46, 0, 24), Position = UDim2.new(0, 118, 0, 96), Parent = CdFrame })
+	corner(CdResetBtn, 8)
+	bindClick(CdOkBtn, "倒计时确认", function() cdConfirm() end)
+	bindClick(CdPauseBtn, "倒计时暂停", function() cdPause() end)
+	bindClick(CdResetBtn, "倒计时重置", function() cdReset() end)
+	-- 小 UI 随时可挪：标题条 + 大字区当把手（不抢按钮/输入框的点击）
+	local function cdDragHook(o)
+		if not o then return end
+		local dragging, startMouse, basePos, moved = false, nil, nil, 0
+		o.InputBegan:Connect(function(i)
+			if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then
+				dragging, startMouse, basePos, moved = true, i.Position, o.Position, 0
+			end
+		end)
+		UserInputService.InputChanged:Connect(function(i)
+			if dragging and (i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseMovement) then
+				local d = i.Position - startMouse
+				moved = math.max(moved, math.abs(d.X) + math.abs(d.Y))
+				o.Position = UDim2.new(basePos.X.Scale, basePos.X.Offset + d.X,
+					basePos.Y.Scale, basePos.Y.Offset + d.Y)
+			end
+		end)
+		UserInputService.InputEnded:Connect(function(i)
+			if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then
+				dragging = false
+			end
+		end)
+	end
+	cdDragHook(CdFrame)
+	cdDragHook(CdTitleL)
+	cdDragHook(CdTimeL)
+end
+function cdPaint()
+	if not (CdFrame and CdFrame.Parent) then return end
+	local sec = math.max(0, math.ceil(CdRemain - 0.0001))
+	if sec ~= CdShownSec then
+		CdShownSec = sec
+		CdTimeL.Text = cdFmt(sec)
+		-- 最后 10 秒染红，肉眼就知道要到了
+		CdTimeL.TextColor3 = (CdRunning and not CdPaused and sec <= 10)
+			and Color3.fromRGB(255, 96, 96) or Color3.fromRGB(238, 243, 255)
+	end
+	if CdPauseBtn then CdPauseBtn.Text = CdPaused and "继续" or "暂停" end
+end
+function cdConfirm()
+	local txt = CdInput and tostring(CdInput.Text or "") or ""
+	local m = tonumber(txt)
+	if not m or m <= 0 then
+		if notify then notify("请输入大于 0 的分钟数（如 1 或 1.5）", Color3.fromRGB(255, 176, 32)) end
+		return
+	end
+	if m > 1440 then m = 1440 end
+	CdTotal = m * 60
+	CdRemain = CdTotal
+	CdRunning, CdPaused = true, false
+	CdShownSec = -1
+	cdPaint()
+	if notify then notify("倒计时开始 · " .. cdFmt(CdTotal)) end
+end
+function cdPause()
+	if not CdRunning then
+		if notify then notify("倒计时还没开始：先输分钟数点确认", Color3.fromRGB(255, 176, 32)) end
+		return
+	end
+	CdPaused = not CdPaused
+	cdPaint()
+	if notify then notify(CdPaused and "倒计时已暂停" or "倒计时继续") end
+end
+function cdReset()
+	CdRunning, CdPaused = false, false
+	CdRemain = CdTotal or 0
+	CdShownSec = -1
+	cdPaint()
+	if notify then notify("倒计时已重置 · " .. cdFmt(CdRemain)) end
+end
+function cdFinish()
+	CdRunning, CdPaused = false, false
+	CdRemain = 0
+	CdShownSec = -1
+	cdPaint()
+	if notify then notify("时间到了！倒计时结束", Color3.fromRGB(255, 176, 32)) end
+end
+function cdTick(dt)
+	if not (CdRunning and not CdPaused) or CdRemain <= 0 then return end
+	CdRemain = CdRemain - (dt or 0)
+	if CdRemain <= 0 then
+		CdRemain = 0
+		cdFinish()
+	else
+		cdPaint()
+	end
+end
+-- ===== 加速小窗 SPEED WIN（用户：「再给弄个加速，做个小窗，可以在小窗上面切换速度和模式」）=====
+-- 引擎页开关唤出；W / V / CF 三模式按钮直切 SetMode；速度 ± 步进 10，与主 UI
+-- 速度滑条双向同步（走 SpeedSlider.Apply）；标题条 + 数字区当把手整块拖；× 收起
+SpeedWinBtns = {}
+function speedWinBuild()
+	if SpeedWin then return end
+	SpeedWin = new("Frame", { Name = "HonSpeedWin",
+		Size = UDim2.new(0, 176, 0, 148), Position = UDim2.new(0, 14, 0, 96),
+		BackgroundColor3 = Color3.fromRGB(16, 19, 28), BackgroundTransparency = 0.08,
+		BorderSizePixel = 0, Visible = false, Parent = Gui })
+	corner(SpeedWin, 12)
+	SpeedWinStroke = new("UIStroke", { Color = Mode().Accent, Transparency = 0.5, Thickness = 1, Parent = SpeedWin })
+	label({ Text = "加速 SPEED", Font = Enum.Font.GothamBold, TextSize = 10,
+		TextColor3 = Color3.fromRGB(140, 148, 168), Position = UDim2.new(0, 12, 0, 8),
+		Size = UDim2.new(1, -40, 0, 14), TextXAlignment = Enum.TextXAlignment.Left }, SpeedWin)
+	SpeedWinCloseBtn = new("TextButton", { Text = "×", Font = Enum.Font.GothamBold, TextSize = 14,
+		TextColor3 = Color3.fromRGB(150, 158, 180), BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+		BackgroundTransparency = 0.9, BorderSizePixel = 0, AutoButtonColor = false,
+		Size = UDim2.new(0, 22, 0, 22), Position = UDim2.new(1, -30, 0, 6), Parent = SpeedWin })
+	corner(SpeedWinCloseBtn, 6)
+	-- 三模式按钮：W / V / CF 直切（高亮当前模式）
+	for i, m in ipairs(Modes) do
+		local b = new("TextButton", { Text = m.Id, Font = Enum.Font.GothamBold, TextSize = 12,
+			TextColor3 = Color3.fromRGB(224, 231, 246), BackgroundColor3 = Color3.fromRGB(38, 42, 58),
+			BorderSizePixel = 0, AutoButtonColor = false,
+			Size = UDim2.new(0, 50, 0, 26), Position = UDim2.new(0, 12 + (i - 1) * 56, 0, 30), Parent = SpeedWin })
+		corner(b, 8)
+		SpeedWinBtns[i] = b
+		bindClick(b, "小窗模式" .. m.Id, function() SetMode(i) end)
+	end
+	-- 当前速度大字 + 单位
+	SpeedWinNumL = label({ Text = "0", Font = Enum.Font.GothamBold, TextSize = 34,
+		TextColor3 = Color3.fromRGB(238, 243, 255), Position = UDim2.new(0, 4, 0, 62),
+		Size = UDim2.new(1, -8, 0, 42), TextXAlignment = Enum.TextXAlignment.Center }, SpeedWin)
+	label({ Text = "sp", Font = Enum.Font.GothamBold, TextSize = 10,
+		TextColor3 = Color3.fromRGB(140, 148, 168), Position = UDim2.new(0, 0, 0, 104),
+		Size = UDim2.new(1, 0, 0, 12), TextXAlignment = Enum.TextXAlignment.Center }, SpeedWin)
+	-- 速度 ±（步进 10）
+	SpeedWinMinusBtn = new("TextButton", { Text = "−", Font = Enum.Font.GothamBold, TextSize = 18,
+		TextColor3 = Mode().Accent, BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+		BackgroundTransparency = 0.88, BorderSizePixel = 0, AutoButtonColor = false,
+		Size = UDim2.new(0, 74, 0, 28), Position = UDim2.new(0, 12, 0, 112), Parent = SpeedWin })
+	corner(SpeedWinMinusBtn, 8)
+	SpeedWinPlusBtn = new("TextButton", { Text = "+", Font = Enum.Font.GothamBold, TextSize = 18,
+		TextColor3 = Mode().Accent, BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+		BackgroundTransparency = 0.88, BorderSizePixel = 0, AutoButtonColor = false,
+		Size = UDim2.new(0, 74, 0, 28), Position = UDim2.new(1, -86, 0, 112), Parent = SpeedWin })
+	corner(SpeedWinPlusBtn, 8)
+	bindClick(SpeedWinCloseBtn, "加速小窗关闭", function()
+		SpeedWin.Visible = false
+		if SpeedWinTgl then SpeedWinTgl.Set(false, true) end
+	end)
+	bindClick(SpeedWinMinusBtn, "加速小窗减速", function() speedWinStep(-10) end)
+	bindClick(SpeedWinPlusBtn, "加速小窗加速", function() speedWinStep(10) end)
+	-- 小窗随时可挪：标题条 + 数字区当把手（不抢按钮的点击）
+	local function swDragHook(o)
+		if not o then return end
+		local dragging, startMouse, basePos = false, nil, nil
+		o.InputBegan:Connect(function(i)
+			if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then
+				dragging, startMouse, basePos = true, i.Position, o.Position
+			end
+		end)
+		UserInputService.InputChanged:Connect(function(i)
+			if dragging and (i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseMovement) then
+				local d = i.Position - startMouse
+				o.Position = UDim2.new(basePos.X.Scale, basePos.X.Offset + d.X,
+					basePos.Y.Scale, basePos.Y.Offset + d.Y)
+			end
+		end)
+		UserInputService.InputEnded:Connect(function(i)
+			if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then
+				dragging = false
+			end
+		end)
+	end
+	swDragHook(SpeedWin)
+	swDragHook(SpeedWinNumL)
+end
+function speedWinStep(d)
+	local m = Mode()
+	local v = math.clamp(math.floor((State.Speed or 0) + d + 0.5), m.Min, m.Max)
+	SpeedSlider.Apply(v)   -- 触发 onChange → 写 State.Speed + 刷主 UI 滑条
+	speedWinRefresh()
+end
+function speedWinRefresh()
+	if not (SpeedWin and SpeedWin.Parent) then return end
+	local m = Mode()
+	if SpeedWinStroke then SpeedWinStroke.Color = m.Accent end
+	for i, b in ipairs(SpeedWinBtns) do
+		local act = (i == State.ModeIndex)
+		b.BackgroundColor3 = act and m.Accent or Color3.fromRGB(38, 42, 58)
+		b.TextColor3 = act and Color3.fromRGB(16, 19, 28) or Color3.fromRGB(150, 158, 180)
+	end
+	if SpeedWinNumL then
+		SpeedWinNumL.Text = tostring(math.floor((State.Speed or 0) + 0.5))
+		SpeedWinNumL.TextColor3 = m.Accent
+	end
+	for _, b in ipairs({ SpeedWinMinusBtn, SpeedWinPlusBtn }) do
+		if b then b.TextColor3 = m.Accent end
+	end
+end
+CdTgl = makeToggle(PageTool, 152, "倒计时器 COUNTDOWN", "屏幕小 UI · 输入分钟数倒数，到点提醒", false, function(v)
+	State.Countdown = v
+	cdBuild()
+	if CdFrame then CdFrame.Visible = v end
+	if v then
+		cdPaint()
+	else
+		-- 关开关 = 收界面并停表（下次开再从 0 开始，不清空已输入的总时长）
+		CdRunning, CdPaused = false, false
+	end
+end, true)
+AntiVoidTgl = makeToggle(PageTool, 200, "防坠落 ANTI-VOID", "掉出地图自动拉回安全点", false, function(v)
 	State.AntiVoid = v
 end)
-   local FakeTgl = makeToggle(PageTool, 200, "分身隐身 FAKE CHAR", "改的是本体（有网络所有权，会同步）", false, function(v)
+   local FakeTgl = makeToggle(PageTool, 248, "分身隐身 FAKE CHAR", "改的是本体（有网络所有权，会同步）", false, function(v)
 	setFakeChar(v)
 end)
-BrightTgl = makeToggle(PageTool, 248, "夜视 FULLBRIGHT", "去雾 + 全亮，关闭时还原", false, function(v)
+BrightTgl = makeToggle(PageTool, 296, "夜视 FULLBRIGHT", "去雾 + 全亮，关闭时还原", false, function(v)
 	setFullbright(v)
 end)
-AntiKbTgl = makeToggle(PageTool, 296, "防击退 ANTI-KB", "限制异常击飞速度", false, function(v)
+AntiKbTgl = makeToggle(PageTool, 344, "防击退 ANTI-KB", "限制异常击飞速度", false, function(v)
 	State.AntiKB = v
 end)
-AntiStunTgl = makeToggle(PageTool, 344, "防失控 ANTI-STUN", "自动解除被眩晕 / 被坐下", false, function(v)
+AntiStunTgl = makeToggle(PageTool, 392, "防失控 ANTI-STUN", "自动解除被眩晕 / 被坐下", false, function(v)
 	State.AntiStun = v
 end)
-GravitySlider = makeSlider(PageTool, "重力 GRAVITY", 392, -200, 300, math.floor(Workspace.Gravity + 0.5), " g",
+GravitySlider = makeSlider(PageTool, "重力 GRAVITY", 450, -200, 300, math.floor(Workspace.Gravity + 0.5), " g",
 	function(v) Workspace.Gravity = v end, false)
-SparkTgl = makeToggle(PageTool, 450, "闪电尖兵大招 SPARK ULT", "点击画面任意位置直接传送过去（照搬参考源码）", false, function(v)
+SparkTgl = makeToggle(PageTool, 502, "闪电尖兵大招 SPARK ULT", "点击画面任意位置直接传送过去（照搬参考源码）", false, function(v)
 	State.SparkTP = v
 end)
 label({ Text = "传 送 TELEPORT", Font = Enum.Font.GothamBold, TextSize = 11,
@@ -1016,7 +1298,7 @@ bindClick(ViewBtn, "查看玩家", function()
 			Cam.CameraSubject = hum
 			if notify then notify("正在查看：" .. pl.Name) end
 		elseif notify then
-			notify("该玩家角色还没加载")
+			notify("该玩家角色还没加载", Color3.fromRGB(255, 176, 32))
 		end
 	end, nil, "选择要查看的玩家")
 end)
@@ -1297,6 +1579,7 @@ function wpRefresh()
 		end)
 	end
 	WPList.CanvasSize = UDim2.new(0, 0, 0, math.max(#Waypoints * 31 + 6, 1))
+	if wpWinRefresh then wpWinRefresh() end   -- 标点小窗开着的话跟着一起刷
 end
 bindClick(WpSaveBtn, "保存标点", function()
 	if not (HRP and HRP.Parent) then
@@ -1331,6 +1614,135 @@ RunService:BindToRenderStep("HonCoord", 9993, function(dt)
 		local q = HRP.Position
 		CoordLbl.Text = string.format("当前坐标：X %d   Y %d   Z %d", q.X, q.Y, q.Z)
 	end
+	-- 标点小窗的坐标条也在这里顺手刷（省一个渲染步）
+	if WPWinCoordLbl and WPWinCoordLbl.Parent and HRP and HRP.Parent then
+		local q2 = HRP.Position
+		WPWinCoordLbl.Text = string.format("X %d   Y %d   Z %d", q2.X, q2.Y, q2.Z)
+	end
+end)
+
+-- ===== 标点传送小窗 WP WIN（用户：「然后那个标点传送也是」——加速小窗同款待遇）=====
+-- 传送页开关唤出；当前坐标 + 「存此处」+ 标点列表（☆ 选中 / 去传送）；
+-- wpWinRefresh() 独立渲染进小窗列表，不碰页面 wpRefresh（两边数据同一份 Waypoints）
+function honDragHook(o)
+	if not o then return end
+	local dragging, startMouse, basePos = false, nil, nil
+	o.InputBegan:Connect(function(i)
+		if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then
+			dragging, startMouse, basePos = true, i.Position, o.Position
+		end
+	end)
+	UserInputService.InputChanged:Connect(function(i)
+		if dragging and (i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseMovement) then
+			local d = i.Position - startMouse
+			o.Position = UDim2.new(basePos.X.Scale, basePos.X.Offset + d.X,
+				basePos.Y.Scale, basePos.Y.Offset + d.Y)
+		end
+	end)
+	UserInputService.InputEnded:Connect(function(i)
+		if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then
+			dragging = false
+		end
+	end)
+end
+function wpWinBuild()
+	if WPWin then return end
+	WPWin = new("Frame", { Name = "HonWPWin",
+		Size = UDim2.new(0, 176, 0, 228), Position = UDim2.new(0, 14, 0, 256),
+		BackgroundColor3 = Color3.fromRGB(16, 19, 28), BackgroundTransparency = 0.08,
+		BorderSizePixel = 0, Visible = false, Parent = Gui })
+	corner(WPWin, 12)
+	WPWinStroke = new("UIStroke", { Color = Color3.fromRGB(150, 220, 255), Transparency = 0.5, Thickness = 1, Parent = WPWin })
+	label({ Text = "标点 WP", Font = Enum.Font.GothamBold, TextSize = 10,
+		TextColor3 = Color3.fromRGB(140, 148, 168), Position = UDim2.new(0, 12, 0, 8),
+		Size = UDim2.new(1, -40, 0, 14), TextXAlignment = Enum.TextXAlignment.Left }, WPWin)
+	WPWinCloseBtn = new("TextButton", { Text = "×", Font = Enum.Font.GothamBold, TextSize = 14,
+		TextColor3 = Color3.fromRGB(150, 158, 180), BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+		BackgroundTransparency = 0.9, BorderSizePixel = 0, AutoButtonColor = false,
+		Size = UDim2.new(0, 22, 0, 22), Position = UDim2.new(1, -30, 0, 6), Parent = WPWin })
+	corner(WPWinCloseBtn, 6)
+	-- 当前坐标（HonCoord 渲染步顺手刷）
+	WPWinCoordLbl = label({ Text = "X 0   Y 0   Z 0", Font = Enum.Font.GothamBold, TextSize = 12,
+		TextColor3 = Color3.fromRGB(150, 220, 255), Position = UDim2.new(0, 12, 0, 28),
+		Size = UDim2.new(1, -24, 0, 16), TextXAlignment = Enum.TextXAlignment.Center }, WPWin)
+	-- 存此处：一键存当前位置（自动命名）
+	WPWinSaveBtn = new("TextButton", { Text = "存此处", Font = Enum.Font.GothamBold, TextSize = 11,
+		TextColor3 = Color3.fromRGB(150, 220, 255), BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+		BackgroundTransparency = 0.88, BorderSizePixel = 0, AutoButtonColor = false,
+		Size = UDim2.new(1, -24, 0, 26), Position = UDim2.new(0, 12, 0, 48), Parent = WPWin })
+	corner(WPWinSaveBtn, 8)
+	-- 标点列表（☆ 选中 / 去传送；删除留在主页面，防误触）
+	WPWinListWrap = new("Frame", { Size = UDim2.new(1, -16, 0, 120), Position = UDim2.new(0, 8, 0, 80),
+		BackgroundColor3 = Color3.fromRGB(20, 23, 33), BackgroundTransparency = 0.25,
+		BorderSizePixel = 0, ClipsDescendants = true, Parent = WPWin })
+	corner(WPWinListWrap, 8)
+	WPWinList = new("ScrollingFrame", { Size = UDim2.new(1, -8, 1, -8), Position = UDim2.new(0, 4, 0, 4),
+		BackgroundTransparency = 1, BorderSizePixel = 0, ScrollBarThickness = 3,
+		ScrollBarImageTransparency = 0.5, CanvasSize = UDim2.new(0, 0, 0, 0), Parent = WPWinListWrap })
+	WPWinCountL = label({ Text = "共 0 个", Font = Enum.Font.Gotham, TextSize = 9,
+		TextColor3 = Color3.fromRGB(120, 128, 148), Position = UDim2.new(0, 12, 0, 204),
+		Size = UDim2.new(1, -24, 0, 12), TextXAlignment = Enum.TextXAlignment.Left }, WPWin)
+	bindClick(WPWinCloseBtn, "标点小窗关闭", function()
+		WPWin.Visible = false
+		if WPWinTgl then WPWinTgl.Set(false, true) end
+	end)
+	bindClick(WPWinSaveBtn, "小窗存标点", function()
+		if not (HRP and HRP.Parent) then
+			if notify then notify("保存失败：角色还没加载", Color3.fromRGB(255, 176, 32)) end
+			return
+		end
+		local q = HRP.Position
+		local nm = "标点 " .. tostring(#Waypoints + 1)
+		table.insert(Waypoints, { n = nm, x = math.floor(q.X), y = math.floor(q.Y), z = math.floor(q.Z) })
+		wpSave(); wpRefresh()   -- wpRefresh 尾部会顺带刷小窗
+		if notify then notify("已保存标点：" .. nm .. "（共 " .. #Waypoints .. " 个）") end
+	end)
+	honDragHook(WPWin)
+	honDragHook(WPWinCoordLbl)
+end
+function wpWinRefresh()
+	if not (WPWin and WPWin.Parent and WPWinList) then return end
+	for _, c in ipairs(WPWinList:GetChildren()) do
+		if c:IsA("Frame") or c:IsA("TextButton") or c:IsA("TextLabel") then c:Destroy() end
+	end
+	if #Waypoints == 0 then
+		label({ Text = "还没有标点\n点上方「存此处」记一个", Font = Enum.Font.Gotham, TextSize = 10,
+			TextColor3 = Color3.fromRGB(105, 113, 134), Position = UDim2.new(0, 8, 0, 34),
+			Size = UDim2.new(1, -16, 0, 40), TextXAlignment = Enum.TextXAlignment.Center,
+			TextYAlignment = Enum.TextYAlignment.Top }, WPWinList)
+	end
+	for i, w in ipairs(Waypoints) do
+		local row = new("Frame", { Size = UDim2.new(1, -4, 0, 26), Position = UDim2.new(0, 2, 0, (i - 1) * 30),
+			BackgroundTransparency = 1, Parent = WPWinList })
+		local nm = new("TextButton", { Text = string.format("%d.%s", i, tostring(w.n)),
+			Font = Enum.Font.Gotham, TextSize = 10,
+			TextColor3 = WPSelIdx == i and Color3.fromRGB(255, 210, 90) or Color3.fromRGB(226, 233, 248),
+			BackgroundTransparency = 1, BorderSizePixel = 0, AutoButtonColor = false,
+			Size = UDim2.new(0.62, 0, 1, 0), TextXAlignment = Enum.TextXAlignment.Left, Parent = row })
+		local sel = new("TextButton", { Text = WPSelIdx == i and "★" or "☆", Font = Enum.Font.Gotham, TextSize = 11,
+			TextColor3 = WPSelIdx == i and Color3.fromRGB(255, 210, 90) or Color3.fromRGB(140, 149, 172),
+			BackgroundTransparency = 1, BorderSizePixel = 0, AutoButtonColor = false,
+			Size = UDim2.new(0.14, 0, 1, 0), Parent = row })
+		local go = new("TextButton", { Text = "去", Font = Enum.Font.GothamBold, TextSize = 10,
+			TextColor3 = Color3.fromRGB(150, 220, 255), BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+			BackgroundTransparency = 0.9, BorderSizePixel = 0, AutoButtonColor = false,
+			Size = UDim2.new(0.16, 0, 0, 20), Position = UDim2.new(0.78, 0, 0, 3), Parent = row })
+		corner(go, 6)
+		nm.MouseButton1Click:Connect(function() tpToPos(w.x, w.y, w.z); wpWinRefresh() end)
+		sel.MouseButton1Click:Connect(function()
+			WPSelIdx = (WPSelIdx == i) and 0 or i
+			wpWinRefresh()
+			if notify then notify(WPSelIdx == i and ("已选中：" .. tostring(w.n)) or "已取消选中") end
+		end)
+		go.MouseButton1Click:Connect(function() tpToPos(w.x, w.y, w.z); wpWinRefresh() end)
+	end
+	WPWinList.CanvasSize = UDim2.new(0, 0, 0, math.max(#Waypoints * 30 + 6, 1))
+	if WPWinCountL then WPWinCountL.Text = "共 " .. #Waypoints .. " 个 · ☆ 选中可循环" end
+end
+WPWinTgl = makeToggle(PageTp, 1044, "标点小窗 WP WIN", "屏幕小窗 · 看坐标 / 存标点 / ★ 选中传送", false, function(v)
+	wpWinBuild()
+	if WPWin then WPWin.Visible = v end
+	if v then wpWinRefresh() end
 end)
 
 function getTargetPlayer(name)
@@ -1403,13 +1815,14 @@ RunService.Stepped:Connect(function()
 			if p:IsA("BasePart") then p.Transparency = t end
 		end
 	end
-	-- 持续维持：把露出来的附加方块压回去
-	if State.HideBlock then
-		BlockTimer = BlockTimer + 1
-		if BlockTimer >= 30 then
-			BlockTimer = 0
-			pcall(hideBodyBlocks, false)
-		end
+	-- 内置自动清除身上方块（v5.45，用户：「开启脚本如果出现方块自动清除而不是手动」）：
+	-- 旧版这里是有开关才维持、而且维持调用写的是 hideBodyBlocks(false)——false 是还原分支，
+	-- 等于每 30 帧把藏起来的方块全部放出来，「隐藏身上方块没有用」的根因就在这一行；
+	-- 现在改成无开关常驻：持续把游戏后加上来的附加物压回去，UNLOAD 时才统一还原
+	BlockTimer = BlockTimer + 1
+	if BlockTimer >= 30 then
+		BlockTimer = 0
+		pcall(hideBodyBlocks, true)
 	end
 end)
 FAKE_Y = 100000
@@ -1576,6 +1989,7 @@ end)
 -- ---------- 娱乐功能生成物（重建：此前整组函数被误删，UI/驱动/恢复逻辑都在，这里按驱动字段契约补回） ----------
 Clones, TrailObj, OrbitPart, CarModel, HeroFlyOn = {}, nil, nil, nil, false
 CarBackup, TP_Backup, BlockHidden = nil, nil, {}
+BlockTimer = 0
 
 -- 彩虹拖尾：两个 Attachment 之间拉彩色光带（Trail 自动渲染，重生后由恢复逻辑重建）
 function setTrail(on)
@@ -1911,7 +2325,7 @@ end
 EjectCd = 0
 function ejectUp()
 	if not (HRP and HRP.Parent) then
-		if notify then notify("角色还没就绪") end
+		if notify then notify("角色还没就绪", Color3.fromRGB(255, 176, 32)) end
 		return
 	end
 	if tick() < (EjectCd or 0) then
@@ -1922,7 +2336,7 @@ function ejectUp()
 	HRP.AssemblyLinearVelocity = Vector3.new(0, 190, 0)
 	-- 脚下补一圈烟花，起飞更有仪式感
 	pcall(toyFirework)
-	if notify then notify("咻——起飞！", Color3.fromRGB(120, 230, 150)) end
+	if notify then notify("咻——起飞！") end
 end
 -- 2) 装死倒地：PlatformStand 让角色当场躺平（再点站起来；起身走两步自动退出）
 function setPlayDead(on)
@@ -1942,7 +2356,7 @@ function setNeonGlow(on)
 	local ch = LP and LP.Character
 	if on then
 		if not ch then
-			if notify then notify("角色还没就绪") end
+			if notify then notify("角色还没就绪", Color3.fromRGB(255, 176, 32)) end
 			return
 		end
 		if NeonBackup then return end
@@ -1956,7 +2370,7 @@ function setNeonGlow(on)
 		for p, _ in pairs(NeonBackup) do
 			if p and p.Parent then p.Material = Enum.Material.Neon end
 		end
-		if notify then notify("霓虹发光开启 · 关掉自动还原", Color3.fromRGB(120, 230, 150)) end
+		if notify then notify("霓虹发光开启 · 关掉自动还原") end
 	else
 		if NeonBackup then
 			for p, v in pairs(NeonBackup) do
@@ -2085,7 +2499,7 @@ function setBodyScale(h, w, head)
 				if head then ensure("HeadScale", head) end
 			end)
 		elseif notify then
-			notify("当前角色不支持缩放（需 R15）")
+			notify("当前角色不支持缩放（需 R15）", Color3.fromRGB(255, 176, 32))
 		end
 	end
 end
@@ -2191,7 +2605,7 @@ SaveBtn = utilBtn("保存存档点 SAVE", 160, function()
 			math.floor(State.Waypoint.X), math.floor(State.Waypoint.Y), math.floor(State.Waypoint.Z))
 		if notify then notify("存档点已保存 " .. WaypointLabel.Text:gsub("存档点：", "")) end
 	elseif notify then
-		notify("保存失败：角色还没加载")
+		notify("保存失败：角色还没加载", Color3.fromRGB(255, 176, 32))
 	end
 end)
 GoBtn = utilBtn("回到存档点 GO", 160, function()
@@ -2229,7 +2643,7 @@ end, false)
 utilBtn("全部关闭 RESET ALL", 450, function()
 	askConfirm("关闭全部功能？", "会把当前开着的所有开关全部关掉：飞行 / 穿墙 / 无限跳 / 透视 / 黑洞 / 分身 / 拖尾 / 特效 等等。\n滑条数值保留，存档点不会被删除。", "确认全部关闭", function()
 		for _, t in ipairs(ToggleRegistry) do pcall(function() t.Set(false, false) end) end
-		if notify then notify("已关闭全部功能", Color3.fromRGB(255, 108, 118)) end
+		if notify then notify("已关闭全部功能") end
 	end)
 end)
 HiddenParts = {}
@@ -2443,6 +2857,34 @@ for _, c in ipairs(PAD_CELLS) do
 			end
 			TweenService:Create(b, TWEEN_FAST, { BackgroundTransparency = on and 0.02 or 0.18 }):Play()
 		end
+		-- v5.47：方向格整块拖（用户：「我要的是拖动它，然后就中间那个我碰到哪里就轻轻碰
+		-- 向哪里……而不是把所有按键全部分散拖动」）——按住格子照常走；手指挪出 12px 容忍区
+		-- 就停脚、改为拖动整个方向键（PadFrame 整体位移），单格再也别想被拽得满屏飞
+		local cellDrag, cellStart, cellMouse = false, nil, nil
+		b.InputBegan:Connect(function(i)
+			if i.UserInputType ~= Enum.UserInputType.Touch and i.UserInputType ~= Enum.UserInputType.MouseButton1 then return end
+			if State.TouchLocked then return end
+			cellDrag, cellStart, cellMouse = false, PadFrame.Position, i.Position
+			press(true)
+		end)
+		UserInputService.InputChanged:Connect(function(i)
+			if not cellMouse then return end
+			if i.UserInputType ~= Enum.UserInputType.MouseMovement and i.UserInputType ~= Enum.UserInputType.Touch then return end
+			local mx, my = i.Position.X - cellMouse.X, i.Position.Y - cellMouse.Y
+			if not cellDrag and (math.abs(mx) > 12 or math.abs(my) > 12) then
+				cellDrag = true
+				press(false)   -- 转入拖动：先停脚，别一边走一边拖
+			end
+			if cellDrag then
+				PadFrame.Position = UDim2.new(cellStart.X.Scale, cellStart.X.Offset + mx,
+					cellStart.Y.Scale, cellStart.Y.Offset + my)
+			end
+		end)
+		b.InputEnded:Connect(function(i)
+			if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then
+				cellMouse, cellDrag = nil, false
+			end
+		end)
 		b.MouseButton1Down:Connect(function() press(true) end)
 		b.MouseButton1Up:Connect(function() press(false) end)
 		b.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.Touch then press(true) end end)
@@ -2463,26 +2905,103 @@ UserInputService.InputEnded:Connect(function(i)
 end)
 do
 	local holdStart, padDrag, padStart, padMouse = nil, false, nil, nil
+	local centerWalk, centerUsed, centerKeys = false, false, nil
+	-- 中心格当小摇杆（用户：「只要轻轻往右上角一摁就往右上角走……只需要轻微触碰某个方向
+	-- 就往某个方向动，要不然中间不能按这样走路一卡一卡的」）：
+	-- 触点相对格子中心的偏移量化成 8 向——偏移任一侧超过 30% 就算这个方向，
+	-- 两个轴都过线就是斜向（右上 / 左上 / 右下 / 左下），斜向也能走
+	local function padAxis(v)
+		if v > 0.3 then return 1 elseif v < -0.3 then return -1 end
+		return 0
+	end
+	local function centerDirAt(pos)
+		-- 触点是屏幕绝对坐标；格子几何 = 56×56（Offset）× PadScale，位置取绝对坐标
+		local ap, asz = padCenter.AbsolutePosition, padCenter.AbsoluteSize
+		if not ap or not asz or asz.X < 1 or asz.Y < 1 then return 0, 0 end
+		local dx = (pos.X - (ap.X + asz.X / 2)) / (asz.X / 2)
+		local dy = -(pos.Y - (ap.Y + asz.Y / 2)) / (asz.Y / 2)  -- 屏幕 Y 向下，方向键 Y 向上
+		return padAxis(dx), padAxis(dy)
+	end
+	local function centerSendKeys(on, dx, dy)
+		if not PAD_USE_KEYS then return end
+		-- PAD_USE_KEYS 模式下中心格也同步发真实按键（和方向键同一套键位表）
+		if centerKeys then
+			for _, k in ipairs(centerKeys) do pcall(function() VirtualInput:SendKeyEvent(false, k, false, game) end) end
+			centerKeys = nil
+		end
+		if on then
+			for _, c in ipairs(PAD_CELLS) do
+				if c[4] and c[5] == dx and c[6] == dy then centerKeys = c[4]; break end
+			end
+			if centerKeys then
+				for _, k in ipairs(centerKeys) do pcall(function() VirtualInput:SendKeyEvent(true, k, false, game) end) end
+			end
+		end
+	end
+	local function centerSetDir(pos)
+		local dx, dy = centerDirAt(pos)
+		if dx == 0 and dy == 0 then
+			-- 正中心（死区）：不当方向键用，留给「长按 0.3 秒拖动整块」
+			if centerWalk then
+				centerWalk = false
+				PadActive = false
+				PadDir.x, PadDir.y = 0, 0
+				TweenService:Create(padCenter, TWEEN_FAST, { BackgroundTransparency = 0.18 }):Play()
+				centerSendKeys(false, 0, 0)
+			end
+			return
+		end
+		if not centerWalk or PadDir.x ~= dx or PadDir.y ~= dy then
+			centerWalk = true
+			centerUsed = true
+			PadDir.x, PadDir.y = dx, dy
+			PadActive = true
+			TweenService:Create(padCenter, TWEEN_FAST, { BackgroundTransparency = 0.02 }):Play()
+			centerSendKeys(true, dx, dy)
+		end
+	end
+	local function centerStop()
+		if centerWalk then
+			centerWalk = false
+			PadActive = false
+			PadDir.x, PadDir.y = 0, 0
+			TweenService:Create(padCenter, TWEEN_FAST, { BackgroundTransparency = 0.18 }):Play()
+		end
+		centerSendKeys(false, 0, 0)
+		centerUsed = false
+	end
 	padCenter.MouseButton1Down:Connect(function()
+		centerUsed = false
 		if State.TouchLocked then return end
 		holdStart = tick()
 	end)
 	padCenter.InputBegan:Connect(function(i)
-		if i.UserInputType == Enum.UserInputType.Touch and not State.TouchLocked then holdStart = tick() end
+		if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then
+			centerUsed = false
+			if not State.TouchLocked then holdStart = tick() end
+			-- 落指即定向：轻碰中心格边缘就往那个方向走（走动和长按拖动互不冲突——
+			-- 这次按聘用过走路就永远不再触发拖动）
+			centerSetDir(i.Position)
+		end
 	end)
 	UserInputService.InputChanged:Connect(function(i)
-		if holdStart and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
-			if tick() - holdStart > 0.3 then
-				if not padDrag then padDrag, padStart, padMouse = true, PadFrame.Position, i.Position end
-				local d = i.Position - padMouse
-				PadFrame.Position = UDim2.new(padStart.X.Scale, padStart.X.Offset + d.X,
-					padStart.Y.Scale, padStart.Y.Offset + d.Y)
-			end
+		if i.UserInputType ~= Enum.UserInputType.MouseMovement and i.UserInputType ~= Enum.UserInputType.Touch then return end
+		if centerWalk then
+			-- 手指在中心格里划：实时改方向（小摇杆手感），且不启动拖动
+			centerSetDir(i.Position)
+			return
+		end
+		if holdStart and not centerUsed and (tick() - holdStart > 0.3) then
+			if not padDrag then padDrag, padStart, padMouse = true, PadFrame.Position, i.Position end
+			local d = i.Position - padMouse
+			PadFrame.Position = UDim2.new(padStart.X.Scale, padStart.X.Offset + d.X,
+				padStart.Y.Scale, padStart.Y.Offset + d.Y)
 		end
 	end)
 	UserInputService.InputEnded:Connect(function(i)
 		if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then
 			holdStart, padDrag = nil, false
+			centerStop()
 		end
 	end)
 end
@@ -2724,7 +3243,7 @@ function setUILock(on)
 	if on then
 		uiSave(t)
 		uiDestroyHandle()
-		if notify then notify("已固定：" .. t.Name .. "（本服务器自动生效）", Color3.fromRGB(120, 230, 150)) end
+		if notify then notify("已固定：" .. t.Name .. "（本服务器自动生效）") end
 	else
 		uiClear(t)
 		t.Off.x, t.Off.y = 0, 0
@@ -2758,7 +3277,7 @@ function uiRestore()
 			for _, t in ipairs(UiTargets) do uiApply(t) end
 			State.UILayoutLocked = true
 			if UiLockTgl then UiLockTgl.Set(true, true) end
-			if notify then notify("已恢复本服务器的 UI 布局（" .. hit .. " 项）", Color3.fromRGB(120, 230, 150)) end
+			if notify then notify("已恢复本服务器的 UI 布局（" .. hit .. " 项）") end
 			return
 		end
 		twait(1.5)
@@ -2870,10 +3389,11 @@ function SetMode(i)
 	for _, b in ipairs(UiBtns) do TweenService:Create(b, TWEEN_SOFT, { TextColor3 = m.Accent }):Play() end
 	InertiaToggle.Dim(m.Id ~= "V")
 	SlideToggle.Dim(m.Id ~= "CF")
-	if notify then notify("引擎已切换：" .. m.Name, m.Accent) end
+	if notify then notify("引擎已切换：" .. m.Name) end
 	TeleportToggle.Dim(m.Id ~= "CF")
 	cur, CFAccum = 0, 0
 	VVEL = Vector3.zero
+	speedWinRefresh()   -- 加速小窗跟着切：模式高亮 + 速度范围 + 主题色
 end
 -- ---------- 神威 · 空间扭曲 ----------
 -- 还原「空间被拧成漩涡」：把一整片空间网格（同心环 + 径向线）按等角(对数)螺旋
@@ -2884,6 +3404,9 @@ KAMUI_A, KAMUI_B = 5, 0.30
 KamuiRoot, KamuiCore, KamuiGlow, KamuiDisc = nil, nil, nil, nil
 KamuiSegs, KamuiRings = {}, {}
 KamuiOn, KamuiT, KamuiDur, KamuiDir = false, 0, 3.0, 1
+-- v5.47：面板动画世代锁——开关动画/tspawn 协程各持一个 gen，过期协程直接退出，
+-- 快速反复开关时两个协程不会再交错写 Main 的 Size/Rotation/Visible（UI 收缩变宽根因之二）
+PanelAnimGen = 0
 
 KAMUI_RMAX, KAMUI_RMIN, KAMUI_BASE = 215, 17, 6
 KAMUI_ARMS, KAMUI_SEGN = 14, 8
@@ -2994,9 +3517,10 @@ function stopKamui()
 	pcall(hideShards)
 end
 
-function playKamui(mode)
+function playKamui(mode, dur)
 	buildKamui()
 	KamuiDir = (mode == "out") and -1 or 1
+	KamuiDur = dur or 3.0
 	KamuiT = 0
 	KamuiOn = true
 	KamuiRoot.Visible = true
@@ -3126,13 +3650,28 @@ RunService:BindToRenderStep("HonKamui", 9999, function(dt)
 end)
 
 function playOpenAnim()
+	-- v5.47：世代锁——本次开场动画持 gen，后续任何开关动画都会 +1 把过期协程作废
+	PanelAnimGen = PanelAnimGen + 1
+	local myGen = PanelAnimGen
+	-- 用户关了启动动画：面板直接归位出现，不播神威漩涡（旧版只有样式切换、没有总开关，
+	-- 「不要动画」藏在第 4 个样式里，用户找不到就是「启动动画没法关」）
+	if not AnimOn then
+		Main.Visible = true
+		pcall(function()
+			if MainScale then MainScale.Scale = PrefPanelScale or 1 end
+			Main.Rotation = 0
+			Main.Size = UDim2.new(0, PANEL_W, 0, PANEL_H)
+			Main.BackgroundTransparency = 0.05
+		end)
+		return
+	end
 	local st = AnimStyleIdx or 1
 	if st ~= 1 then stopKamui() end
 	if st == 4 then
 		Main.Visible = true
 		pcall(function()
-			if MainScale then MainScale.Scale = 1 end
-			if OrigMainSize then Main.Size = OrigMainSize end
+			if MainScale then MainScale.Scale = PrefPanelScale or 1 end
+			Main.Size = UDim2.new(0, PANEL_W, 0, PANEL_H)
 			Main.BackgroundTransparency = 0.05
 		end)
 		return
@@ -3141,7 +3680,7 @@ function playOpenAnim()
 		Main.Visible = true
 		pcall(function()
 			Main.BackgroundTransparency = 1
-			if MainScale then MainScale.Scale = 1 end
+			if MainScale then MainScale.Scale = PrefPanelScale or 1 end
 			TweenService:Create(Main, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
 				{ BackgroundTransparency = 0.05 }):Play()
 		end)
@@ -3152,7 +3691,7 @@ function playOpenAnim()
 		pcall(function()
 			if MainScale then MainScale.Scale = 0.4 end
 			TweenService:Create(MainScale, TweenInfo.new(0.45, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
-				{ Scale = 1 }):Play()
+				{ Scale = PrefPanelScale or 1 }):Play()
 		end)
 		return
 	end
@@ -3162,13 +3701,14 @@ function playOpenAnim()
 	KamuiShatter = true
 	tspawn(function()
 		twait(1.6)
+		if myGen ~= PanelAnimGen then return end   -- 期间又开关过：本次结果已作废
 		KamuiShatter = false
 		pcall(hideShards)
 		Main.Visible = true
 		pcall(function()
-			if MainScale then MainScale.Scale = 1 end
+			if MainScale then MainScale.Scale = PrefPanelScale or 1 end
 			Main.Rotation = 0
-			if OrigMainSize then Main.Size = OrigMainSize end
+			Main.Size = UDim2.new(0, PANEL_W, 0, PANEL_H)
 			Main.BackgroundTransparency = 1
 			TweenService:Create(Main, TweenInfo.new(0.45, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
 				{ Size = UDim2.new(0, PANEL_W, 0, PANEL_H), BackgroundTransparency = 0.05 }):Play()
@@ -3194,6 +3734,7 @@ function unloadScript()
 	pcall(function() if type(setBlackHole) == "function" then setBlackHole(false) end end)
 	pcall(function() if type(setTrail) == "function" then setTrail(false) end end)
 	pcall(function() if type(setOrbitFx) == "function" then setOrbitFx(false) end end)
+	pcall(function() if type(clearStyleFx) == "function" then clearStyleFx() end end)
 	pcall(function() if type(setCar) == "function" then setCar(false) end end)
 	pcall(function() if type(setHeroFly) == "function" then setHeroFly(false) end end)
 	pcall(function() if KamuiRoot then KamuiRoot.Visible = false end end)
@@ -3205,6 +3746,8 @@ function unloadScript()
 		setGfxParticles(false); setGfxDecal(false)
 		setGfxShadows(false); setGfxFog(false)
 	end)
+	-- 身上方块还原：脚本内置自动清过角色附加物，卸载时原样还回去不留残
+	pcall(function() if type(hideBodyBlocks) == "function" then hideBodyBlocks(false) end end)
 	-- 卸载前把「隐藏全部 UI / 隐身录屏」收起来的游戏界面全部还回去，不留残
 	pcall(function()
 		for _, g in ipairs(PG:GetChildren()) do
@@ -3221,7 +3764,7 @@ function unloadScript()
 		end
 	end)
 	for _, nm in ipairs({ "HonFunLoop", "HonFlyJump", "HonFov", "HonKamui",
-		"HonUILayout", "HonPadMove", "HonFakeSync", "HonDance", "HonBorder" }) do
+		"HonUILayout", "HonPadMove", "HonFakeSync", "HonDance", "HonBorder", "HonStyleFx" }) do
 		pcall(function() RunService:UnbindFromRenderStep(nm) end)
 	end
 	-- WindUI 界面也要收：用户可能在 WindUI 框架里点的关闭
@@ -3232,6 +3775,15 @@ function unloadScript()
 end
 
 function playCloseAnim(after)
+	-- v5.47：世代锁——同 playOpenAnim，过期协程作废，快速反复开关不再交错写面板状态
+	PanelAnimGen = PanelAnimGen + 1
+	local myGen = PanelAnimGen
+	-- 同启动动画：关了就秒收，不播收回动画
+	if not CloseAnimOn then
+		Main.Visible = false
+		if after then pcall(after) end
+		return
+	end
 	local st = CloseAnimIdx or 1
 	if st ~= 1 then stopKamui() end
 	if st == 4 then
@@ -3262,31 +3814,33 @@ function playCloseAnim(after)
 		tspawn(function()
 			twait(0.32)
 			Main.Visible = false
-			if MainScale then MainScale.Scale = 1 end
+			if MainScale then MainScale.Scale = PrefPanelScale or 1 end
 			if after then pcall(after) end
 		end)
 		return
 	end
-	pcall(playKamui, "out")
+	-- v5.47：删除动画改成与开启完全对称的碎片扭曲——面板碎成 24 片，被黑洞吸回去再消失
+	-- （用户：「它是直接把面板就哐的一下横过来，然后消失了，我需要的是让它和开启一样
+	-- 变成碎片扭曲空间，然后再收回去」）——旧版那套 Rotation=10 + 宽×1.16 高×0.8 的
+	-- 横倒 tween 整个删掉：它既是「哐的一下横过来」的观感来源，又把 Main.Size 永久污染
+	-- （当时 OrigMainSize 没赋值，还原全是空跑），无动画开启时污染直接暴露成 UI 缩短变宽
+	pcall(playKamui, "out", 2.2)
 	pcall(shatterPanel)
 	KamuiShatter = true
-	pcall(function()
-		local ti0 = TweenInfo.new(0.18, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
-		TweenService:Create(Main, ti0, { Rotation = 10 }):Play()
-		TweenService:Create(Main, ti0, { Size = UDim2.new(0, Main.AbsoluteSize.X * 1.16, 0, Main.AbsoluteSize.Y * 0.8) }):Play()
-	end)
+	Main.Visible = false
+	if after then pcall(after) end
 	tspawn(function()
-		twait(0.2)
-		Main.Visible = false
+		twait(2.0)
+		if myGen ~= PanelAnimGen then return end   -- 期间又打开过：本次收尾作废
 		KamuiShatter = false
 		pcall(hideShards)
+		-- 硬复位：尺寸/旋转/透明度全部归位，绝不留污染值
 		pcall(function()
 			Main.Rotation = 0
-			if OrigMainSize then Main.Size = OrigMainSize end
+			Main.Size = UDim2.new(0, PANEL_W, 0, PANEL_H)
 			Main.BackgroundTransparency = 0.05
-			if MainScale then MainScale.Scale = 1 end
+			if MainScale then MainScale.Scale = PrefPanelScale or 1 end
 		end)
-		if after then pcall(after) end
 	end)
 end
 
@@ -3521,7 +4075,42 @@ function refreshEspDepth()
 		if e.HL and e.HL.Parent then
 			e.HL.DepthMode = State.EspDepth and Enum.HighlightDepthMode.AlwaysOnTop or Enum.HighlightDepthMode.Occluded
 		end
-		if e.BB and e.BB.Parent then e.BB.AlwaysOnTop = State.EspDepth end
+		-- v5.47：文字牌无条件最顶渲染——厚墙 / 远距都不许挡
+		-- （用户：「我需要它不管在哪里，不管有什么阻挡都能透视到」）
+		if e.BB and e.BB.Parent then e.BB.AlwaysOnTop = true end
+	end
+end
+-- v5.47：ESP 字体放大 + 启动记忆（用户：「增加一个透视字体放大，因为字体太小了。
+-- 就是我设置到那个字体，下次启动脚本的时候还是在那个字体的位置，就那个大小」）——
+-- 竖排三件套按 EspFontScale 整体等比缩放（盒子 / 字 / 血条 / 间距全按比例走）
+EspFontScale = 1.0
+function espApplyFont()
+	for _, e in pairs(EspItems) do
+		if e and e.BB and e.BB.Parent then
+			local s = EspFontScale
+			e.BB.Size = UDim2.new(0, math.floor(200 * s + 0.5), 0, math.floor(80 * s + 0.5))
+			e.BB.StudsOffset = Vector3.new(0, 4 * s, 0)
+			if e.NameLbl then
+				e.NameLbl.Size = UDim2.new(1, 0, 0, math.floor(22 * s + 0.5))
+				e.NameLbl.Position = UDim2.new(0, 0, 0, math.floor(2 * s + 0.5))
+				e.NameLbl.TextSize = math.max(6, math.floor(16 * s + 0.5))
+			end
+			local bw = math.floor(150 * s + 0.5)
+			if e.BarBg then
+				e.BarBg.Size = UDim2.new(0, bw, 0, math.floor(12 * s + 0.5))
+				e.BarBg.Position = UDim2.new(0.5, -bw / 2, 0, math.floor(30 * s + 0.5))
+			end
+			if e.HpTxt then
+				e.HpTxt.Size = UDim2.new(0, bw, 0, math.floor(14 * s + 0.5))
+				e.HpTxt.Position = UDim2.new(0.5, -bw / 2, 0, math.floor(29 * s + 0.5))
+				e.HpTxt.TextSize = math.max(6, math.floor(10 * s + 0.5))
+			end
+			if e.DistLbl then
+				e.DistLbl.Size = UDim2.new(1, 0, 0, math.floor(20 * s + 0.5))
+				e.DistLbl.Position = UDim2.new(0, 0, 0, math.floor((e.Cat == "Interact" and 32 or 54) * s + 0.5))
+				e.DistLbl.TextSize = math.max(6, math.floor(14 * s + 0.5))
+			end
+		end
 	end
 end
 function addEsp(target, cat, adornee, name)
@@ -3540,22 +4129,79 @@ function addEsp(target, cat, adornee, name)
 	local bb = Instance.new("BillboardGui")
 	bb.Name = "HonEspTag"
 	bb.Adornee = adornee
-	bb.Size = UDim2.new(0, 180, 0, 42)
-	bb.StudsOffset = Vector3.new(0, 3, 0)
-	bb.AlwaysOnTop = State.EspDepth
-	bb.MaxDistance = 600
+	-- v5.44：竖排三件套（用户：「名字摆最上面，血条摆中间，距离摆最下面，字体太小了」）——
+	-- 旧版是 13px 单行「名字 距离 HP」挤一行，远处根本看不清
+	-- v5.47：整套按 EspFontScale 等比缩放（用户：「增加一个透视字体放大」）
+	local s = EspFontScale
+	bb.Size = UDim2.new(0, math.floor(200 * s + 0.5), 0, math.floor(80 * s + 0.5))
+	bb.StudsOffset = Vector3.new(0, 4 * s, 0)
+	-- v5.47：无条件最顶 + MaxDistance 拉到 100000——厚墙远距都不许丢标签
+	-- （用户：「可能是墙壁特别厚，然后又特别远的地方它透视不到……不管有什么阻挡都能透视到」）
+	bb.AlwaysOnTop = true
+	bb.MaxDistance = 100000
 	bb.Parent = EspFolder
-	local txt = Instance.new("TextLabel")
-	txt.Size = UDim2.new(1, 0, 1, 0)
-	txt.BackgroundTransparency = 1
-	txt.Font = Enum.Font.GothamBold
-	txt.TextSize = 13
-	txt.TextColor3 = col
-	txt.TextStrokeTransparency = 0.4
-	txt.RichText = true
-	txt.Text = esc(name or cat)
-	txt.Parent = bb
-	EspItems[target] = { Cat = cat, HL = hl, BB = bb, Label = txt, Name = esc(name or cat) }
+	-- ① 名字（最上面，16px）
+	local nm = Instance.new("TextLabel")
+	nm.Name = "HonEspName"
+	nm.Size = UDim2.new(1, 0, 0, math.floor(22 * s + 0.5))
+	nm.Position = UDim2.new(0, 0, 0, math.floor(2 * s + 0.5))
+	nm.BackgroundTransparency = 1
+	nm.Font = Enum.Font.GothamBold
+	nm.TextSize = math.max(6, math.floor(16 * s + 0.5))
+	nm.TextColor3 = ESP_NAME_COLOR
+	nm.TextStrokeTransparency = 0.4
+	nm.Text = esc(name or cat)
+	nm.Parent = bb
+	-- ② 血条（中间）：深色底槽 + 按血量比例的填充 + 数字压在条上
+	local barW = math.floor(150 * s + 0.5)
+	local barBg = Instance.new("Frame")
+	barBg.Name = "HonEspBarBg"
+	barBg.Size = UDim2.new(0, barW, 0, math.floor(12 * s + 0.5))
+	barBg.Position = UDim2.new(0.5, -barW / 2, 0, math.floor(30 * s + 0.5))
+	barBg.BackgroundColor3 = Color3.fromRGB(10, 12, 18)
+	barBg.BackgroundTransparency = 0.2
+	barBg.BorderSizePixel = 0
+	barBg.Parent = bb
+	corner(barBg, 6)
+	local barFill = Instance.new("Frame")
+	barFill.Name = "HonEspBarFill"
+	barFill.Size = UDim2.new(1, 0, 1, 0)
+	barFill.BackgroundColor3 = ESP_HP_FULL
+	barFill.BorderSizePixel = 0
+	barFill.Parent = barBg
+	corner(barFill, 6)
+	local hpTxt = Instance.new("TextLabel")
+	hpTxt.Name = "HonEspHp"
+	hpTxt.Size = UDim2.new(0, barW, 0, math.floor(14 * s + 0.5))
+	hpTxt.Position = UDim2.new(0.5, -barW / 2, 0, math.floor(29 * s + 0.5))
+	hpTxt.BackgroundTransparency = 1
+	hpTxt.Font = Enum.Font.GothamBold
+	hpTxt.TextSize = math.max(6, math.floor(10 * s + 0.5))
+	hpTxt.TextColor3 = Color3.fromRGB(240, 244, 252)
+	hpTxt.TextStrokeTransparency = 0.3
+	hpTxt.Text = ""
+	hpTxt.Parent = bb
+	-- ③ 距离（最下面，14px）
+	local ds = Instance.new("TextLabel")
+	ds.Name = "HonEspDist"
+	ds.Size = UDim2.new(1, 0, 0, math.floor(20 * s + 0.5))
+	ds.Position = UDim2.new(0, 0, 0, math.floor(54 * s + 0.5))
+	ds.BackgroundTransparency = 1
+	ds.Font = Enum.Font.GothamBold
+	ds.TextSize = math.max(6, math.floor(14 * s + 0.5))
+	ds.TextColor3 = ESP_DIST_COLOR
+	ds.TextStrokeTransparency = 0.4
+	ds.Text = ""
+	ds.Parent = bb
+	-- 交互物没有血量：血条整组藏起来，距离上移到名字下方，不留空档
+	if cat == "Interact" then
+		barBg.Visible = false
+		barFill.Visible = false
+		hpTxt.Visible = false
+		ds.Position = UDim2.new(0, 0, 0, math.floor(32 * s + 0.5))
+	end
+	EspItems[target] = { Cat = cat, HL = hl, BB = bb, NameLbl = nm, BarBg = barBg,
+		BarFill = barFill, HpTxt = hpTxt, DistLbl = ds, BarW = barW, Name = esc(name or cat) }
 end
 espTimer, espScan = 0, 0
 function isPlayerChar(model)
@@ -3597,22 +4243,29 @@ function updateEsp(dt)
 			if anchor and anchor.Parent then
 				local pos = anchor:IsA("Model") and anchor:GetPivot().Position or anchor.Position
 				local dist = math.floor((pos - HRP.Position).Magnitude)
-				local hpPart = ""
-				if e.Cat == "Player" or e.Cat == "NPC" then
-					local hum = anchor:FindFirstChildOfClass("Humanoid")
-					if hum then
-						local maxHp = hum.MaxHealth > 0 and hum.MaxHealth or 100
-						local ratio = math.clamp(hum.Health / maxHp, 0, 1)
-						local hc = hpColor(ratio)
-						hpPart = "  " .. rgbTag(hc, string.format("HP %d", math.floor(hum.Health)))
-						if e.HL and e.HL.Parent then
-							e.HL.OutlineColor = hc
-							e.HL.FillColor = hc
-						end
+				-- 距离（最下面一栏）
+				if e.DistLbl then e.DistLbl.Text = tostring(dist) .. " m" end
+				local hum = anchor:FindFirstChildOfClass("Humanoid")
+				if (e.Cat == "Player" or e.Cat == "NPC") and hum then
+					local maxHp = hum.MaxHealth > 0 and hum.MaxHealth or 100
+					local ratio = math.clamp(hum.Health / maxHp, 0, 1)
+					local hc = hpColor(ratio)
+					-- 血条：填充按比例收，数字跟着血量变色
+					if e.BarFill then e.BarFill.Size = UDim2.new(ratio, 0, 1, 0); e.BarFill.BackgroundColor3 = hc end
+					if e.HpTxt then
+						e.HpTxt.Text = math.floor(hum.Health) .. " / " .. math.floor(maxHp)
+						e.HpTxt.TextColor3 = hc
 					end
+					if e.HL and e.HL.Parent then
+						e.HL.OutlineColor = hc
+						e.HL.FillColor = hc
+					end
+				elseif e.BarBg then
+					-- 理论上交互物在建图时就没血条；这是防御分支（角色掉了 Humanoid 之类）
+					e.BarBg.Visible = false
+					if e.BarFill then e.BarFill.Visible = false end
+					if e.HpTxt then e.HpTxt.Visible = false end
 				end
-				e.Label.Text = rgbTag(ESP_NAME_COLOR, e.Name) .. "  " ..
-					rgbTag(ESP_DIST_COLOR, tostring(dist) .. " m") .. hpPart
 			end
 		end
 	end
@@ -3692,6 +4345,10 @@ function bindCharacter(char)
 	lastTransp = -1
 	clearFX()
 	buildFX(char, HRP)
+	-- 身上方块内置自动清除（v5.45）：启动 / 重生绑定角色就清一遍；
+	-- 配件是异步加载的，CharacterAppearanceLoaded 也会再走 bindCharacter，
+	-- 加上 Stepped 维持循环持续压回，三重保证不露方块
+	pcall(hideBodyBlocks, true)
 	cur, CFAccum = 0, 0
 	if State.Fly then buildFlyParts() end
 	-- 画质/夜视类状态重生后自动重放（Lighting 是全局的不受影响，粒子/贴图类要重扫一遍）
@@ -3738,6 +4395,17 @@ function selfHeal()
 	return refsValid()
 end
 RayParams = RaycastParams.new()
+-- ===== 游戏内「放技能必须定身」检测（用户：哥斯拉 VS 王者基多拉类技能，放着技能角色被游戏钉住，=====
+-- 但加速还推着角色走，一放着技能就乱窜，一眼脚本）=====
+-- 游戏定身三件套：PlatformStand / HumanoidRootPart 锚定 /（W 引擎独有）WalkSpeed 被写 0。
+-- 检测到就全部熄火钉在原地，角色绝不在技能期间移动。
+-- 注意 V/CF 引擎自己就把 WalkSpeed 写 0，所以 WalkSpeed=0 只对 W 引擎当定身信号；
+-- 飞行时 PlatformStand 是脚本自己开的，但飞行分支在上面提前 return，走不到这里。
+function skillRooted()
+	if not Humanoid or not Humanoid.Parent then return false end
+	if Humanoid.PlatformStand then return true end
+	if HRP and HRP.Anchored then return true end
+	return false end
 RunService.Heartbeat:Connect(function(dt)
 	if HON_SHUTDOWN then return end
 	updateEsp(dt)
@@ -3948,15 +4616,26 @@ if State.WPLoop then
 	if math.abs(cur - target) < 0.4 then cur = target end
 	statTarget = cur
 	if m.Id == "W" then
-		Humanoid.WalkSpeed = cur
-		statNote = dir and "行进中" or "待机"
+		if skillRooted() or Humanoid.WalkSpeed == 0 then
+			-- 游戏定身中（放技能类：WalkSpeed 被写 0 / PlatformStand / 锚定）：
+			-- 这一帧不把 WalkSpeed 抢回来，角色就钉住了；游戏恢复后下一帧自动继续加速
+			statNote = "技能定身"
+		else
+			Humanoid.WalkSpeed = cur
+			statNote = dir and "行进中" or "待机"
+		end
 	elseif m.Id == "V" then
 		-- V 引擎：自维护虚拟速度 VVEL + CFrame 位移。
 		-- 旧版直接写 AssemblyLinearVelocity，但 WalkSpeed=0 时 Humanoid 控制器会在物理步里把水平速度清零，
 		-- 角色完全不动——这就是「V 引擎不能用」。CFrame 位移不经过 Humanoid，任何游戏都能正常跑。
 		Humanoid.WalkSpeed = 0
 		VVEL = VVEL or Vector3.zero
-		if not HRP.Anchored then
+		if skillRooted() then
+			-- 游戏定身（PlatformStand / 锚定）：连 CFrame 位移一起停，VVEL 清零，
+			-- 不然定身一结束角色会带着残留速度窜出去
+			VVEL = Vector3.zero
+			statNote = "技能定身"
+		elseif not HRP.Anchored then
 			local goal = dir and (dir * cur) or Vector3.zero
 			local k = 1 - math.exp(-dt * math.max(State.Smooth, 1))
 			VVEL = VVEL + (goal - VVEL) * k
@@ -3985,7 +4664,11 @@ if State.WPLoop then
 		end
 	elseif m.Id == "CF" then
 		Humanoid.WalkSpeed = 0
-		if not HRP.Anchored and dir then
+		if skillRooted() then
+			-- 同 V 引擎：游戏定身期间不做 CFrame 位移，蓄力清零，结束不窜
+			CFAccum = 0
+			statNote = "技能定身"
+		elseif not HRP.Anchored and dir then
 			if State.CFTeleport then
 				CFAccum = CFAccum + cur * dt
 				local threshold = math.clamp(cur * 0.12, 4, 30)
@@ -4825,13 +5508,15 @@ function makeDraggable(obj)
 	end)
 end
 function applyTouchDrag()
-	-- 触屏数字键 / 虚拟方向键：每个控件单独可拖，屏幕上点哪个就能挪哪个
+	-- 触屏数字键：每个控件单独可拖，屏幕上点哪个就能挪哪个
 	pcall(function() for _, o in ipairs(TouchBtns) do makeDraggable(o.Btn or o) end end)
-	pcall(function() for _, o in ipairs(PadBtns) do makeDraggable(o.Btn or o) end end)
+	-- v5.47：虚拟方向键不再按格分散拖（用户：「而不是把所有按键全部分散拖动」）——
+	-- 整块拖走：按住方向格挪动过 12px 容忍区即拖动整个 PadFrame，中心格仍是
+	-- 轻碰=走、长按 0.3s=拖整块；这里只保留框体本身的拖拽（格子间 3px 缝隙）
 	pcall(function() if PadFrame then makeDraggable(PadFrame) end end)
 	pcall(function()
 		if TouchBtns and #TouchBtns > 0 and notify then
-			notify("触屏控件已可拖动：按住屏幕上的键就能挪位置")
+			notify("触屏控件已可拖动：方向键按住格子里挪动=整块拖，数字键各自拖")
 		end
 	end)
 end
@@ -4932,6 +5617,13 @@ end
 -- ---------- 屏幕上方：已开启功能横排 1 2 3 ----------
 TopBarFrame, TopBarLabel, TopBarTimer = nil, nil, 0
 function updateTopBar()
+	-- 用户：「有的功能打开会自动在屏幕右上角生成一个提示窗，我不要让它生成，
+	-- 当我开启功能显示那个时候它才会生成」——这个清单从此只归「功能列表显示」管，
+	-- 不开功能列表显示时天塌下来也不弹
+	if not State.ShowFunList then
+		if TopBarFrame then TopBarFrame.Visible = false end
+		return
+	end
 	if not TopBarFrame then
 		TopBarFrame = new("Frame", { Name = "HonTopBar", Size = UDim2.new(0, 172, 0, 120),
 			Position = UDim2.new(1, -184, 0, 8), BackgroundColor3 = Color3.fromRGB(13, 15, 23),
@@ -5097,14 +5789,21 @@ UI_STYLES = {
 	{ name = "纯黑极简", bg = Color3.fromRGB(0, 0, 0),    alpha = 0.22, stroke = 0.85 },
 	-- 阳光派对 · 竞技活动三套皮肤
 	{ name = "酷风 COOL",   bg = Color3.fromRGB(14, 24, 34), alpha = 0.16, stroke = 0.30,
-		strokeColor = Color3.fromRGB(90, 220, 255), strokeThick = 1.5, glowColor = Color3.fromRGB(40, 160, 230) },
+		strokeColor = Color3.fromRGB(90, 220, 255), strokeThick = 1.5, glowColor = Color3.fromRGB(40, 160, 230),
+		Fx = "tech" },
 	{ name = "可爱风 CUTE", bg = Color3.fromRGB(52, 28, 42), alpha = 0.20, stroke = 0.45,
-		strokeColor = Color3.fromRGB(255, 160, 200), strokeThick = 2, glowColor = Color3.fromRGB(230, 110, 160) },
+		strokeColor = Color3.fromRGB(255, 160, 200), strokeThick = 2, glowColor = Color3.fromRGB(230, 110, 160),
+		Fx = "sakura" },
 	{ name = "魔眼 3D",     bg = Color3.fromRGB(16, 4, 6),   alpha = 0.06, stroke = 0.15,
-		strokeColor = Color3.fromRGB(235, 45, 55), strokeThick = 2.5, glowColor = Color3.fromRGB(190, 25, 35) },
+		strokeColor = Color3.fromRGB(235, 45, 55), strokeThick = 2.5, glowColor = Color3.fromRGB(190, 25, 35),
+		Fx = "demon" },
 }
 ANIM_STYLES = { "神威漩涡（推荐）", "淡入淡出", "缩放弹出", "不要动画" }
-BgImg, BgOn, BgAuto, FontScaleV, UiStyleIdx, AnimStyleIdx, CloseAnimIdx = nil, false, true, 1, 1, 1, 1
+-- 启动/删除动画开关（v5.44：按用户要求去掉样式切换，只留「放不放这一套动画」）——
+-- 开着就播默认的神威漩涡（启动）/ 收回（删除），关了面板直接出现/消失，不再有 ▾ 循环按钮
+AnimOn, CloseAnimOn = true, true
+-- 字体默认直接最大（用户要求「默认拉到最大」）：无存档时 160%，有存档按存档来
+BgImg, BgOn, BgAuto, FontScaleV, UiStyleIdx, AnimStyleIdx, CloseAnimIdx = nil, false, true, 1.6, 1, 1, 1
 BgImgSrc, BgAlpha = nil, 0.45
 FontBase = {}
 
@@ -5122,7 +5821,182 @@ function applyUiStyle(i)
 	end)
 	-- 边框开着且是「主题色」时边框色优先：不然换个皮肤，描边色就被样式覆盖回白色
 	if BorderOn and BorderMode == 4 and MainStroke then MainStroke.Color = Mode().Accent end
+	-- v5.47：主题特效（樱花 / 科技扫描线 / 地狱翅膀+巨眼）跟着样式走
+	pcall(buildStyleFx, i)
 	if notify then notify("UI 样式：" .. st.name) end
+end
+
+-- ===== v5.47：三主题屏幕特效（用户：「可爱风加点樱花特效，魔眼加点那种地狱的那种翅膀
+-- 什么的呀，或者眼睛的那种，然后酷炫的也是加点科技风的」）=====
+-- 特效挂在 Gui（ScreenGui）下的全屏层，随「UI 样式」切换增删，render step「HonStyleFx」驱动：
+-- 酷风 = 科技扫描线 + 四角 HUD 支架；可爱风 = 18 片樱花飘落（摇摆+旋转+循环）；
+-- 魔眼 = 地狱翅膀（3 层翼指绕肩扇动）+ 一双巨眼（瞳孔游移 + 定时眨眼）
+StyleFxRoot, StyleFxKind, StyleFxT = nil, nil, 0
+StyleFxParts = {}
+function clearStyleFx()
+	StyleFxKind = nil
+	StyleFxParts = {}
+	if StyleFxRoot and StyleFxRoot.Parent then StyleFxRoot:Destroy() end
+	StyleFxRoot = nil
+	pcall(function() RunService:UnbindFromRenderStep("HonStyleFx") end)
+end
+-- 樱花花瓣
+local function fxSakura()
+	local pal = { Color3.fromRGB(255, 183, 206), Color3.fromRGB(255, 205, 226),
+		Color3.fromRGB(255, 222, 236), Color3.fromRGB(248, 165, 190) }
+	local W = Cam.ViewportSize.X
+	for k = 1, 18 do
+		local sz = 7 + (k % 5) * 2.4
+		local f = new("Frame", { Size = UDim2.new(0, sz, 0, sz * 0.8), Rotation = 0,
+			BackgroundColor3 = pal[(k % 4) + 1], BackgroundTransparency = 0.1 + (k % 4) * 0.07,
+			BorderSizePixel = 0, Parent = StyleFxRoot })
+		corner(f, sz / 2)
+		table.insert(StyleFxParts, { K = "petal", F = f,
+			X = 30 + math.random() * (W - 60), Y = math.random() * 760,
+			V = 26 + math.random() * 46, SW = 18 + math.random() * 42,
+			Fq = 0.5 + math.random() * 0.9, Ph = math.random() * 6.283,
+			R = (math.random() - 0.5) * 150 })
+	end
+end
+-- 科技风：扫描线 + 四角 HUD 支架
+local function fxTech(st)
+	local W, H = Cam.ViewportSize.X, Cam.ViewportSize.Y
+	local cy = st.glowColor or Color3.fromRGB(40, 160, 230)
+	-- 一条 2px 亮线 + 外面罩 26px 渐变光带，从上往下循环扫
+	local band = new("Frame", { Size = UDim2.new(1, 0, 0, 26), Position = UDim2.new(0, 0, 0, -40),
+		BackgroundColor3 = cy, BackgroundTransparency = 0.86, BorderSizePixel = 0, Parent = StyleFxRoot })
+	new("UIGradient", { Rotation = 90, Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.5, 0.5),
+		NumberSequenceKeypoint.new(1, 1) }), Parent = band })
+	local line = new("Frame", { Size = UDim2.new(1, 0, 0, 2), Position = UDim2.new(0, 0, 0, -40),
+		BackgroundColor3 = cy, BackgroundTransparency = 0.2, BorderSizePixel = 0, Parent = StyleFxRoot })
+	table.insert(StyleFxParts, { K = "scan", Band = band, Line = line, V = 130 })
+	-- 四角支架：每角一横一竖两条 2px 臂，呼吸式明暗
+	local arm, inset = 30, 16
+	for ci = 1, 4 do
+		local ox = (ci == 1 or ci == 3) and inset or (W - inset)
+		local oy = (ci <= 2) and inset or (H - inset)
+		local dx = (ci == 1 or ci == 3) and 1 or -1
+		local dy = (ci <= 2) and 1 or -1
+		local b1 = new("Frame", { Size = UDim2.new(0, arm, 0, 2),
+			Position = UDim2.new(0, dx > 0 and ox or (ox - arm), 0, oy),
+			BackgroundColor3 = cy, BackgroundTransparency = 0.35, BorderSizePixel = 0, Parent = StyleFxRoot })
+		local b2 = new("Frame", { Size = UDim2.new(0, 2, 0, arm),
+			Position = UDim2.new(0, ox, 0, dy > 0 and oy or (oy - arm)),
+			BackgroundColor3 = cy, BackgroundTransparency = 0.35, BorderSizePixel = 0, Parent = StyleFxRoot })
+		table.insert(StyleFxParts, { K = "bracket", Bars = { b1, b2 } })
+	end
+end
+-- 魔眼：地狱翅膀 + 一双巨眼
+local function fxDemon(st)
+	local W, H = Cam.ViewportSize.X, Cam.ViewportSize.Y
+	local red = st.strokeColor or Color3.fromRGB(235, 45, 55)
+	local cx, cy = W * 0.5, H * 0.58
+	-- 翅膀：每侧 3 层 × 4 根翼指，绕肩点扇动（层越靠外越暗越大）
+	for side = -1, 1, 2 do
+		for layer = 1, 3 do
+			local col = (layer == 1) and Color3.fromRGB(96, 10, 16)
+				or (layer == 2 and Color3.fromRGB(150, 20, 28) or red)
+			local tr = 0.16 + (layer - 1) * 0.1
+			for bi = 1, 4 do
+				local len = 110 + bi * 32 + layer * 14
+				local w = 13 - bi * 1.6 + layer
+				local b = new("Frame", { Size = UDim2.new(0, len, 0, w),
+					AnchorPoint = Vector2.new(side > 0 and 0 or 1, 0.5),
+					Position = UDim2.new(0, cx + side * 30, 0, cy),
+					Rotation = (-52 + (bi - 1) * 24) * side,
+					BackgroundColor3 = col, BackgroundTransparency = tr,
+					BorderSizePixel = 0, Parent = StyleFxRoot })
+				corner(b, w / 2)
+				table.insert(StyleFxParts, { K = "bone", F = b,
+					A0 = (-52 + (bi - 1) * 24) * side, Ph = bi * 0.55 + layer * 0.3 })
+			end
+		end
+	end
+	-- 巨眼一双：黑眶 + 大红虹膜 + 竖瞳 + 高光；定时眨眼，瞳孔缓慢游移
+	for e = -1, 1, 2 do
+		local ew, eh = 92, 116
+		local box = new("Frame", { Size = UDim2.new(0, ew, 0, eh),
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.new(0, W * 0.5 + e * 108, 0, H * 0.17),
+			BackgroundTransparency = 1, Parent = StyleFxRoot })
+		local scl = new("Frame", { Size = UDim2.new(1, 0, 1, 0),
+			BackgroundColor3 = Color3.fromRGB(12, 2, 4), BackgroundTransparency = 0.04,
+			BorderSizePixel = 0, Parent = box })
+		corner(scl, 40)
+		new("UIStroke", { Color = red, Transparency = 0.55, Thickness = 1.5, Parent = scl })
+		local iris = new("Frame", { Size = UDim2.new(0, 66, 0, 66), AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.new(0.5, 0, 0.5, 0), BackgroundColor3 = red,
+			BackgroundTransparency = 0.05, BorderSizePixel = 0, Parent = box })
+		corner(iris, 33)
+		local pup = new("Frame", { Size = UDim2.new(0, 13, 0, 52), AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.new(0.5, 0, 0.5, 0), BackgroundColor3 = Color3.fromRGB(6, 0, 2),
+			BorderSizePixel = 0, Parent = box })
+		corner(pup, 6)
+		local shine = new("Frame", { Size = UDim2.new(0, 12, 0, 12), AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.new(0.5, -14, 0.5, -16), BackgroundColor3 = Color3.fromRGB(255, 240, 240),
+			BackgroundTransparency = 0.25, BorderSizePixel = 0, Parent = box })
+		corner(shine, 6)
+		table.insert(StyleFxParts, { K = "eye", Box = box, Iris = iris, Pup = pup,
+			EW = ew, EH = eh, BlinkT = 2.4 + e * 0.9, BlinkPh = 0 })
+	end
+end
+function buildStyleFx(i)
+	clearStyleFx()
+	local st = UI_STYLES[i] or UI_STYLES[1]
+	if not st.Fx then return end
+	StyleFxRoot = new("Frame", { Name = "HonStyleFx", Size = UDim2.new(1, 0, 1, 0),
+		BackgroundTransparency = 1, BorderSizePixel = 0, Parent = Gui })
+	StyleFxKind = st.Fx
+	if st.Fx == "sakura" then fxSakura()
+	elseif st.Fx == "tech" then fxTech(st)
+	elseif st.Fx == "demon" then fxDemon(st) end
+	if #StyleFxParts > 0 then
+		RunService:BindToRenderStep("HonStyleFx", 2002, function(dt)
+			if HON_SHUTDOWN or not StyleFxRoot or not StyleFxRoot.Parent then return end
+			-- 整帧包一层：个别元素出问题只跳这一帧，不连带其他特效
+			pcall(function()
+			StyleFxT = StyleFxT + dt
+			local t = StyleFxT
+			local H = Cam.ViewportSize.Y
+			local W = Cam.ViewportSize.X
+			for _, d in ipairs(StyleFxParts) do
+				if d.K == "petal" then
+					d.Y = d.Y + d.V * dt
+					if d.Y > H + 16 then d.Y = -16; d.X = 30 + math.random() * (W - 60) end
+					d.F.Position = UDim2.new(0, d.X + math.sin(t * d.Fq + d.Ph) * d.SW, 0, d.Y)
+					d.F.Rotation = (d.F.Rotation + d.R * dt) % 360
+				elseif d.K == "scan" then
+					local y = (t * d.V) % (H + 60) - 40
+					d.Band.Position = UDim2.new(0, 0, 0, y - 13)
+					d.Line.Position = UDim2.new(0, 0, 0, y)
+				elseif d.K == "bracket" then
+					local tr = 0.35 + 0.2 * (0.5 + 0.5 * math.sin(t * 3))
+					for _, b in ipairs(d.Bars) do b.BackgroundTransparency = tr end
+				elseif d.K == "bone" then
+					d.F.Rotation = d.A0 + math.sin(t * 2.2 + d.Ph) * 11
+					d.F.BackgroundTransparency = 0.16 + 0.08 * (0.5 + 0.5 * math.sin(t * 2.2 + d.Ph))
+				elseif d.K == "eye" then
+					-- 瞳孔游移：双螺线慢转，幅度限制在眼眶内
+					local dx = math.sin(t * 0.6) * 13 + math.sin(t * 0.23) * 5
+					local dy = math.cos(t * 0.44) * 11
+					d.Iris.Position = UDim2.new(0.5, dx, 0.5, dy)
+					d.Pup.Position = UDim2.new(0.5, dx, 0.5, dy)
+					-- 眨眼：倒计时到点进入 0.16s 闭-开窗口
+					d.BlinkT = d.BlinkT - dt
+					if d.BlinkT <= 0 then d.BlinkPh = 0.16; d.BlinkT = 2.6 + math.random() * 2.4 end
+					local open = 1
+					if d.BlinkPh > 0 then
+						d.BlinkPh = d.BlinkPh - dt
+						local u = 1 - math.max(d.BlinkPh, 0) / 0.16
+						open = 1 - math.sin(u * math.pi)
+					end
+					d.Box.Size = UDim2.new(0, d.EW, 0, math.max(2, d.EH * open))
+				end
+			end
+			end)
+		end)
+	end
 end
 
 function applyFontScale(sc)
@@ -5222,6 +6096,8 @@ function setBg(on, quiet)
 		-- （此前只设 Visible，恢复存档或切预设后透明度丢成旧值——「透明度没有用」的最后一环）
 		if on then BgImg.ImageTransparency = BgAlpha or 0.45 end
 	end
+	-- WindUI 框架下同步窗口背景（v5.46）：切了框架背景也不能丢
+	windSyncBg()
 	if notify and not quiet then notify(on and "背景图已开启" or "背景图已关闭") end
 end
 -- 切换背景预设（设置页 chips；点击即换图并存档，重启/换服不丢）
@@ -5231,6 +6107,7 @@ function setBgPreset(i)
 	BgImgSrc = p.url
 	bgSave()
 	if BgOn then setBg(true) end
+	windSyncBg()
 	-- 预设全是 GitHub 直链，执行器里很可能加载不出来——提示里直接给兜底路径，
 	-- 别让用户对着黑面板猜「是不是又坏了」
 	if notify then notify("背景预设：" .. p.name .. (BgOn and " · 没显示就用下方图片 ID 框" or " · 打开背景图开关后生效")) end
@@ -5239,12 +6116,13 @@ end
 function applyBgId(text)
 	local id = string.match(tostring(text or ""), "%d+")
 	if not id or #id < 3 then
-		if notify then notify("没识别到有效图片 ID（请填纯数字）") end
+		if notify then notify("没识别到有效图片 ID（请填纯数字）", Color3.fromRGB(255, 176, 32)) end
 		return
 	end
 	BgImgSrc = "rbxassetid://" .. id
 	bgSave()
 	if BgOn then setBg(true) end
+	windSyncBg()
 	if notify then notify("背景图已应用 ID " .. id .. (BgOn and "" or " · 打开背景图开关后生效")) end
 end
 
@@ -5268,12 +6146,17 @@ function windFetch()
 	local ok, lib = pcall(function() return _G.WindUI end)
 	if ok and lib then return lib end
 	if type(loadstring) ~= "function" then return nil end
-	local okSrc, src = pcall(function()
-		return game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua")
-	end)
-	if not okSrc or type(src) ~= "string" or src == "" then return nil end
-	local okLib, lib2 = pcall(function() return loadstring(src)() end)
-	if okLib and lib2 then return lib2 end
+	-- v5.46 借鉴夜脚本 tryLoadWindUI 的重试：HttpGet 偶发失败（网络抖动 / 限流）
+	-- 就整体回退自制 UI 太脆——最多试 3 次，任一成功即用，全失败才回退
+	for _ = 1, 3 do
+		local okSrc, src = pcall(function()
+			return game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua")
+		end)
+		if okSrc and type(src) == "string" and src ~= "" then
+			local okLib, lib2 = pcall(function() return loadstring(src)() end)
+			if okLib and lib2 then return lib2 end
+		end
+	end
 	return nil
 end
 function windDestroy()
@@ -5329,6 +6212,21 @@ function windBtn(tab, title, sub, fn)
 	end)
 end
 -- 照自制 UI 的页面结构搭一套 WindUI：引擎/辅助/视觉/传送/娱乐/画质/设置
+-- ===== WindUI 侧背景同步（v5.46，借鉴夜脚本的窗口背景方案）=====
+-- 夜脚本三件套：CreateWindow 直接吃 Background + BackgroundImageTransparency，
+-- 建完再补一层保险强制重写（防 UI 初始化不同步），运行时可实时改；
+-- 关背景时把 BackgroundImage 清成 ""。自制 UI 侧走 setBg 的 ImageLabel，两边互不干扰
+function windSyncBg()
+	if not WindWin then return end
+	pcall(function()
+		if BgOn then
+			WindWin.BackgroundImage = BgImgSrc or BG_URL
+			WindWin.BackgroundImageTransparency = BgAlpha or 0.45
+		else
+			WindWin.BackgroundImage = ""
+		end
+	end)
+end
 function windBuild(lib)
 	if not lib or not lib.CreateWindow then return false end
 	local W = nil
@@ -5339,11 +6237,16 @@ function windBuild(lib)
 			Icon = "solar:wind-bold",
 			Theme = "Dark",
 			ToggleKey = Enum.KeyCode.F,
+			-- v5.46：背景图直接交给 WindUI 窗口（没开就不传，走库默认）
+			Background = BgOn and (BgImgSrc or BG_URL) or nil,
+			BackgroundImageTransparency = BgAlpha or 0.45,
 		})
 	end)
 	if not W then return false end
 	WindWin = W
-	windSafe("Tag", function() W:Tag({ Title = "v5.43", Color = "ElementBackground" }) end)
+	-- 再补一层保险（夜脚本同款）：CreateWindow 可能被库吞掉背景参数，建完强制再写一次
+	windSyncBg()
+	windSafe("Tag", function() W:Tag({ Title = "v5.47", Color = "ElementBackground" }) end)
 	-- 引擎页
 	local tEng = nil
 	windSafe("Tab:引擎", function() tEng = W:Tab({ Title = "引擎", Icon = "gauge" }) end)
@@ -5358,6 +6261,7 @@ function windBuild(lib)
 		windTglByTitle(tEng, "防穿墙 / 沿墙滑动", "CF / V 引擎生效")
 		windTglByTitle(tEng, "瞬移闪现 TP", "仅 CF · 蓄力后整段位移")
 		windTglByTitle(tEng, "引擎描边 OUTLINE", "角色轮廓跟着引擎颜色")
+		windTglByTitle(tEng, "加速小窗 SPEED WIN", "屏幕小窗 · 切模式 / 调速度，把手可拖动")
 	end
 	-- 辅助页
 	local tAss = nil
@@ -5382,8 +6286,11 @@ function windBuild(lib)
 		windTglByTitle(tEsp, "交互物透视", "ProximityPrompt / ClickDetector")
 		windTglByTitle(tEsp, "秒交互", "HoldDuration=0 · 距离 30")
 		windTglByTitle(tEsp, "雷达 RADAR", "右上角 · 人/NPC/互动物/墙壁折线")
-		windTglByTitle(tEsp, "穿墙显示", "ESP 无视遮挡（任何厚度都能看到）")
-		windTglByTitle(tEsp, "隐藏身上方块 NO BLOCK", "配件 / 框选 / 名牌等附加物一起藏")
+		windTglByTitle(tEsp, "穿墙显示", "角色高亮穿墙，名字/血条/距离永远可见")
+		windSld(tEsp, EspFontSlider, "ESP 字体", 60, 200, 100, 1)
+		windBtn(tEsp, "一键触碰所有可触碰物体", "整个服务器：Prompt / ClickDetector / Tool", function()
+			touchAllInteractables()
+		end)
 	end
 	-- 传送页
 	local tTp = nil
@@ -5396,7 +6303,7 @@ function windBuild(lib)
 				Callback = function(text)
 					local x, y, z = string.match(tostring(text or ""), "(-?%d+%.?%d*)[,%s]+(-?%d+%.?%d*)[,%s]+(-?%d+%.?%d*)")
 					if not x then
-						if notify then notify("坐标格式不对：要三个数字，如 100, 200, 300") end
+						if notify then notify("坐标格式不对：要三个数字，如 100, 200, 300", Color3.fromRGB(255, 176, 32)) end
 						return
 					end
 					tpToPos(tonumber(x), tonumber(y), tonumber(z))
@@ -5405,6 +6312,8 @@ function windBuild(lib)
 		end)
 		windTglByTitle(tTp, "点击传送", "开启后点地面即可瞬移过去")
 		windTglByTitle(tTp, "防坠落 ANTI-VOID", "掉出地图自动拉回安全点")
+		windTglByTitle(tTp, "倒计时器 COUNTDOWN", "屏幕小 UI · 输入分钟数倒数，到点提醒")
+		windTglByTitle(tTp, "标点小窗 WP WIN", "屏幕小窗 · 看坐标 / 存标点 / ★ 选中传送")
 		windTglByTitle(tTp, "闪电尖兵大招 SPARK ULT", "点击画面任意位置直接传送过去（照搬参考源码）")
 	end
 	-- 娱乐页
@@ -5439,6 +6348,8 @@ function windBuild(lib)
 		windTglByTitle(tGfx, "普通夜视", "夜里全亮 · 阴影全关")
 		windTglByTitle(tGfx, "超级夜视", "超高亮度 · 正午光感")
 		windTglByTitle(tGfx, "彻底去雾", "连 Atmosphere 雾霾一起清")
+		windBtn(tGfx, "一键提升帧率 · 降低卡顿", "阴影/粒子/贴图/地形装饰/渲染质量全压掉，可一键还原", function() fpsBoost() end)
+		windBtn(tGfx, "恢复默认画质", "所有画质项恢复原状（含帧率优化动过的项）", function() gfxReset() end)
 	end
 	-- 设置页（含切回自制 UI 的入口——用户在 WindUI 里也能回自制）
 	local tSet = nil
@@ -5454,9 +6365,11 @@ function windBuild(lib)
 				})
 			end)
 		end
-		windSld(tSet, FontSlider, "字体大小", 70, 160, PrefFontScale and math.floor(PrefFontScale * 100 + 0.5) or 100, 1)
+		windSld(tSet, FontSlider, "字体大小", 70, 160, PrefFontScale and math.floor(PrefFontScale * 100 + 0.5) or 160, 1)
 		windSld(tSet, PanelScaleSlider, "面板缩放", 60, 140, PrefPanelScale and math.floor(PrefPanelScale * 100 + 0.5) or 100, 1)
 		windSld(tSet, BgAlphaSlider, "背景图透明", 0, 100, PrefBgAlpha and math.floor(PrefBgAlpha * 100 + 0.5) or 45, 1)
+		windTglByTitle(tSet, "启动动画", "开机播放神威漩涡展开动画")
+		windTglByTitle(tSet, "删除动画", "关闭面板时播放碎裂消失动画")
 		if BgTgl and BgTgl.Set then
 			windSafe("tgl:面板背景图", function()
 				tSet:Toggle({
@@ -5511,6 +6424,8 @@ function setUiFramework(i)
 		end
 		UiFrameworkIdx = 2
 		pcall(function() if Gui then Gui.Enabled = false end end)
+		-- 背景图应用到 WindUI 窗口（CreateWindow 已接参数，这里再保险一次）
+		windSyncBg()
 		if notify then notify("已切换到 WindUI（按 F 开关界面）") end
 	else
 		windDestroy()
@@ -5589,32 +6504,21 @@ bindClick(BorderModeBtn, "边框样式", function()
 	prefSave()
 end)
 
--- 启动 / 删除动画样式
-function animRow(title, y, onPick, onPick0)
-	label({ Text = title, Font = Enum.Font.GothamBold, TextSize = 11,
-		TextColor3 = Color3.fromRGB(196, 204, 224), BackgroundTransparency = 1,
-		Size = UDim2.new(1, -4, 0, 16), Position = UDim2.new(0, 2, 0, y),
-		TextXAlignment = Enum.TextXAlignment.Left }, PageSet)
-	local i0 = onPick0 and onPick0() or 1
-	local b = new("TextButton", { Text = ANIM_STYLES[i0] .. "  ▾", Font = Enum.Font.GothamBold, TextSize = 11,
-		TextColor3 = Mode().Accent, BackgroundColor3 = Color3.fromRGB(255, 255, 255),
-		BackgroundTransparency = 0.9, BorderSizePixel = 0, AutoButtonColor = false,
-		Size = UDim2.new(1, 0, 0, 32), Position = UDim2.new(0, 0, 0, y + 18), Parent = PageSet })
-	corner(b, 8)
-	table.insert(FunBtns, b)
-	local idx = i0
-	bindClick(b, title, function()
-		idx = (idx % #ANIM_STYLES) + 1
-		b.Text = ANIM_STYLES[idx] .. "  ▾"
-		-- 切走神威时立刻停掉正在播放的动画，不然「选了不要动画，动画还在放」
-		if idx ~= 1 then stopKamui() end
-		onPick(idx)
-	end)
-end
--- 动画样式存档（本地文件 + 跨服务器双保险，和标点同一套机制）
+-- 启动 / 删除动画开关：用户要求「可开可关，不要动画切换」——样式循环整层删掉，只留默认的神威漩涡
+AnimTgl = makeToggle(PageSet, 346, "启动动画", "开机播放神威漩涡展开动画", AnimOn, function(v)
+	AnimOn = v
+	animSave()
+	if notify then notify(v and "启动动画已开启" or "启动动画已关闭") end
+end, true)
+CloseAnimTgl = makeToggle(PageSet, 394, "删除动画", "关闭面板时播放碎裂消失动画", CloseAnimOn, function(v)
+	CloseAnimOn = v
+	animSave()
+	if notify then notify(v and "删除动画已开启" or "删除动画已关闭") end
+end, true)
+-- 动画开关存档（本地文件 + 跨服务器双保险，和标点同一套机制）
 ANIM_FILE = "HonSpeedHub_Anim.json"
 function animSave()
-	local d = { o = AnimStyleIdx or 1, c = CloseAnimIdx or 1 }
+	local d = { on = AnimOn and true or false, co = CloseAnimOn and true or false }
 	local ok, json = pcall(function() return HttpService:JSONEncode(d) end)
 	if not ok or not json then return end
 	pcall(function() if writefile then writefile(ANIM_FILE, json) end end)
@@ -5638,25 +6542,25 @@ function animLoad()
 		end)
 	end
 	if d then
-		if type(d.o) == "number" and d.o >= 1 and d.o <= #ANIM_STYLES then AnimStyleIdx = d.o end
-		if type(d.c) == "number" and d.c >= 1 and d.c <= #ANIM_STYLES then CloseAnimIdx = d.c end
+		-- 新档 on/co 是布尔；旧档 o/c 是样式序号（4 = 不要动画 → 对应开关关上）
+		if type(d.on) == "boolean" then AnimOn = d.on end
+		if type(d.co) == "boolean" then CloseAnimOn = d.co end
+		if type(d.o) == "number" and d.o == 4 then AnimOn = false end
+		if type(d.c) == "number" and d.c == 4 then CloseAnimOn = false end
 	end
 end
 animLoad()
-animRow("启动动画样式", 346, function(i) AnimStyleIdx = i; animSave(); if notify then notify("启动动画：" .. ANIM_STYLES[i]) end end,
-	function() return AnimStyleIdx or 1 end)
-animRow("删除动画样式", 394, function(i) CloseAnimIdx = i; animSave(); if notify then notify("删除动画：" .. ANIM_STYLES[i]) end end,
-	function() return CloseAnimIdx or 1 end)
 
 -- UI 偏好存档：字体大小 / 面板缩放 / 背景图透明（本地文件 + 跨服务器双保险，和动画样式同一套机制）
 -- 用户要求「脚本设置里面增加个自动保存」——这三项改完即存，换服/重进不恢复默认
 PREF_FILE = "HonSpeedHub_Pref.json"
 PrefFontScale, PrefPanelScale, PrefBgAlpha, PrefFramework = nil, nil, nil, nil
 function prefSave()
-	-- fw = 界面框架（1 自制 / 2 WindUI），bo/bm = 面板边框开关与样式——
-	-- 和背景图一样本地文件 + 跨服务器双保险，重启/换服不恢复默认
+	-- fw = 界面框架（1 自制 / 2 WindUI），bo/bm = 面板边框开关与样式，
+	-- ef = ESP 字体缩放——和背景图一样本地文件 + 跨服务器双保险，重启/换服不恢复默认
 	local d = { fs = PrefFontScale, ps = PrefPanelScale, ba = PrefBgAlpha,
-		fw = UiFrameworkIdx or 1, bo = BorderOn and true or false, bm = BorderMode or 1 }
+		fw = UiFrameworkIdx or 1, bo = BorderOn and true or false, bm = BorderMode or 1,
+		ef = EspFontScale }
 	local ok, json = pcall(function() return HttpService:JSONEncode(d) end)
 	if not ok or not json then return end
 	pcall(function() if writefile then writefile(PREF_FILE, json) end end)
@@ -5686,10 +6590,12 @@ function prefLoad()
 	if type(d.fw) == "number" and (d.fw == 1 or d.fw == 2) then PrefFramework = d.fw end
 	if type(d.bo) == "boolean" then BorderOn = d.bo end
 	if type(d.bm) == "number" then BorderMode = math.clamp(math.floor(d.bm), 1, #BORDER_STYLES) end
+	-- ef = ESP 字体缩放（v5.47）：0.6 ~ 2.0，重启/换服照原样恢复
+	if type(d.ef) == "number" then EspFontScale = math.clamp(d.ef, 0.6, 2) end
 end
 prefLoad()
 local psDef = PrefPanelScale and math.floor(PrefPanelScale * 100 + 0.5) or 100
-local fsDef = PrefFontScale and math.floor(PrefFontScale * 100 + 0.5) or 100
+local fsDef = PrefFontScale and math.floor(PrefFontScale * 100 + 0.5) or 160
 local baDef = PrefBgAlpha and math.floor(PrefBgAlpha * 100 + 0.5) or 45
 PanelScaleSlider = makeSlider(PageSet, "面板缩放", 452, 60, 140, math.clamp(psDef, 60, 140), " %", function(v)
 	PrefPanelScale = v / 100
@@ -5705,10 +6611,49 @@ BgAlphaSlider = makeSlider(PageSet, "背景图透明", 564, 0, 100, math.clamp(b
 	PrefBgAlpha = v / 100
 	BgAlpha = PrefBgAlpha
 	if BgImg then BgImg.ImageTransparency = BgAlpha end
+	windSyncBg()
 	-- 背景图开关关着时 BgImg 还是 nil，调了没反应——明确提示，别让用户以为又坏了
 	if not BgImg and notify then notify("先打开下方「面板背景图」开关，透明度才生效", Color3.fromRGB(255, 205, 110)) end
 	prefSave()
 end, false)
+
+-- v5.47：ESP 字体放大滑条（视觉页，用户：「增加一个透视字体放大，因为字体太小了。
+-- 就是我设置到那个字体，下次启动脚本的时候还是在那个字体的位置，就那个大小」）——
+-- 60% ~ 200% 整体等比缩放竖排三件套，改动即存 ef 档，重启/换服照原样恢复
+local efDef = math.floor(EspFontScale * 100 + 0.5)
+EspFontSlider = makeSlider(PageEsp, "ESP 字体", 406, 60, 200, math.clamp(efDef, 60, 200), " %", function(v)
+	EspFontScale = v / 100
+	espApplyFont()
+	prefSave()
+end, false)
+pcall(espApplyFont)
+-- ===== 一键触碰所有可触碰物体（用户：「一键触碰所有可触碰的物体，整个服务器」）=====
+-- 遍历 Workspace:GetDescendants()：ProximityPrompt → fireproximityprompt（执行器扩展），
+-- ClickDetector → 试 fireclickdetector，Tool → Activate()；逐个 pcall，橙提示汇总成功数
+function touchAllInteractables()
+	local n = 0
+	for _, d in ipairs(Workspace:GetDescendants()) do
+		if d and d.Parent then
+			local cn = d.ClassName
+			if cn == "ProximityPrompt" then
+				if pcall(function() fireproximityprompt(d) end) then n = n + 1 end
+			elseif cn == "ClickDetector" then
+				if pcall(function() fireclickdetector(d) end) then n = n + 1 end
+			elseif cn == "Tool" then
+				if pcall(function() d:Activate() end) then n = n + 1 end
+			end
+		end
+	end
+	if notify then notify("已触发 " .. n .. " 个可触碰物体", Color3.fromRGB(255, 176, 32)) end
+	return n
+end
+local TouchAllBtn = new("TextButton", { Text = "一键触碰所有可触碰物体", Font = Enum.Font.GothamBold, TextSize = 11,
+	TextColor3 = Mode().Accent, BackgroundColor3 = Color3.fromRGB(255, 255, 255), BackgroundTransparency = 0.9,
+	BorderSizePixel = 0, AutoButtonColor = false,
+	Size = UDim2.new(1, 0, 0, 36), Position = UDim2.new(0, 0, 0, 456), Parent = PageEsp })
+corner(TouchAllBtn, 10)
+table.insert(FunBtns, TouchAllBtn)
+bindClick(TouchAllBtn, "一键触碰", function() touchAllInteractables() end)
 
 BgTgl = makeToggle(PageSet, 620, "面板背景图", "用你给的图当面板背景", false, function(v) setBg(v) end, true)
 BgAutoTgl = makeToggle(PageSet, 668, "启动时自动加载背景", "每次进游戏自动显示背景图", true, function(v) BgAuto = v; bgSave() end, true)
@@ -5823,6 +6768,8 @@ GfxFx = nil
 -- 这就是「画质必须每次启动都开启，不开就出 bug」的根因
 GfxOrigShadow, GfxOrigFog = nil, nil
 GfxOrigParts, GfxOrigDecals = {}, {}
+-- 一键提升帧率用到的两个额外原值：地形装饰 Terrain.Decoration、引擎渲染质量 QualityLevel
+GfxOrigTerrainDeco, GfxOrigQuality = nil, nil
 function gfxLight()
 	if not Lighting then Lighting = game:GetService("Lighting") end
 	return Lighting
@@ -5917,6 +6864,53 @@ function setGfxSat(v)
 		end
 		GfxFx.Saturation = (v - 100) / 100
 	end)
+end
+
+-- ---------- 一键提升帧率 · 降低卡顿（用户：「这两个做成一个功能，降低贴图什么的，反正能提升帧率就行」）----------
+-- 全部走已有的 setGfxX 通道：自动记原值、同步开关 UI、写存档，「恢复默认画质」一键还原，
+-- 绝不留下关不回去的效果。再加两个画质页没有的独立项：地形装饰（草/花，大地图掉帧大头）
+-- 和渲染质量等级（客户端允许才生效，不允许就跳过，不报错）
+function fpsBoost()
+	local done = {}
+	-- ① 阴影 / 粒子 / 贴花：复用已有通道
+	setGfxShadows(true);   State.GfxShadow = true
+	setGfxParticles(true); State.GfxParticle = true
+	setGfxDecal(true);     State.GfxDecal = true
+	table.insert(done, "阴影")
+	table.insert(done, "粒子")
+	table.insert(done, "贴图")
+	-- ② 地形装饰（草 / 花 / 灌木）：中大型地图掉帧大头，且不挡战斗视线
+	local terrain = Workspace:FindFirstChildOfClass("Terrain")
+	if terrain then
+		pcall(function()
+			if GfxOrigTerrainDeco == nil then GfxOrigTerrainDeco = terrain.Decoration end
+			terrain.Decoration = false
+			table.insert(done, "地形装饰")
+		end)
+	end
+	-- ③ 渲染质量等级：能设就设，设不了（执行器/客户端不允许）就跳过，不卡加载不报错
+	pcall(function()
+		local setfn = Settings or settings
+		if type(setfn) == "function" then
+			local st = setfn()
+			if st and st.Rendering and Enum.QualityLevel and Enum.QualityLevel.Level01 then
+				if GfxOrigQuality == nil then GfxOrigQuality = st.Rendering.QualityLevel end
+				st.Rendering.QualityLevel = Enum.QualityLevel.Level01
+				table.insert(done, "渲染质量")
+			end
+		end
+	end)
+	-- 同步 3 个画质开关的 UI（silent：不触发 onChange，状态已在上面直接置好）
+	for _, t in ipairs(ToggleRegistry) do
+		local ti = t._title
+		if ti == "关闭阴影" or ti == "关闭粒子特效" or ti == "隐藏贴花/纹理" then
+			pcall(function() t.Set(true, true) end)
+		end
+	end
+	gfxSave()
+	if notify then
+		notify("帧率优化已应用：" .. table.concat(done, " · ") .. "（恢复默认画质可还原）")
+	end
 end
 
 -- ---------- 夜视 / 环境（夜脚本源码完整搬入：普通夜视 / 超级夜视 / 彻底去雾）----------
@@ -6112,10 +7106,30 @@ local GfxResetBtn = new("TextButton", { Text = "恢复默认画质", Font = Enum
 	Size = UDim2.new(1, 0, 0, 34), Position = UDim2.new(0, 0, 0, 546), Parent = PageGfx })
 corner(GfxResetBtn, 8)
 table.insert(FunBtns, GfxResetBtn)
-bindClick(GfxResetBtn, "恢复画质", function()
+-- 恢复默认画质：自制 UI 按钮与 WindUI 按钮共用（含一键提升帧率动过的地形装饰 / 渲染质量）
+function gfxReset()
+	-- State 必须显式归 false：setGfxX 只动游戏画面，不碰 State——
+	-- 少了这四行，恢复默认后存的档还是「开着」的状态，下次启动又给关回去了
+	State.GfxShadow, State.GfxFog, State.GfxParticle, State.GfxDecal = false, false, false, false
 	setGfxShadows(false); setGfxFog(false); setGfxParticles(false); setGfxDecal(false)
 	setGfxBright(100); setGfxSat(100)
 	gfxAllNightOff()
+	-- 一键提升帧率动过的两项也还原：地形装饰 + 渲染质量
+	if GfxOrigTerrainDeco ~= nil then
+		pcall(function()
+			local terrain = Workspace:FindFirstChildOfClass("Terrain")
+			if terrain then terrain.Decoration = GfxOrigTerrainDeco end
+		end)
+	end
+	if GfxOrigQuality ~= nil then
+		pcall(function()
+			local setfn = Settings or settings
+			if type(setfn) == "function" then
+				local st = setfn()
+				if st and st.Rendering then st.Rendering.QualityLevel = GfxOrigQuality end
+			end
+		end)
+	end
 	-- 同步 4 个画质开关 + 2 个滑条的 UI（silent）
 	for _, t in ipairs(ToggleRegistry) do
 		local ti = t._title
@@ -6127,13 +7141,28 @@ bindClick(GfxResetBtn, "恢复画质", function()
 	if GfxSatSlider then pcall(function() GfxSatSlider.Set(100) end) end
 	gfxSave()
 	if notify then notify("画质已恢复默认（已存档）") end
-end)
+end
+bindClick(GfxResetBtn, "恢复画质", function() gfxReset() end)
+-- 一键提升帧率 · 降低卡顿：用户要求「这两个做成一个功能，反正能提升帧率就行」——
+-- 阴影 / 粒子 / 贴图全关 + 地形装饰关 + 渲染质量压到最低，全部可被「恢复默认画质」还原
+local GfxBoostBtn = new("TextButton", { Text = "一键提升帧率 · 降低卡顿", Font = Enum.Font.GothamBold, TextSize = 11,
+	TextColor3 = Color3.fromRGB(140, 255, 170), BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+	BackgroundTransparency = 0.9, BorderSizePixel = 0, AutoButtonColor = false,
+	Size = UDim2.new(1, 0, 0, 34), Position = UDim2.new(0, 0, 0, 594), Parent = PageGfx })
+corner(GfxBoostBtn, 8)
+table.insert(FunBtns, GfxBoostBtn)
+bindClick(GfxBoostBtn, "提升帧率", function() fpsBoost() end)
 
 -- ---------- 雷达 ----------
 -- 模式1 = 2D 全显（人 + NPC + 建筑 + 可互动物 + 自己）；模式2 = 仅人物 / NPC
--- 军事雷达样式：世界坐标固定（上 = 世界 -Z，右 = 世界 +X），自己居中并显示朝向，
--- 带旋转扫描线与半程刻度圈；屏幕右上角创建，动态避开右上角功能列表 TopBarFrame
-RadarFrame, RadarSelf, RadarSelfDir, RadarSweep, RadarSweepAng = nil, nil, nil, nil, 0
+-- v5.44 起改成「朝向朝上 heading-up」：自己永远是中心一个点 + 前方小三角（三角指的就是当前朝向），
+-- 敌人 / NPC / 建筑按自己朝向反向旋转绕着自己转（用户：「让人物跟着我转，而不是让我转」）。
+-- 屏幕右上角创建，动态避开右上角功能列表 TopBarFrame
+RadarFrame, RadarSelf, RadarSelfTri, RadarSweep, RadarSweepAng = nil, nil, nil, nil, 0
+-- 朝向朝上（heading-up）用的自己水平朝向：cosH = -Look.Z, sinH = Look.X（归一化）。
+-- 世界偏移按它反向旋转后映射到屏幕——自己永远是中心一个点 + 前方小三角，
+-- 敌人 / NPC / 建筑绕着自己转（用户：「让人物转，而不是让我转」）
+RadarCosH, RadarSinH = 1, 0
 RadarDots, RadarWalls, RadarMode, RadarTimer, RadarNpcCache = {}, {}, 1, 0, {}
 function buildRadar()
 	if RadarFrame then return end
@@ -6168,17 +7197,18 @@ function buildRadar()
 			NumberSequenceKeypoint.new(1, 0.92),
 		}),
 		Parent = RadarSweep })
-	-- 自己：中心圆点（世界固定：上 = -Z，右 = +X）
+	-- 自己：中心圆点（固定不动，天旋地转它也在正中心）
 	RadarSelf = new("Frame", { Size = UDim2.new(0, 8, 0, 8), AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.new(0.5, 0, 0.5, 0), BackgroundColor3 = Color3.fromRGB(120, 255, 160),
 		BorderSizePixel = 0, Parent = RadarFrame })
 	corner(RadarSelf, 4)
-	-- 自己朝向短线：位置每帧沿朝向计算（不用 Rotation——Frame 绕自身几何中心旋转，
-	-- 底边贴中心时端点绕偏心点公转，就是中心点上方乱飘的「小绿方块」）
-	RadarSelfDir = new("Frame", { Size = UDim2.new(0, 3, 0, 13), AnchorPoint = Vector2.new(0.5, 0.5),
-		BackgroundColor3 = Color3.fromRGB(120, 255, 160), BackgroundTransparency = 0.1,
-		BorderSizePixel = 0, Parent = RadarFrame })
-	corner(RadarSelfDir, 1.5)
+	-- 自己前方小三角：标记「我脸朝向哪边」。朝向朝上模式下世界绕自己转，
+	-- 正上方就是当前朝向，所以三角是静态的（不用每帧算位置/ Rotation）
+	RadarSelfTri = new("TextLabel", { Text = "▲", Font = Enum.Font.GothamBold, TextSize = 10,
+		TextColor3 = Color3.fromRGB(120, 255, 160), BackgroundTransparency = 1,
+		AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 0.5, -5),
+		Size = UDim2.new(0, 14, 0, 13), TextYAlignment = Enum.TextYAlignment.Bottom,
+		Parent = RadarFrame })
 end
 function updateRadar(dt)
 	if not State.Radar then if RadarFrame then RadarFrame.Visible = false end return end
@@ -6256,24 +7286,25 @@ function updateRadar(dt)
 	local RANGE, RR = 220, 78
 	local myPos = HRP.Position
 	local myLook = HRP.CFrame.LookVector
-	-- 自己朝向短线：从中心沿世界朝向伸出（屏幕方向 = (look.X, -look.Z)），不用 Rotation
-	if RadarSelfDir then
-		local lx, ly = myLook.X, myLook.Z
-		local m = math.sqrt(lx * lx + ly * ly)
-		if m > 0.001 then
-			RadarSelfDir.Position = UDim2.new(0.5, lx / m * 10, 0.5, -ly / m * 10)
-		end
-	end
+	-- 朝向朝上：先拿到自己水平朝向（cosH = -Z, sinH = X）。正上/正下看时水平分量为 0，
+	-- 保持上一帧的朝向不跳变；从来没拿到过就默认世界 -Z 朝上（和老版世界固定一致）
+	local lx, lz = myLook.X, myLook.Z
+	local lm = math.sqrt(lx * lx + lz * lz)
+	if lm > 0.001 then RadarCosH, RadarSinH = -lz / lm, lx / lm end
+	local cosH, sinH = RadarCosH, RadarSinH
 	local nDot, nWall = 0, 0
 	for i, it in ipairs(pts) do
 		local d = it.P.Position - myPos
 		local dist = math.sqrt(d.X * d.X + d.Z * d.Z)
-		-- 世界固定：屏幕上 = 世界 -Z，屏幕右 = 世界 +X
-		local ang = math.atan2(d.X, -d.Z)
+		-- 世界偏移按自己朝向反向旋转：正前方的目标永远出现在屏幕正上方，
+		-- 右边的目标出现在屏幕右方——敌人 / NPC / 建筑绕着自己转，自己不动
+		local rx = d.X * cosH + d.Z * sinH
+		local ry = -d.X * sinH + d.Z * cosH
 		local k = math.min(dist / RANGE, 1) * RR
-		local px, py = math.sin(ang) * k, -math.cos(ang) * k
+		local px = (dist > 0.001) and (rx / dist * k) or 0
+		local py = (dist > 0.001) and (ry / dist * k) or 0
 		if it.W then
-			-- 墙壁线段：AnchorPoint 贴中点，Rotation = 线段屏幕方向，粗细 2px
+			-- 墙壁线段：方向同样按朝向旋转，AnchorPoint 贴中点，粗细 2px
 			nWall = nWall + 1
 			local seg = RadarWalls[nWall]
 			if not seg then
@@ -6286,7 +7317,9 @@ function updateRadar(dt)
 			seg.BackgroundColor3 = it.C
 			seg.Size = UDim2.new(0, it.Len, 0, 2)
 			seg.Position = UDim2.new(0.5, px, 0.5, py)
-			seg.Rotation = math.deg(math.atan2(it.DY, it.DX))
+			local wdx = it.DX * cosH + it.DY * sinH
+			local wdy = -it.DX * sinH + it.DY * cosH
+			seg.Rotation = math.deg(math.atan2(wdy, wdx))
 		else
 			nDot = nDot + 1
 			local dot = RadarDots[nDot]
@@ -6307,6 +7340,9 @@ end
 
 function notify(msg, col)
 	if not msg then return end
+	-- v5.47 提示收权：右上角只留给「功能列表显示」，日常确认（无色）一律不弹；
+	-- 警告/错误必须显式带色才会显示（统一橙 Color3.fromRGB(255,176,32)）
+	if not col then return end
 	local t = new("Frame", { Size = UDim2.new(1, 0, 0, 42), LayoutOrder = tick(),
 		BackgroundColor3 = Color3.fromRGB(16, 19, 28), BackgroundTransparency = 0.08,
 		BorderSizePixel = 0, Parent = NotifyHost })
@@ -6452,6 +7488,9 @@ function setStealth(on)
 	if on then
 		local n = stealthFreeze()
 		stealthHideOwn()
+		-- 开隐身自动清身上方块（v5.45，用户：「开启隐身之后自动清除」）——
+		-- 录屏的时候角色光溜的，不戴帽子不挂配件
+		pcall(hideBodyBlocks, true)
 		if State.StealthHideGame then stealthHideGame() end
 		if StealthBall then StealthBall.Visible = true end
 		stealthTime, stealthAcc = 0, 0
@@ -6579,6 +7618,7 @@ RunService:BindToRenderStep("HonFunLoop", 9995, function(dt)
 		end
 	end
 	pcall(toyFrame, dt)
+	pcall(cdTick, dt)
 	pcall(updateRadar, dt)
 	TopBarTimer = (TopBarTimer or 0) + dt
 	if TopBarTimer > 0.35 then
@@ -6732,7 +7772,8 @@ pcall(updateTopBar)
 -- 这样开场自动加载的背景图一建出来就是保存的透明度；playOpenAnim 之前应用缩放，
 -- 保证「缩放弹出」动画的起点就是恢复后的比例
 pcall(function()
-	if PrefFontScale then applyFontScale(PrefFontScale) end
+	-- 字体默认最大：用户要求「默认拉到最大」，无存档时也应用 1.6，有存档按存档
+	applyFontScale(PrefFontScale or 1.6)
 	if PrefPanelScale and MainScale then MainScale.Scale = PrefPanelScale end
 	if PrefBgAlpha ~= nil then BgAlpha = PrefBgAlpha end
 end)
@@ -6811,8 +7852,8 @@ tspawn(function()
 			Main.Rotation = 0
 			if OrigMainSize then Main.Size = OrigMainSize end
 			Main.BackgroundTransparency = 0.05
-			if MainScale then MainScale.Scale = 1 end
+			if MainScale then MainScale.Scale = PrefPanelScale or 1 end
 		end)
 	end
 end)
-_pr("[HON SPEED HUB] v5.43 已加载 · 完整文件约 6819 行 · 若你的脚本远大于此行数说明粘贴重复了")
+_pr("[HON SPEED HUB] v5.47 已加载 · 完整文件约 7860 行 · 若你的脚本远大于此行数说明粘贴重复了")
