@@ -1,5 +1,5 @@
 local _pr = (type(print) == "function") and print or (type(warn) == "function" and warn) or function() end
-_pr("[HON SPEED HUB] 载入中 · v5.47 · 若只看到这一行说明文件在中途中断")
+_pr("[HON SPEED HUB] 载入中 · v5.50 · 若只看到这一行说明文件在中途中断")
 local twait  = (type(task) == "table" and task.wait)  or wait  or function() end
 local tspawn = (type(task) == "table" and task.spawn) or spawn or function(f, ...) return f(...) end
 if type(twait) ~= "function" then twait = function() end end
@@ -97,7 +97,7 @@ local State = {
 	Freeze = false, HidePlayers = false, HideUI = false, AutoJump = false, CoordHud = false,
 	TPLoop = false, TPInterval = 0, TPOffsetY = 3,
 	MoveGameUI = false, UILayoutLocked = false,
-	Stealth = false, StealthHideGame = true,
+	Stealth = false, StealthHideGame = false,
 	BlackHole = false, BlackHoleForce = 60, HeroFly = false, Car = false,
 	EngineOutline = true, Trail = false, CloneArmy = false, OrbitFx = false,
 	HeadRide = false, Shake = false, SpinCam = false, Magnet = false,
@@ -205,7 +205,7 @@ label({ Text = "HON SPEED HUB", Font = Enum.Font.GothamBold, TextSize = 21,
 	TextColor3 = Color3.fromRGB(238, 243, 255),
 	Position = UDim2.new(0, 36, 0, 16), Size = UDim2.new(0, 200, 0, 24),
 	TextXAlignment = Enum.TextXAlignment.Left }, Header)
-label({ Text = "Universal Hub  ·  W / V / CF  ·  v5.47", Font = Enum.Font.Gotham, TextSize = 11,
+label({ Text = "Universal Hub  ·  W / V / CF  ·  v5.50", Font = Enum.Font.Gotham, TextSize = 11,
 	TextColor3 = Color3.fromRGB(140, 149, 172),
 	Position = UDim2.new(0, 36, 0, 42), Size = UDim2.new(0, 240, 0, 16),
 	TextXAlignment = Enum.TextXAlignment.Left }, Header)
@@ -245,6 +245,24 @@ iconBtn("×", -34, Color3.fromRGB(255, 108, 118), function()
 end)
 -- ---------- 更新公告 ----------
 CHANGELOG = {
+	{ v = "v5.50", t = {
+		"重要改进 · 隐身录屏改为「开启后冻结除加速外的全部功能，关闭后原样恢复」（用户：「隐身完之后把所有功能全部关掉，就是开启隐身之后关掉所有功能，除了那个加速，然后其他功能全部关掉，当我关闭隐身，当我关闭录屏时恢复所有功能」）：此前 stealthFreeze 用 _keep 标志判断保留项，导致防布娃娃 / 启动动画 / 面板边框 / 背景图 / 霓虹发光 / 装死倒地等一堆非加速开关在隐身时也没被关；现在 stealthFreeze 改用一份独立的「加速白名单」（启用引擎 + 加速小窗 SPEED WIN + 隐身录屏开关本身），其余所有处于开启状态的开关一律 Set(false) 冻结，关隐身时逐个 Set(true) 还原到隐身前的状态——既满足「只留加速」，又不破坏 _keep 同时管辖的「全部关闭」按钮逻辑（设置类开关仍不被全部关闭排除）",
+		"说明同步 · 隐身录屏小窗副标题与提示文案更正为「隐藏界面 + 暂停其他功能（加速保留）」「隐藏期间仅加速保持运行，其余功能全部暂停（关闭隐身即恢复）」，删掉旧版「隐藏期间加速 / 飞行 / ESP 全部继续生效」的错误描述",
+	}},
+	{ v = "v5.49", t = {
+		"重要修复 · 防录屏不再误藏系统 UI 与服务器自带 UI（用户：「防录屏不只隐藏脚本，不隐藏原系统 UI 和服务器自带的 UI」）：此前「隐藏全部 UI」开关与「隐身录屏 STEALTH」都会遍历 PlayerGui，把 Gui 以外的所有 ScreenGui（即游戏服务器自带的界面）一并 Enabled=false——录屏 / 截图时把人家游戏界面也收了；现在只藏脚本自己的 Gui 这一个 ScreenGui，原系统 UI（CoreGui：聊天 / 排行榜 / 菜单 / 顶栏）与服务器自带 UI 原样保留，录屏只隐去本脚本面板",
+		"重要改进 · 隐身录屏默认不再藏游戏界面：State.StealthHideGame 默认 true → false，开启后只调用 stealthHideOwn() 收本脚本面板（REC 悬浮钮照常显示），彻底停掉 stealthHideGame() 对 PlayerGui 下服务器 UI 的收拢；「隐藏全部 UI」开关改名为「隐藏脚本界面」，语义与行为一致",
+		"实测 · mock 全量回归 17 个测试文件全绿：新增 test_v549 专项（隐藏脚本界面只禁 Gui.Enabled、PlayerGui 下服务器 ScreenGui 保持 Enabled 不变、关开关还原；State.StealthHideGame 默认 false、隐身录屏开后仅 HideOwn 生效、服务器 ScreenGui 与 REC 球均不受影响）；82 开关 + 168 按钮触发 0 报错",
+	}},
+	{ v = "v5.48", t = {
+		"重大修复 · 切 WindUI 框架后倒计时小窗不显示、飞行用不了的根因（用户：「倒计时的那个倒计时有问题，它不显示在那个小窗上面」「飞行用不了」）：setUiFramework(2) 此前执行 Gui.Enabled=false 想藏掉自制 UI——可倒计时 / 加速 / 标点 / 飞行四个小窗和右上角 UP / DOWN 键全部挂在 Gui 下，禁 Gui 等于把它们连窝端，症状正是「倒计时不显示」「飞行用不了」；现在切框架只藏 Main 主面板和 Mini 迷你条（GuiPanelBak 记住原显隐、切回时原样恢复，缩成迷你条也不怕），Gui 全程不禁，小窗与升降键在哪个框架下都活",
+		"重大新增 · 四个小窗全部加最小化键（用户：「给所有小窗全部增加个缩小，就是最小键也是缩量的」）：加速 / 标点 / 飞行三个小窗标题条新增「–」钮——点一下整窗缩成 30px 标题条（子元素逐个记原显隐后全藏、标题字与 × 留着），再点还原；通用能力 winMinSetup(win, minBtn, keep) 一次接线全窗生效；飞行小窗最小化只缩窗体，右上角 UP / DOWN 升降键不受影响",
+		"重大改进 · 倒计时最小化改「屏幕中心上方小 pill」（用户：「倒计时的 UI 缩小之后，倒计时会出现在屏幕中心上方」）：倒计时小窗的「–」收起完整窗体后，屏幕顶部中间（0.5, -75, 0, 8）浮出 150×40 小 pill——大字时间 + 「展开」钮；缩起期间表照常走、最后 10 秒同步染红；点 pill 时间字或展开钮随时还原完整小窗；关开关 = 全收 + 停表 + 最小化态重置，下次开从完整小窗开始",
+		"重大改进 · 飞行重写为悬浮模式（用户：「修改一下飞行，飞行用不了，我要的是开机之后控制，就是把角色控制在原地，就固定在原地，只能前后移动，前后左右移动准确来说就是，上下只能靠屏幕右上角的那两个按钮键来进行动」）：旧飞行动力整个是死的——渲染步读 Humanoid.MoveDirection 取水平方向（PlatformStand 下该值失效，脚本自己的注释都承认），主循环里算完的速度又从不写出去（死代码），唯一活着的只有 E / Q / Space / LeftCtrl 键盘升降；现在单一动力源：① 水平走原始输入（WASD / 虚拟方向键）按飞行速度直写；② 上下只认右上角 UP / DOWN 两个按钮键，键盘升降全部拆除；③ 不按升降 = 弹簧锁在当前高度（按过再松手就锁定新高度），角色固定在原地不坠不飘；④ 每帧直接写 HRP.AssemblyLinearVelocity，不再依赖 LinearVelocity 约束（新 API 个别执行器建了不工作，飞行会直接瘫）；AlignOrientation 保持 upright + 朝向只跟随镜头水平朝向（不含俯仰），pcall 包着，老执行器自动退化照样飞",
+		"重要修复 · 三个新测试才抓到的笔误 / 断链（test_v548 暴露）：① winMinSetup 的 shrunk and false or e[2] 是坏三元——A=false 时 Lua 穿透到 or 分支，最小化根本没藏住子元素（缩成标题条但内容全露着）；② CdMiniL 把单个实例误当 kids 表传给 new() 第三参——mock 的 ipairs 静默零迭代，真机上 ipairs(userdata) 直接报错，整个 cdBuild 会中断（倒计时开关点了白点）；③ 飞行中重生三断链——FlyHoldY 留着旧高度把新角色往旧高度拽、旧 FlyAtt 还挂在已换掉的角色上（buildFlyParts 早退跳过）、新角色 PlatformStand 没重断言，现在重生一律销毁旧附件 → 重建 → 按新位置锁高度 → 重钉 PlatformStand",
+		"重要改进 · 加速小窗 ± 改为一点一点加（用户：「引擎的那个小窗上面的加速要一点一点的增加，而不是一下就加 10」）：± 按钮步进 10 → 1，与主速度滑条整数粒度一致；顶 / 底格 clamp 照旧，要大改直接拖主滑条",
+		"实测 · mock 全量回归 17 个测试文件全绿：新增 test_v548 五段专项（框架切换小窗全活——Gui 不禁 / Main·Mini 藏 / 四个小窗 + UP·DOWN 键在 WindUI 下仍可见可点 / GuiPanelBak 原显隐恢复 / 关着面板切框架不强行弹回；四窗最小化-恢复——30px 标题条 + 子元素藏 / 还原 + 标题条元素不藏 + 飞行小窗缩窗不缩升降键；倒计时 pill——顶部中间位置 + 缩起照常走 + 最后 10 秒染红 + 两种展开路径 + 关开关重置；飞行悬浮——PlatformStand + 弹簧锁高度 + WASD 水平 + E / Q 键盘升降失效 + UP / DOWN 按钮升降与锁定高度随动 + 速度滑条联动 + 关闭全复位 + 重生三连重置；加速 ±1 + 连点累积 + 顶 / 底 clamp + 源码级防回归）；mock 基建修正——GuiObject.Visible 默认 true 对齐真机；82 开关 + 168 按钮触发 0 报错",
+	}},
 	{ v = "v5.47", t = {
 		"重大改进 · ESP 字体放大 + 启动记忆（用户：「增加一个透视字体放大，因为字体太小了。就是我设置到那个字体，下次启动脚本的时候还是在那个字体的位置，就那个大小」）：视觉页新增「ESP 字体」滑条（60%~200%，默认 100%）——竖排三件套（盒子 / 名字 / 血条 / 距离 / 间距）整套按 EspFontScale 等比缩放，不是只放大字号；选定的倍数写存档（ef 字段，clamp 0.6~2），重启 / 换服自动恢复；WindUI 视觉页同步上架",
 		"重要修复 · ESP 厚墙远距透视不到（用户：「可能是墙壁特别厚，然后又特别远的地方它透视不到……我需要它不管在哪里，不管有什么阻挡都能透视到」）：名字 / 血条 / 距离文字牌此前 AlwaysOnTop 跟着「穿墙显示」开关走、MaxDistance 又是默认小值——墙一挡或稍远就整组消失；现在文字牌无条件最顶渲染（AlwaysOnTop=true），MaxDistance 拉到 100000，厚墙远距都不丢标签；角色高亮仍归「穿墙显示」开关管，行为不变",
@@ -1010,11 +1028,43 @@ toolBtn("传送", 62,    function() teleportTyped() end)
 toolBtn("传 TA", 124,  function() teleportToPlayer() end)
 toolBtn("观察", 186,   function() spectateTyped() end)
 toolBtn("重进", 248,   function() rejoinServer() end)
+-- ===== v5.48：小窗最小化（用户：「给所有小窗全部增加个缩小，就是最小键也是缩小的」）=====
+-- 「–」把窗缩成只剩标题条（winMinSetup：子元素逐个记 Visible，缩时全藏、展时全还），
+-- 再点一下（钮变 □）展开。keep 里的对象（标题字 / 关闭钮）收缩时保持可见
+function winMinSetup(win, minBtn, keep)
+	if not (win and minBtn) then return end
+	local full = win.Size
+	local shrunk = false
+	local bodies = {}
+	for _, c in ipairs(win:GetChildren()) do
+		if c ~= minBtn and c:IsA("GuiObject") then
+			local k = false
+			for _, o in ipairs(keep or {}) do if c == o then k = true break end end
+			if not k then table.insert(bodies, { c, c.Visible }) end
+		end
+	end
+	local function apply()
+		-- 注意：不能写 `e[1].Visible = shrunk and false or e[2]`——Lua 的 and/or 三元
+		-- 在 A=false 时会穿透到 or 分支（true and false or x == x），最小化根本没藏住
+		for _, e in ipairs(bodies) do
+			if shrunk then e[1].Visible = false else e[1].Visible = e[2] end
+		end
+		win.Size = shrunk and UDim2.new(full.X.Scale, full.X.Offset, 0, 30) or full
+		minBtn.Text = shrunk and "□" or "–"
+	end
+	bindClick(minBtn, "小窗最小化", function()
+		shrunk = not shrunk
+		apply()
+	end)
+end
 -- ===== 倒计时器 COUNTDOWN（用户：「在防坠落上面增加一个计时，开启之后屏幕生成一个小 UI，
 -- 输入要计多少分钟，点确认开始倒数，到 0 提示时间到了，可暂停 / 重置」）=====
 -- 说明：纯界面小部件，不碰角色；Stepped 维持循环在 render step 里 tick
 CdTotal, CdRemain, CdRunning, CdPaused = 0, 0, false, false
 CdShownSec = -1
+-- v5.48：最小化态——缩起来时完整小窗收起、屏幕顶部中间出一个小 pill 继续显示时间
+-- （用户：「倒计时的 UI 缩小之后，倒计时会出现在屏幕中心上方」）
+CdMinimized = false
 function cdFmt(s)
 	s = math.max(0, math.floor(s + 0.5))
 	return string.format("%02d:%02d", math.floor(s / 60), s % 60)
@@ -1058,6 +1108,31 @@ function cdBuild()
 	bindClick(CdOkBtn, "倒计时确认", function() cdConfirm() end)
 	bindClick(CdPauseBtn, "倒计时暂停", function() cdPause() end)
 	bindClick(CdResetBtn, "倒计时重置", function() cdReset() end)
+	-- v5.48：最小化——「–」收小窗，倒计时改到屏幕顶部中间的小 pill 上继续跑
+	CdMinBtn = new("TextButton", { Text = "–", Font = Enum.Font.GothamBold, TextSize = 14,
+		TextColor3 = Color3.fromRGB(150, 158, 180), BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+		BackgroundTransparency = 0.9, BorderSizePixel = 0, AutoButtonColor = false,
+		Size = UDim2.new(0, 22, 0, 22), Position = UDim2.new(1, -30, 0, 6), Parent = CdFrame })
+	corner(CdMinBtn, 6)
+	bindClick(CdMinBtn, "倒计时最小化", function() cdSetMini(true) end)
+	CdMini = new("Frame", { Name = "HonCdMini",
+		Size = UDim2.new(0, 150, 0, 40), Position = UDim2.new(0.5, -75, 0, 8),
+		BackgroundColor3 = Color3.fromRGB(16, 19, 28), BackgroundTransparency = 0.08,
+		BorderSizePixel = 0, Visible = false, Parent = Gui })
+	corner(CdMini, 10)
+	new("UIStroke", { Color = Mode().Accent, Transparency = 0.5, Thickness = 1, Parent = CdMini })
+	CdMiniL = new("TextButton", { Text = "00:00", Font = Enum.Font.GothamBold, TextSize = 22,
+		TextColor3 = Color3.fromRGB(238, 243, 255), BackgroundTransparency = 1,
+		BorderSizePixel = 0, AutoButtonColor = false,
+		Position = UDim2.new(0, 12, 0, 9), Size = UDim2.new(0, 78, 0, 22),
+		TextXAlignment = Enum.TextXAlignment.Left, Parent = CdMini })
+	bindClick(CdMiniL, "倒计时展开", function() cdSetMini(false) end)
+	CdMiniOpen = new("TextButton", { Text = "展开", Font = Enum.Font.GothamBold, TextSize = 10,
+		TextColor3 = Mode().Accent, BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+		BackgroundTransparency = 0.88, BorderSizePixel = 0, AutoButtonColor = false,
+		Size = UDim2.new(0, 46, 0, 24), Position = UDim2.new(1, -58, 0, 8), Parent = CdMini })
+	corner(CdMiniOpen, 8)
+	bindClick(CdMiniOpen, "倒计时展开", function() cdSetMini(false) end)
 	-- 小 UI 随时可挪：标题条 + 大字区当把手（不抢按钮/输入框的点击）
 	local function cdDragHook(o)
 		if not o then return end
@@ -1084,6 +1159,13 @@ function cdBuild()
 	cdDragHook(CdFrame)
 	cdDragHook(CdTitleL)
 	cdDragHook(CdTimeL)
+	cdDragHook(CdMini)   -- 最小化 pill 也能随手挪
+end
+function cdSetMini(on)
+	CdMinimized = on and true or false
+	if CdFrame then CdFrame.Visible = not on end
+	if CdMini then CdMini.Visible = on end
+	cdPaint()
 end
 function cdPaint()
 	if not (CdFrame and CdFrame.Parent) then return end
@@ -1096,6 +1178,12 @@ function cdPaint()
 			and Color3.fromRGB(255, 96, 96) or Color3.fromRGB(238, 243, 255)
 	end
 	if CdPauseBtn then CdPauseBtn.Text = CdPaused and "继续" or "暂停" end
+	-- v5.48：最小化 pill 同步时间与最后 10 秒染红（时间照常走，缩不缩都在跑）
+	if CdMiniL and CdMiniL.Parent then
+		CdMiniL.Text = cdFmt(sec)
+		CdMiniL.TextColor3 = (CdRunning and not CdPaused and sec <= 10)
+			and Color3.fromRGB(255, 96, 96) or Color3.fromRGB(238, 243, 255)
+	end
 end
 function cdConfirm()
 	local txt = CdInput and tostring(CdInput.Text or "") or ""
@@ -1146,8 +1234,9 @@ function cdTick(dt)
 	end
 end
 -- ===== 加速小窗 SPEED WIN（用户：「再给弄个加速，做个小窗，可以在小窗上面切换速度和模式」）=====
--- 引擎页开关唤出；W / V / CF 三模式按钮直切 SetMode；速度 ± 步进 10，与主 UI
--- 速度滑条双向同步（走 SpeedSlider.Apply）；标题条 + 数字区当把手整块拖；× 收起
+-- 引擎页开关唤出；W / V / CF 三模式按钮直切 SetMode；速度 ± 步进 1（v5.48 起一点一点加），
+-- 与主 UI 速度滑条双向同步（走 SpeedSlider.Apply）；标题条 + 数字区当把手整块拖；
+-- × 收起、– 最小化缩成标题条（v5.48）
 SpeedWinBtns = {}
 function speedWinBuild()
 	if SpeedWin then return end
@@ -1157,14 +1246,20 @@ function speedWinBuild()
 		BorderSizePixel = 0, Visible = false, Parent = Gui })
 	corner(SpeedWin, 12)
 	SpeedWinStroke = new("UIStroke", { Color = Mode().Accent, Transparency = 0.5, Thickness = 1, Parent = SpeedWin })
-	label({ Text = "加速 SPEED", Font = Enum.Font.GothamBold, TextSize = 10,
+	SpeedWinTitleL = label({ Text = "加速 SPEED", Font = Enum.Font.GothamBold, TextSize = 10,
 		TextColor3 = Color3.fromRGB(140, 148, 168), Position = UDim2.new(0, 12, 0, 8),
-		Size = UDim2.new(1, -40, 0, 14), TextXAlignment = Enum.TextXAlignment.Left }, SpeedWin)
+		Size = UDim2.new(1, -80, 0, 14), TextXAlignment = Enum.TextXAlignment.Left }, SpeedWin)
 	SpeedWinCloseBtn = new("TextButton", { Text = "×", Font = Enum.Font.GothamBold, TextSize = 14,
 		TextColor3 = Color3.fromRGB(150, 158, 180), BackgroundColor3 = Color3.fromRGB(255, 255, 255),
 		BackgroundTransparency = 0.9, BorderSizePixel = 0, AutoButtonColor = false,
 		Size = UDim2.new(0, 22, 0, 22), Position = UDim2.new(1, -30, 0, 6), Parent = SpeedWin })
 	corner(SpeedWinCloseBtn, 6)
+	-- v5.48：最小化（缩成标题条，再点展开）
+	SpeedWinMinBtn = new("TextButton", { Text = "–", Font = Enum.Font.GothamBold, TextSize = 14,
+		TextColor3 = Color3.fromRGB(150, 158, 180), BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+		BackgroundTransparency = 0.9, BorderSizePixel = 0, AutoButtonColor = false,
+		Size = UDim2.new(0, 22, 0, 22), Position = UDim2.new(1, -56, 0, 6), Parent = SpeedWin })
+	corner(SpeedWinMinBtn, 6)
 	-- 三模式按钮：W / V / CF 直切（高亮当前模式）
 	for i, m in ipairs(Modes) do
 		local b = new("TextButton", { Text = m.Id, Font = Enum.Font.GothamBold, TextSize = 12,
@@ -1197,8 +1292,10 @@ function speedWinBuild()
 		SpeedWin.Visible = false
 		if SpeedWinTgl then SpeedWinTgl.Set(false, true) end
 	end)
-	bindClick(SpeedWinMinusBtn, "加速小窗减速", function() speedWinStep(-10) end)
-	bindClick(SpeedWinPlusBtn, "加速小窗加速", function() speedWinStep(10) end)
+	-- v5.48：± 一点一点加（用户：「要一点一点的增加，而不是一下就加 10」）——与主滑条
+	-- 整数粒度一致，长按习惯靠主滑条 / 大改直接拖滑条
+	bindClick(SpeedWinMinusBtn, "加速小窗减速", function() speedWinStep(-1) end)
+	bindClick(SpeedWinPlusBtn, "加速小窗加速", function() speedWinStep(1) end)
 	-- 小窗随时可挪：标题条 + 数字区当把手（不抢按钮的点击）
 	local function swDragHook(o)
 		if not o then return end
@@ -1223,6 +1320,7 @@ function speedWinBuild()
 	end
 	swDragHook(SpeedWin)
 	swDragHook(SpeedWinNumL)
+	winMinSetup(SpeedWin, SpeedWinMinBtn, { SpeedWinTitleL, SpeedWinCloseBtn })
 end
 function speedWinStep(d)
 	local m = Mode()
@@ -1250,11 +1348,19 @@ end
 CdTgl = makeToggle(PageTool, 152, "倒计时器 COUNTDOWN", "屏幕小 UI · 输入分钟数倒数，到点提醒", false, function(v)
 	State.Countdown = v
 	cdBuild()
-	if CdFrame then CdFrame.Visible = v end
 	if v then
+		-- 最小化过就回顶部中间的小 pill，否则给完整小窗
+		if CdMinimized then
+			if CdMini then CdMini.Visible = true end
+		elseif CdFrame then
+			CdFrame.Visible = true
+		end
 		cdPaint()
 	else
-		-- 关开关 = 收界面并停表（下次开再从 0 开始，不清空已输入的总时长）
+		-- 关开关 = 收界面并停表（下次开从完整小窗开始，不清空已输入的总时长）
+		if CdFrame then CdFrame.Visible = false end
+		if CdMini then CdMini.Visible = false end
+		CdMinimized = false
 		CdRunning, CdPaused = false, false
 	end
 end, true)
@@ -1653,14 +1759,20 @@ function wpWinBuild()
 		BorderSizePixel = 0, Visible = false, Parent = Gui })
 	corner(WPWin, 12)
 	WPWinStroke = new("UIStroke", { Color = Color3.fromRGB(150, 220, 255), Transparency = 0.5, Thickness = 1, Parent = WPWin })
-	label({ Text = "标点 WP", Font = Enum.Font.GothamBold, TextSize = 10,
+	WPWinTitleL = label({ Text = "标点 WP", Font = Enum.Font.GothamBold, TextSize = 10,
 		TextColor3 = Color3.fromRGB(140, 148, 168), Position = UDim2.new(0, 12, 0, 8),
-		Size = UDim2.new(1, -40, 0, 14), TextXAlignment = Enum.TextXAlignment.Left }, WPWin)
+		Size = UDim2.new(1, -80, 0, 14), TextXAlignment = Enum.TextXAlignment.Left }, WPWin)
 	WPWinCloseBtn = new("TextButton", { Text = "×", Font = Enum.Font.GothamBold, TextSize = 14,
 		TextColor3 = Color3.fromRGB(150, 158, 180), BackgroundColor3 = Color3.fromRGB(255, 255, 255),
 		BackgroundTransparency = 0.9, BorderSizePixel = 0, AutoButtonColor = false,
 		Size = UDim2.new(0, 22, 0, 22), Position = UDim2.new(1, -30, 0, 6), Parent = WPWin })
 	corner(WPWinCloseBtn, 6)
+	-- v5.48：最小化（缩成标题条，再点展开）
+	WPWinMinBtn = new("TextButton", { Text = "–", Font = Enum.Font.GothamBold, TextSize = 14,
+		TextColor3 = Color3.fromRGB(150, 158, 180), BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+		BackgroundTransparency = 0.9, BorderSizePixel = 0, AutoButtonColor = false,
+		Size = UDim2.new(0, 22, 0, 22), Position = UDim2.new(1, -56, 0, 6), Parent = WPWin })
+	corner(WPWinMinBtn, 6)
 	-- 当前坐标（HonCoord 渲染步顺手刷）
 	WPWinCoordLbl = label({ Text = "X 0   Y 0   Z 0", Font = Enum.Font.GothamBold, TextSize = 12,
 		TextColor3 = Color3.fromRGB(150, 220, 255), Position = UDim2.new(0, 12, 0, 28),
@@ -1699,6 +1811,7 @@ function wpWinBuild()
 	end)
 	honDragHook(WPWin)
 	honDragHook(WPWinCoordLbl)
+	winMinSetup(WPWin, WPWinMinBtn, { WPWinTitleL, WPWinCloseBtn })
 end
 function wpWinRefresh()
 	if not (WPWin and WPWin.Parent and WPWinList) then return end
@@ -2568,7 +2681,7 @@ StealthTgl = makeToggle(PageUtil, 516, "隐身录屏 STEALTH", "隐藏界面 + �
 	setStealth(v)
 end, true)
 
-label({ Text = "开启后右上角出现一个 REC 悬浮窗：点一下恢复全部界面，再点一下重新隐藏。\n隐藏期间加速 / 飞行 / ESP 全部继续生效。\n注：注入器若是独立原生窗口，脚本无法控制它，请用它自己的快捷键。",
+label({ Text = "开启后右上角出现一个 REC 悬浮窗：点一下恢复全部界面，再点一下重新隐藏。\n隐藏期间仅「加速」保持运行（启用引擎 + 加速小窗），其余功能全部暂停，关闭隐身即原样恢复。\n注：注入器若是独立原生窗口，脚本无法控制它，请用它自己的快捷键。",
 	Font = Enum.Font.Gotham, TextSize = 10, TextColor3 = Color3.fromRGB(132, 141, 163),
 	Position = UDim2.new(0, 2, 0, 564), Size = UDim2.new(1, -4, 0, 56),
 	TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top }, PageUtil)
@@ -2625,7 +2738,7 @@ HidePlrTgl = makeToggle(PageUtil, 204, "隐藏其他玩家", "别人变透明，
 		HiddenParts = {}
 	end
 end)
-HideUiTgl = makeToggle(PageUtil, 252, "隐藏全部 UI", "录屏 / 截图用（系统 UI 保留）", false, function(v) setHideUI(v) end)
+HideUiTgl = makeToggle(PageUtil, 252, "隐藏脚本界面", "录屏 / 截图用（系统 / 服务器 UI 保留，只藏本脚本）", false, function(v) setHideUI(v) end)
 AutoJumpTgl = makeToggle(PageUtil, 300, "自动连跳 AUTO JUMP", "一直保持弹跳前进", false, function(v) State.AutoJump = v end)
 CoordTgl = makeToggle(PageUtil, 348, "坐标显示 COORD", "自动开启 HUD 并在上面显示 XYZ", false, function(v)
 	State.CoordHud = v
@@ -2649,24 +2762,15 @@ end)
 HiddenParts = {}
 function setHideUI(on)
 	State.HideUI = on
-	-- 只收 PlayerGui 下的界面（游戏自己的 UI + 我们的面板）；
-	-- Roblox 系统 UI（聊天 / 玩家列表 / 左上角菜单 / 顶栏）不碰——录屏也要有系统 UI。
-	-- 记下被我们关掉的 ScreenGui，卸载时原样恢复，不误伤游戏本来就关着的
-	HideUIHidden = HideUIHidden or {}
-	for _, g in ipairs(HideUIHidden) do
-		if g and g.Parent then g.Enabled = true end
-	end
-	HideUIHidden = {}
-	if on then
-		for _, g in ipairs(PG:GetChildren()) do
-			if g:IsA("ScreenGui") and g ~= Gui and g.Enabled then
-				g.Enabled = false
-				table.insert(HideUIHidden, g)
-			end
-		end
-	end
+	-- 只藏脚本自己的界面：本脚本所有 UI 都挂在 Gui 这一个 ScreenGui 下，
+	-- 禁掉 Gui 即整块消失。Roblox 系统 UI（CoreGui：聊天 / 排行榜 / 菜单 / 顶栏）
+	-- 与服务器自带 UI（PlayerGui 下除 Gui 外的其他 ScreenGui）一律不碰——
+	-- 录屏 / 截图时游戏原本的界面照常显示，不会把人家游戏界面也收了。
+	pcall(function()
+		if Gui then Gui.Enabled = not on end
+	end)
 	if notify then
-		notify(on and "已隐藏界面（系统 UI 保留，方便录屏）" or "已恢复界面")
+		notify(on and "已隐藏本脚本界面（系统 / 服务器 UI 保留，方便录屏）" or "已恢复本脚本界面")
 	end
 end
 LockShield = new("TextButton", { Text = "", AutoButtonColor = false,
@@ -2685,7 +2789,7 @@ corner(StatusFrame, 12)
 Status = label({ Text = "就绪", Font = Enum.Font.Gotham, TextSize = 11, TextColor3 = Color3.fromRGB(150, 159, 182),
 	Position = UDim2.new(0, 12, 0, 0), Size = UDim2.new(1, -24, 1, 0),
 	TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Center, RichText = true }, StatusFrame)
-label({ Text = "M 切引擎 · F2 开关 · L 锁面板 · E/Q 飞行 · , . 切页 · RightCtrl 显隐",
+label({ Text = "M 切引擎 · F2 开关 · L 锁面板 · 飞行升降看右上角 UP/DOWN · , . 切页 · RightCtrl 显隐",
 	Font = Enum.Font.Gotham, TextSize = 9, TextColor3 = Color3.fromRGB(105, 113, 134),
 	Position = UDim2.new(0, 0, 1, -13), Size = UDim2.new(1, 0, 0, 12),
 	TextXAlignment = Enum.TextXAlignment.Center,
@@ -2713,12 +2817,20 @@ FlyClose = new("TextButton", { Text = "×", Font = Enum.Font.GothamBold, TextSiz
 	Position = UDim2.new(1, -36, 0, 7), Size = UDim2.new(0, 26, 0, 26), Parent = FlyBar })
 corner(FlyClose, 8)
 FlyClose.MouseButton1Click:Connect(function() FlyTgl.Set(false) end)
-FlyToggle = makeToggle(FlyWin, 44, "开关飞行", "WASD 移动 · E/Q 升降", false, function(v) setFly(v) end)
+-- v5.48：最小化——缩成只剩 FLY 标题条（UP/DOWN 按钮在右上角，不受影响），再点展开
+FlyMinBtn = new("TextButton", { Text = "–", Font = Enum.Font.GothamBold, TextSize = 14,
+	TextColor3 = Color3.fromRGB(150, 158, 180), BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+	BackgroundTransparency = 0.9, BorderSizePixel = 0, AutoButtonColor = false,
+	Position = UDim2.new(1, -68, 0, 7), Size = UDim2.new(0, 26, 0, 26), Parent = FlyBar })
+corner(FlyMinBtn, 8)
+FlyToggle = makeToggle(FlyWin, 44, "开关飞行", "WASD 前后左右 · 升降看右上角 UP/DOWN", false, function(v) setFly(v) end)
 FlySlider = makeSlider(FlyWin, "飞行速度", 96, 10, 250, 60, " sp", function(v) State.FlySpeed = v end, false)
 label({ Text = "UP / DOWN 键在右上角 · 主 UI 可关窗",
 	Font = Enum.Font.Gotham, TextSize = 10, TextColor3 = Color3.fromRGB(132, 141, 163),
 	Position = UDim2.new(0, 16, 0, 150), Size = UDim2.new(1, -32, 0, 28),
 	TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top }, FlyWin)
+-- v5.48：最小化接线放在最后（子元素齐了才算「窗体」）——缩成标题条，UP/DOWN 照常在右上角
+winMinSetup(FlyWin, FlyMinBtn, { FlyBar })
 function makeFlyBtn(txt, y)
 	local b = new("TextButton", { Text = txt, Font = Enum.Font.GothamBold, TextSize = 12,
 		TextColor3 = Color3.fromRGB(238, 243, 255), BackgroundColor3 = Color3.fromRGB(16, 19, 28),
@@ -3748,21 +3860,6 @@ function unloadScript()
 	end)
 	-- 身上方块还原：脚本内置自动清过角色附加物，卸载时原样还回去不留残
 	pcall(function() if type(hideBodyBlocks) == "function" then hideBodyBlocks(false) end end)
-	-- 卸载前把「隐藏全部 UI / 隐身录屏」收起来的游戏界面全部还回去，不留残
-	pcall(function()
-		for _, g in ipairs(PG:GetChildren()) do
-			if g:IsA("ScreenGui") and g ~= Gui then
-				if HideUIHidden then
-					for _, h in ipairs(HideUIHidden) do
-						if h == g then g.Enabled = true end
-					end
-				end
-				for _, h in ipairs(StealthHiddenGui or {}) do
-					if h == g then g.Enabled = true end
-				end
-			end
-		end
-	end)
 	for _, nm in ipairs({ "HonFunLoop", "HonFlyJump", "HonFov", "HonKamui",
 		"HonUILayout", "HonPadMove", "HonFakeSync", "HonDance", "HonBorder", "HonStyleFx" }) do
 		pcall(function() RunService:UnbindFromRenderStep(nm) end)
@@ -3989,21 +4086,24 @@ function buildFlyParts()
 	FlyAtt = Instance.new("Attachment")
 	FlyAtt.Name = "HonFlyAtt"
 	FlyAtt.Parent = HRP
-	FlyVel = Instance.new("LinearVelocity")
-	FlyVel.Attachment0 = FlyAtt
-	FlyVel.MaxForce = 1e9
-	FlyVel.RelativeTo = Enum.ActuatorRelativeTo.World
-	FlyVel.VelocityConstraintMode = Enum.VelocityConstraintMode.Vector
-	FlyVel.VectorVelocity = Vector3.zero
-	FlyVel.Parent = HRP
-	FlyOrient = Instance.new("AlignOrientation")
-	FlyOrient.Attachment0 = FlyAtt
-	FlyOrient.Mode = Enum.OrientationAlignmentMode.OneAttachment
-	FlyOrient.RigidityEnabled = true
-	FlyOrient.Parent = HRP
+	-- v5.48：位移不走 LinearVelocity 约束，改成每帧直接写 HRP.AssemblyLinearVelocity
+	-- 约束类是新 API，个别执行器建了不工作，飞行会直接瘫（用户：「飞行用不了」）
+	-- 只留 AlignOrientation 保持悬浮时 upright + 朝向跟随镜头水平朝向（pcall 包着，
+	-- 老执行器没有这个类型就退化：照样飞，只是不强制朝向）
+	FlyOrient = nil
+	pcall(function()
+		local o = Instance.new("AlignOrientation")
+		o.Attachment0 = FlyAtt
+		o.Mode = Enum.OrientationAlignmentMode.OneAttachment
+		o.RigidityEnabled = true
+		o.Parent = HRP
+		FlyOrient = o
+	end)
+	if not (FlyOrient and FlyOrient.Parent) then FlyOrient = nil end
 end
 function destroyFlyParts()
 	if FlyAtt then pcall(function() FlyAtt:Destroy() end) end
+	if FlyOrient then pcall(function() FlyOrient:Destroy() end) end
 	FlyAtt, FlyVel, FlyOrient = nil, nil, nil
 end
 function setFly(on)
@@ -4350,7 +4450,18 @@ function bindCharacter(char)
 	-- 加上 Stepped 维持循环持续压回，三重保证不露方块
 	pcall(hideBodyBlocks, true)
 	cur, CFAccum = 0, 0
-	if State.Fly then buildFlyParts() end
+	-- v5.48：重生后锁定高度重置到新角色的当前 Y——不然 FlyHoldY 还留着旧高度，
+	-- 弹簧速度会把新角色往重生点上方/下方的旧高度拽
+	if State.Fly then
+		-- 先销毁旧角色身上的附件：buildFlyParts 有「附件还活着就跳过」的早退，
+		-- 不先销毁的话新角色拿不到 FlyAtt/FlyOrient（旧的还挂在已换掉的角色上）
+		destroyFlyParts()
+		buildFlyParts()
+		-- 新角色的人形默认 PlatformStand=false，不重断言的话重生后角色会站起来 /
+		-- 受重力，飞行态等于断了一拍（velocity 照写，但人形状态不对）
+		if Humanoid and Humanoid.Parent then Humanoid.PlatformStand = true end
+		FlyHoldY = (HRP and HRP.Parent) and HRP.Position.Y or nil
+	end
 	-- 画质/夜视类状态重生后自动重放（Lighting 是全局的不受影响，粒子/贴图类要重扫一遍）
 	pcall(function()
 		if State.GfxShadow then setGfxShadows(true) end
@@ -4561,22 +4672,9 @@ if State.WPLoop then
 	if State.Fly then
 		if Humanoid.PlatformStand ~= true then Humanoid.PlatformStand = true end
 		if not FlyAtt or not FlyAtt.Parent then buildFlyParts() end
-		local dir = flyDir()
-		local v = Vector3.zero
-		if dir then v = dir * State.FlySpeed end
-		local vert = 0
-		if FlyUp then vert = vert + 1 end
-		if FlyDown then vert = vert - 1 end
-		if UserInputService:IsKeyDown(Enum.KeyCode.E) then vert = vert + 1 end
-		if UserInputService:IsKeyDown(Enum.KeyCode.Q) then vert = vert - 1 end
-		if vert ~= 0 then
-			FlyHoldY = HRP.Position.Y
-			v = v + Vector3.new(0, vert * State.FlySpeed, 0)
-		else
-			if not FlyHoldY then FlyHoldY = HRP.Position.Y end
-			local dy = FlyHoldY - HRP.Position.Y
-			v = v + Vector3.new(0, math.clamp(dy * 8, -State.FlySpeed, State.FlySpeed), 0)
-		end
+		-- v5.48：位移动力全挪到 HonFlyJump（悬浮模式：水平 WASD/方向键 + 右上角 UP/DOWN
+		-- 升降 + 不按时锁高度）。这里只负责外观和状态灯——旧代码在这算的 v 从来没写出去，
+		-- 纯死代码，已拆
 		if Highlight and Highlight.Parent then
 			Highlight.Enabled = State.EngineOutline
 			Highlight.OutlineColor = m.Accent
@@ -5444,30 +5542,34 @@ RunService:BindToRenderStep("HonFlyJump", 9994, function(dt)
 	if HON_SHUTDOWN then return end
 	if not (HRP and HRP.Parent) then return end
 	if State.Fly then
-		if not (FlyVel and FlyVel.Parent) then pcall(buildFlyParts) end
+		-- v5.48 悬浮模式重写（用户：「把角色控制在原地，就固定在原地，只能前后移动，
+		-- 前后左右移动准确来说就是，上下只能靠屏幕右上角的那两个按钮键来进行动」）：
+		-- ① 水平走原始输入（WASD / 虚拟方向键）——PlatformStand 下 MoveDirection 是失效的，
+		-- 旧代码读它等于水平移动整个是死的；② 上下只认右上角 UP/DOWN 两个按钮键，E/Q 键盘升降去掉；
+		-- ③ 不按升降 = 弹簧锁在当前高度（按过再松手就锁定新高度，角色固定在原地不坠不飘）；
+		-- ④ 每帧直接写 HRP.AssemblyLinearVelocity，不依赖 LinearVelocity 约束（老执行器也认）
+		if not (FlyAtt and FlyAtt.Parent) then pcall(buildFlyParts) end
 		local spd = State.FlySpeed or 60
-		local v = Vector3.zero
-		local md = (Humanoid and Humanoid.Parent) and Humanoid.MoveDirection or Vector3.zero
-		if md.Magnitude > 0.05 then
-			v = v + Vector3.new(md.X, 0, md.Z).Unit * spd
-		end
-		local up, down = false, false
-		pcall(function()
-			if UserInputService:IsKeyDown(Enum.KeyCode.E) or UserInputService:IsKeyDown(Enum.KeyCode.Space) then up = true end
-			if UserInputService:IsKeyDown(Enum.KeyCode.Q) or UserInputService:IsKeyDown(Enum.KeyCode.LeftCtrl) then down = true end
-		end)
-		if FlyUp then up = true end
-		if FlyDown then down = true end
-		if up then v = v + Vector3.new(0, spd, 0) end
-		if down then v = v - Vector3.new(0, spd, 0) end
-		if v.Magnitude < 0.1 then
-			if not FlyHoldY then FlyHoldY = HRP.Position.Y end
-			v = Vector3.new(0, math.clamp((FlyHoldY - HRP.Position.Y) * 8, -spd, spd), 0)
+		local dir = flyDir()
+		local vx, vz = 0, 0
+		if dir then vx, vz = dir.X * spd, dir.Z * spd end
+		local vy
+		if FlyUp or FlyDown then
+			local vert = (FlyUp and 1 or 0) - (FlyDown and 1 or 0)
+			vy = vert * spd
+			FlyHoldY = (FlyHoldY or HRP.Position.Y) + vert * spd * dt
 		else
-			FlyHoldY = HRP.Position.Y
+			if not FlyHoldY then FlyHoldY = HRP.Position.Y end
+			vy = math.clamp((FlyHoldY - HRP.Position.Y) * 8, -spd, spd)
 		end
-		if FlyVel then FlyVel.VectorVelocity = v end
-		if FlyOrient then FlyOrient.CFrame = Cam.CFrame end
+		pcall(function() HRP.AssemblyLinearVelocity = Vector3.new(vx, vy, vz) end)
+		-- 朝向跟随镜头水平朝向（不含俯仰——不能一边飞一边抬头望天）
+		if FlyOrient then
+			local look = horiz(Cam.CFrame.LookVector)
+			if look and look.Magnitude > 0.01 then
+				pcall(function() FlyOrient.CFrame = CFrame.lookAt(HRP.Position, HRP.Position + look) end)
+			end
+		end
 	end
 	if State.AutoJump and Humanoid and Humanoid.Parent then
 		if Humanoid.FloorMaterial ~= Enum.Material.Air and not State.Fly then
@@ -6134,6 +6236,8 @@ end
 FW_NAMES = { "自制 UI", "WindUI" }
 UiFrameworkIdx, WindWin = 1, nil
 PrefFramework = nil
+-- v5.48：切 WindUI 前记住自制面板的显隐，切回时原样恢复（缩成迷你条也不怕）
+GuiPanelBak = nil
 -- 每个 WindUI 组件调用都过 windSafe：库里单个组件签名不符/字段缺失只废那一个，
 -- 不炸整个界面（更不会让用户回不去自制 UI）
 function windSafe(name, fn)
@@ -6167,8 +6271,15 @@ function windDestroy()
 		end
 	end)
 	WindWin = nil
-	-- 自制 UI 还活着（只是被隐藏），直接放出来
-	pcall(function() if Gui then Gui.Enabled = true end end)
+	-- 自制 UI 还活着（只是被隐藏），直接放出来（按切换前的显隐恢复，别把用户缩起的面板强行展开）
+	pcall(function()
+		if Gui then Gui.Enabled = true end
+		if GuiPanelBak then
+			if Main then Main.Visible = GuiPanelBak.main end
+			if Mini then Mini.Visible = GuiPanelBak.mini end
+			GuiPanelBak = nil
+		end
+	end)
 end
 -- 自制开关 → WindUI 开关：直接驱动原 toggle 的 Set(v)（非 silent），
 -- 完整复刻点击行为（onChange + 存档）。同名开关（如两个「反重力」）一起同步。
@@ -6246,7 +6357,7 @@ function windBuild(lib)
 	WindWin = W
 	-- 再补一层保险（夜脚本同款）：CreateWindow 可能被库吞掉背景参数，建完强制再写一次
 	windSyncBg()
-	windSafe("Tag", function() W:Tag({ Title = "v5.47", Color = "ElementBackground" }) end)
+	windSafe("Tag", function() W:Tag({ Title = "v5.50", Color = "ElementBackground" }) end)
 	-- 引擎页
 	local tEng = nil
 	windSafe("Tab:引擎", function() tEng = W:Tab({ Title = "引擎", Icon = "gauge" }) end)
@@ -6423,7 +6534,12 @@ function setUiFramework(i)
 			return false
 		end
 		UiFrameworkIdx = 2
-		pcall(function() if Gui then Gui.Enabled = false end end)
+		-- v5.48：只藏自制主面板，绝不禁整个 Gui——倒计时 / 加速 / 标点 / 飞行这些小窗
+		-- 和右上角 UP/DOWN 键全挂在 Gui 下，禁 Gui 等于把它们连窝端
+		-- （用户：「倒计时不显示在那个小窗上面」「飞行用不了」根因就在这）
+		GuiPanelBak = { main = Main and Main.Visible, mini = Mini and Mini.Visible }
+		if Main then Main.Visible = false end
+		if Mini then Mini.Visible = false end
 		-- 背景图应用到 WindUI 窗口（CreateWindow 已接参数，这里再保险一次）
 		windSyncBg()
 		if notify then notify("已切换到 WindUI（按 F 开关界面）") end
@@ -7442,30 +7558,23 @@ function stealthShowOwn()
 	end
 	StealthOwn = {}
 end
-function stealthHideGame()
-	StealthHiddenGui = {}
-	for _, g in ipairs(PG:GetChildren()) do
-		-- 除了我们自己的，PlayerGui 下的全部收起来（含注入器做在 PlayerGui 里的界面）。
-		-- Roblox 系统 UI（CoreGui：聊天/排行榜/菜单/顶栏）不隐藏——录屏也要有系统 UI
-		if g:IsA("ScreenGui") and g ~= Gui and g.Enabled then
-			g.Enabled = false
-			table.insert(StealthHiddenGui, g)
-		end
-	end
-end
-function stealthShowGame()
-	for _, g in ipairs(StealthHiddenGui) do
-		if g and g.Parent then g.Enabled = true end
-	end
-	StealthHiddenGui = {}
-end
--- ---------- 隐身录屏：冻结除「加速」外的所有功能，退出后原样恢复 ----------
+-- ---------- 隐身录屏：开启后冻结除「加速」外的全部功能，关闭后原样恢复 ----------
+-- 加速 = 启用引擎（让角色真正跑快）+ 加速小窗 SPEED WIN（调速面板）；隐身录屏开关本身
+-- 也必须在白名单里，否则隐身开着时关不掉它。其余（ESP / 飞行 / 穿墙 / 防布娃娃 /
+-- 启动动画 / 背景图 …）一律冻结，关闭隐身后逐个原样恢复。注意这里不走 _keep 标志——
+-- _keep 同时还管着「全部关闭」按钮，不能为了隐身把设置类开关（边框 / 背景图等）从
+-- 全部关闭里排除掉，所以隐身冻结单独用一份白名单。
 StealthFrozen = nil
+local STEALTH_KEEP = {
+	["启用引擎"] = true,
+	["加速小窗 SPEED WIN"] = true,
+	["隐身录屏 STEALTH"] = true,
+}
 function stealthFreeze()
 	if StealthFrozen then return end
 	StealthFrozen = {}
 	for _, t in ipairs(ToggleRegistry) do
-		if t._last and not t._keep then
+		if t._last and not STEALTH_KEEP[t._title] then
 			table.insert(StealthFrozen, t)
 			pcall(function() t.Set(false, false) end)
 		end
@@ -7491,14 +7600,12 @@ function setStealth(on)
 		-- 开隐身自动清身上方块（v5.45，用户：「开启隐身之后自动清除」）——
 		-- 录屏的时候角色光溜的，不戴帽子不挂配件
 		pcall(hideBodyBlocks, true)
-		if State.StealthHideGame then stealthHideGame() end
 		if StealthBall then StealthBall.Visible = true end
 		stealthTime, stealthAcc = 0, 0
-		if notify then notify("隐身录屏开启 · 已暂停 " .. n .. " 个功能（加速保持运行）") end
+		if notify then notify("隐身录屏开启 · 已暂停 " .. n .. " 个功能（仅加速保持运行）") end
 	else
 		local n = stealthRestore()
 		stealthShowOwn()
-		if State.StealthHideGame then stealthShowGame() end
 		if StealthBall then StealthBall.Visible = false end
 		if notify then notify("已恢复界面 · 并恢复 " .. n .. " 个功能") end
 	end
@@ -7856,4 +7963,6 @@ tspawn(function()
 		end)
 	end
 end)
-_pr("[HON SPEED HUB] v5.47 已加载 · 完整文件约 7860 行 · 若你的脚本远大于此行数说明粘贴重复了")
+_pr("[HON SPEED HUB] v5.50 已加载 · 完整文件约 7969 行 · 若你的脚本远大于此行数说明粘贴重复了")
+
+
