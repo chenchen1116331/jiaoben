@@ -1,5 +1,5 @@
 local _pr = (type(print) == "function") and print or (type(warn) == "function" and warn) or function() end
-_pr("[HON SPEED HUB] 载入中 · v5.52 · 若只看到这一行说明文件在中途中断")
+_pr("[HON SPEED HUB] 载入中 · v5.53 · 若只看到这一行说明文件在中途中断")
 local twait  = (type(task) == "table" and task.wait)  or wait  or function() end
 local tspawn = (type(task) == "table" and task.spawn) or spawn or function(f, ...) return f(...) end
 if type(twait) ~= "function" then twait = function() end end
@@ -216,7 +216,7 @@ label({ Text = "HON SPEED HUB", Font = Enum.Font.GothamBold, TextSize = 21,
 	TextColor3 = Color3.fromRGB(238, 243, 255),
 	Position = UDim2.new(0, 36, 0, 16), Size = UDim2.new(0, 200, 0, 24),
 	TextXAlignment = Enum.TextXAlignment.Left }, Header)
-label({ Text = "Universal Hub  ·  W / V / CF  ·  v5.52", Font = Enum.Font.Gotham, TextSize = 11,
+label({ Text = "Universal Hub  ·  W / V / CF  ·  v5.53", Font = Enum.Font.Gotham, TextSize = 11,
 	TextColor3 = Color3.fromRGB(140, 149, 172),
 	Position = UDim2.new(0, 36, 0, 42), Size = UDim2.new(0, 240, 0, 16),
 	TextXAlignment = Enum.TextXAlignment.Left }, Header)
@@ -256,6 +256,10 @@ iconBtn("×", -34, Color3.fromRGB(255, 108, 118), function()
 end)
 -- ---------- 更新公告 ----------
 CHANGELOG = {
+	{ v = "v5.53", t = {
+		"重要修复 · 特殊小窗（加速小窗 / 倒计时 / 标点小窗 / 飞行窗口）的数字不再能被拖走：此前数字 / 时间 / 坐标这些文字标签被错当成拖动手柄，按住数字拖动会把它从窗内拽飞、而窗口框本身没动，看起来就像「窗口回到初始位置、数字乱跑」；现在只保留窗体 / 标题条作为把手，数字固定在窗内不漂移（点数字拖动会整体移动窗口，数字相对窗口位置不变）",
+		"重要修复 · 小窗关闭后再开启回到初始位置：此前窗口位置没有记忆，关掉再打开就弹回默认坐标；现在拖动时实时记下位置，关闭后再开启（含最小化 / 展开切换）都恢复到关闭前的位置——加速 / 倒计时 / 标点 / 飞行四个窗统一处理",
+	}},
 	{ v = "v5.52", t = {
 		"功能新增 · 设置页新增「输入动画 INPUT ANIM」开关（按钮按下时的缩放回弹反馈，关闭则无动画），并保留「启动动画」开关；一键触碰所有可触碰物体从视觉页移到工具页（WindUI 侧移至辅助页）；透视修复部分玩家不高亮（高亮此前挂在角色模型上，会随重生 / 流式加载 / 角色重建而丢失，改为挂到持久容器 EspFolder，Adornee 仍指向角色，每次扫描稳定渲染）；透视血条新增样式切换「血条背景 HP BAR BG」（开=有背景实时血量，关=纯血量数字）；反重力去重——删除辅助页的反重力与重力值滑条，只保留工具页的反重力（两个反重力同指一个开关，留一个即可）",
 		"实测 · 全量回归 20 个测试文件全绿（含新增 test_v552 专项：输入动画开关 / 一键触碰位移 / 高亮挂持久容器 / 血条样式切换 / 反重力去重）：82 开关 + 168 按钮触发 0 报错",
@@ -860,7 +864,10 @@ OutlineTgl = makeToggle(PageEng, 504, "引擎描边 OUTLINE", "角色轮廓跟�
 end)
 SpeedWinTgl = makeToggle(PageEng, 552, "加速小窗 SPEED WIN", "屏幕小窗 · 切模式 / 调速度，把手可拖动", false, function(v)
 	speedWinBuild()
-	if SpeedWin then SpeedWin.Visible = v end
+	if SpeedWin then
+		if v and SpeedWin.SavedPos then SpeedWin.Position = SpeedWin.SavedPos end
+		SpeedWin.Visible = v
+	end
 	if v then speedWinRefresh() end
 end)
 label({ Text = "辅 助 功 能", Font = Enum.Font.GothamBold, TextSize = 11,
@@ -1140,8 +1147,8 @@ function cdBuild()
 		Size = UDim2.new(0, 46, 0, 24), Position = UDim2.new(1, -58, 0, 8), Parent = CdMini })
 	corner(CdMiniOpen, 8)
 	bindClick(CdMiniOpen, "倒计时展开", function() cdSetMini(false) end)
-	-- 小 UI 随时可挪：标题条 + 大字区当把手（不抢按钮/输入框的点击）
-	local function cdDragHook(o)
+	-- 小 UI 随时可挪：窗体 / 标题条当把手，时间大字不再可拖动（固定在窗内）
+	local function cdDragHook(o, onMove)
 		if not o then return end
 		local dragging, startMouse, basePos, moved = false, nil, nil, 0
 		o.InputBegan:Connect(function(i)
@@ -1155,6 +1162,7 @@ function cdBuild()
 				moved = math.max(moved, math.abs(d.X) + math.abs(d.Y))
 				o.Position = UDim2.new(basePos.X.Scale, basePos.X.Offset + d.X,
 					basePos.Y.Scale, basePos.Y.Offset + d.Y)
+				if onMove then onMove(o.Position) end
 			end
 		end)
 		UserInputService.InputEnded:Connect(function(i)
@@ -1163,15 +1171,14 @@ function cdBuild()
 			end
 		end)
 	end
-	cdDragHook(CdFrame)
-	cdDragHook(CdTitleL)
-	cdDragHook(CdTimeL)
-	cdDragHook(CdMini)   -- 最小化 pill 也能随手挪
+	cdDragHook(CdFrame, function(p) CdFrame.SavedPos = p end)
+	cdDragHook(CdTitleL, function(p) CdFrame.SavedPos = p end)
+	cdDragHook(CdMini, function(p) CdMini.SavedPos = p end)   -- 最小化 pill 也能随手挪
 end
 function cdSetMini(on)
 	CdMinimized = on and true or false
-	if CdFrame then CdFrame.Visible = not on end
-	if CdMini then CdMini.Visible = on end
+	if CdFrame then CdFrame.Visible = not on; if (not on) and CdFrame.SavedPos then CdFrame.Position = CdFrame.SavedPos end end
+	if CdMini then CdMini.Visible = on; if on and CdMini.SavedPos then CdMini.Position = CdMini.SavedPos end end
 	cdPaint()
 end
 function cdPaint()
@@ -1303,8 +1310,8 @@ function speedWinBuild()
 	-- 整数粒度一致，长按习惯靠主滑条 / 大改直接拖滑条
 	bindClick(SpeedWinMinusBtn, "加速小窗减速", function() speedWinStep(-1) end)
 	bindClick(SpeedWinPlusBtn, "加速小窗加速", function() speedWinStep(1) end)
-	-- 小窗随时可挪：标题条 + 数字区当把手（不抢按钮的点击）
-	local function swDragHook(o)
+	-- 小窗随时可挪：只有窗体 / 标题条当把手，数字区不再可拖动（数字固定在窗内不漂移）
+	local function swDragHook(o, onMove)
 		if not o then return end
 		local dragging, startMouse, basePos = false, nil, nil
 		o.InputBegan:Connect(function(i)
@@ -1317,6 +1324,7 @@ function speedWinBuild()
 				local d = i.Position - startMouse
 				o.Position = UDim2.new(basePos.X.Scale, basePos.X.Offset + d.X,
 					basePos.Y.Scale, basePos.Y.Offset + d.Y)
+				if onMove then onMove(o.Position) end
 			end
 		end)
 		UserInputService.InputEnded:Connect(function(i)
@@ -1325,8 +1333,7 @@ function speedWinBuild()
 			end
 		end)
 	end
-	swDragHook(SpeedWin)
-	swDragHook(SpeedWinNumL)
+	swDragHook(SpeedWin, function(p) SpeedWin.SavedPos = p end)
 	winMinSetup(SpeedWin, SpeedWinMinBtn, { SpeedWinTitleL, SpeedWinCloseBtn })
 end
 function speedWinStep(d)
@@ -1356,11 +1363,11 @@ CdTgl = makeToggle(PageTool, 152, "倒计时器 COUNTDOWN", "屏幕小 UI · 输
 	State.Countdown = v
 	cdBuild()
 	if v then
-		-- 最小化过就回顶部中间的小 pill，否则给完整小窗
+		-- 最小化过就回顶部中间的小 pill，否则给完整小窗（都恢复到关闭前位置）
 		if CdMinimized then
-			if CdMini then CdMini.Visible = true end
+			if CdMini then CdMini.Visible = true; if CdMini.SavedPos then CdMini.Position = CdMini.SavedPos end end
 		elseif CdFrame then
-			CdFrame.Visible = true
+			CdFrame.Visible = true; if CdFrame.SavedPos then CdFrame.Position = CdFrame.SavedPos end
 		end
 		cdPaint()
 	else
@@ -1737,7 +1744,7 @@ end)
 -- ===== 标点传送小窗 WP WIN（用户：「然后那个标点传送也是」——加速小窗同款待遇）=====
 -- 传送页开关唤出；当前坐标 + 「存此处」+ 标点列表（☆ 选中 / 去传送）；
 -- wpWinRefresh() 独立渲染进小窗列表，不碰页面 wpRefresh（两边数据同一份 Waypoints）
-function honDragHook(o)
+function honDragHook(o, onMove)
 	if not o then return end
 	local dragging, startMouse, basePos = false, nil, nil
 	o.InputBegan:Connect(function(i)
@@ -1750,6 +1757,7 @@ function honDragHook(o)
 			local d = i.Position - startMouse
 			o.Position = UDim2.new(basePos.X.Scale, basePos.X.Offset + d.X,
 				basePos.Y.Scale, basePos.Y.Offset + d.Y)
+			if onMove then onMove(o.Position) end
 		end
 	end)
 	UserInputService.InputEnded:Connect(function(i)
@@ -1816,8 +1824,7 @@ function wpWinBuild()
 		wpSave(); wpRefresh()   -- wpRefresh 尾部会顺带刷小窗
 		if notify then notify("已保存标点：" .. nm .. "（共 " .. #Waypoints .. " 个）") end
 	end)
-	honDragHook(WPWin)
-	honDragHook(WPWinCoordLbl)
+	honDragHook(WPWin, function(p) WPWin.SavedPos = p end)
 	winMinSetup(WPWin, WPWinMinBtn, { WPWinTitleL, WPWinCloseBtn })
 end
 function wpWinRefresh()
@@ -1861,7 +1868,10 @@ function wpWinRefresh()
 end
 WPWinTgl = makeToggle(PageTp, 1044, "标点小窗 WP WIN", "屏幕小窗 · 看坐标 / 存标点 / ★ 选中传送", false, function(v)
 	wpWinBuild()
-	if WPWin then WPWin.Visible = v end
+	if WPWin then
+		if v and WPWin.SavedPos then WPWin.Position = WPWin.SavedPos end
+		WPWin.Visible = v
+	end
 	if v then wpWinRefresh() end
 end)
 
@@ -3968,6 +3978,7 @@ do
 		if fDrag and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
 			local d = input.Position - fMouse
 			FlyWin.Position = UDim2.new(fPos.X.Scale, fPos.X.Offset + d.X, fPos.Y.Scale, fPos.Y.Offset + d.Y)
+			FlyWin.SavedPos = FlyWin.Position
 		end
 	end)
 	UserInputService.InputEnded:Connect(function(input)
@@ -4118,6 +4129,7 @@ function setFly(on)
 	FlyHoldY = (HRP and HRP.Parent) and HRP.Position.Y or nil
 end
 function setFlyWindow(on)
+	if on and FlyWin.SavedPos then FlyWin.Position = FlyWin.SavedPos end
 	FlyWin.Visible = on
 	UpBtn.Visible = on
 	DownBtn.Visible = on
@@ -6366,7 +6378,7 @@ function windBuild(lib)
 	WindWin = W
 	-- 再补一层保险（夜脚本同款）：CreateWindow 可能被库吞掉背景参数，建完强制再写一次
 	windSyncBg()
-	windSafe("Tag", function() W:Tag({ Title = "v5.52", Color = "ElementBackground" }) end)
+	windSafe("Tag", function() W:Tag({ Title = "v5.53", Color = "ElementBackground" }) end)
 	-- 引擎页
 	local tEng = nil
 	windSafe("Tab:引擎", function() tEng = W:Tab({ Title = "引擎", Icon = "gauge" }) end)
@@ -7980,6 +7992,6 @@ tspawn(function()
 		end)
 	end
 end)
-_pr("[HON SPEED HUB] v5.52 已加载 · 完整文件约 7986 行 · 若你的脚本远大于此行数说明粘贴重复了")
+_pr("[HON SPEED HUB] v5.53 已加载 · 完整文件约 7998 行 · 若你的脚本远大于此行数说明粘贴重复了")
 
 
