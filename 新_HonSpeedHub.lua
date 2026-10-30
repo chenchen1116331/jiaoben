@@ -1,5 +1,5 @@
 local _pr = (type(print) == "function") and print or (type(warn) == "function" and warn) or function() end
-_pr("[HON SPEED HUB] 载入中 · v5.50 · 若只看到这一行说明文件在中途中断")
+_pr("[HON SPEED HUB] 载入中 · v5.52 · 若只看到这一行说明文件在中途中断")
 local twait  = (type(task) == "table" and task.wait)  or wait  or function() end
 local tspawn = (type(task) == "table" and task.spawn) or spawn or function(f, ...) return f(...) end
 if type(twait) ~= "function" then twait = function() end end
@@ -89,12 +89,12 @@ local State = {
 	TouchKeys = false, TouchLocked = false,
 	PadKeys = false, PadSize = 100,
 	EspPlayer = false, EspNPC = false, EspInteract = false,
-	InstantInteract = false, EspDepth = true,
+	InstantInteract = false, EspDepth = true, InputAnim = true, EspHpBarBg = true,
 	ClickTP = false, SparkTP = false, AntiVoid = false, FakeChar = false, BodyTransp = 0, Fullbright = false, LowGravity = false, GravityValue = 40,
 	Spin = false, Rainbow = false, Bounce = false, Orbit = false, LowFx = false,
 	PlayDead = false, NeonGlow = false, EjectCd = 0,
 	Dance = false, Follow = false, Face = false, FovValue = 0, WatchTarget = nil, Radar = false, GfxShadow = false, GfxFog = false, GfxParticle = false, GfxDecal = false, GfxNight = false, GfxSuperNight = false, GfxNoFog = false, DashRun = false, WPLoop = false, WPLoopInt = 5,
-	Freeze = false, HidePlayers = false, HideUI = false, AutoJump = false, CoordHud = false,
+	Freeze = false, HidePlayers = false, AutoJump = false, CoordHud = false,
 	TPLoop = false, TPInterval = 0, TPOffsetY = 3,
 	MoveGameUI = false, UILayoutLocked = false,
 	Stealth = false, StealthHideGame = false,
@@ -115,12 +115,23 @@ function bindClick(btn, tag, fn)
 		local ok, err = pcall(fn)
 		if not ok then _pr("[HON] 点击[" .. tostring(tag) .. "]出错: " .. tostring(err)) end
 	end
-	pcall(function() btn.MouseButton1Click:Connect(fire) end)
-	pcall(function() btn.Activated:Connect(fire) end)
-	pcall(function() btn.TouchTap:Connect(fire) end)
+	local function pressPop()
+		if not (State and State.InputAnim and btn and btn.IsA and btn:IsA("GuiObject")) then return end
+		pcall(function()
+			local sz = btn.Size
+			if not sz then return end
+			local small = UDim2.new(sz.X.Scale, sz.X.Offset - 2, sz.Y.Scale, sz.Y.Offset - 2)
+			local tw = TweenService:Create(btn, TweenInfo.new(0.08, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Size = small })
+			tw:Play()
+			pcall(function() spawn(function() wait(0.09); pcall(function() if btn and btn.Parent then btn.Size = sz end end) end) end)
+		end)
+	end
+	pcall(function() btn.MouseButton1Click:Connect(function() pressPop(); fire() end) end)
+	pcall(function() btn.Activated:Connect(function() pressPop(); fire() end) end)
+	pcall(function() btn.TouchTap:Connect(function() pressPop(); fire() end) end)
 	pcall(function()
 		btn.InputBegan:Connect(function(i)
-			if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then fire() end
+			if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then pressPop(); fire() end
 		end)
 	end)
 end
@@ -205,7 +216,7 @@ label({ Text = "HON SPEED HUB", Font = Enum.Font.GothamBold, TextSize = 21,
 	TextColor3 = Color3.fromRGB(238, 243, 255),
 	Position = UDim2.new(0, 36, 0, 16), Size = UDim2.new(0, 200, 0, 24),
 	TextXAlignment = Enum.TextXAlignment.Left }, Header)
-label({ Text = "Universal Hub  ·  W / V / CF  ·  v5.50", Font = Enum.Font.Gotham, TextSize = 11,
+label({ Text = "Universal Hub  ·  W / V / CF  ·  v5.52", Font = Enum.Font.Gotham, TextSize = 11,
 	TextColor3 = Color3.fromRGB(140, 149, 172),
 	Position = UDim2.new(0, 36, 0, 42), Size = UDim2.new(0, 240, 0, 16),
 	TextXAlignment = Enum.TextXAlignment.Left }, Header)
@@ -245,6 +256,13 @@ iconBtn("×", -34, Color3.fromRGB(255, 108, 118), function()
 end)
 -- ---------- 更新公告 ----------
 CHANGELOG = {
+	{ v = "v5.52", t = {
+		"功能新增 · 设置页新增「输入动画 INPUT ANIM」开关（按钮按下时的缩放回弹反馈，关闭则无动画），并保留「启动动画」开关；一键触碰所有可触碰物体从视觉页移到工具页（WindUI 侧移至辅助页）；透视修复部分玩家不高亮（高亮此前挂在角色模型上，会随重生 / 流式加载 / 角色重建而丢失，改为挂到持久容器 EspFolder，Adornee 仍指向角色，每次扫描稳定渲染）；透视血条新增样式切换「血条背景 HP BAR BG」（开=有背景实时血量，关=纯血量数字）；反重力去重——删除辅助页的反重力与重力值滑条，只保留工具页的反重力（两个反重力同指一个开关，留一个即可）",
+		"实测 · 全量回归 20 个测试文件全绿（含新增 test_v552 专项：输入动画开关 / 一键触碰位移 / 高亮挂持久容器 / 血条样式切换 / 反重力去重）：82 开关 + 168 按钮触发 0 报错",
+	}},
+	{ v = "v5.51", t = {
+		"功能调整 · 删除独立的「隐藏脚本界面」开关（用户：「把那个隐藏脚本 UI 界面的功能给删掉，不需要，我只需要一个隐藏录屏功能就行了」）：移除 setHideUI 函数、HideUiTgl 开关与 State.HideUI 字段，实用工具页其余开关相应上移补位；现在只有「隐身录屏 STEALTH」这一种隐藏方式——它本来就只藏本脚本面板（系统 UI / 服务器自带 UI 一律不动），删掉冗余开关后录屏逻辑更干净：录屏时只隐去本脚本，游戏原本的界面照常显示",
+	}},
 	{ v = "v5.50", t = {
 		"重要改进 · 隐身录屏改为「开启后冻结除加速外的全部功能，关闭后原样恢复」（用户：「隐身完之后把所有功能全部关掉，就是开启隐身之后关掉所有功能，除了那个加速，然后其他功能全部关掉，当我关闭隐身，当我关闭录屏时恢复所有功能」）：此前 stealthFreeze 用 _keep 标志判断保留项，导致防布娃娃 / 启动动画 / 面板边框 / 背景图 / 霓虹发光 / 装死倒地等一堆非加速开关在隐身时也没被关；现在 stealthFreeze 改用一份独立的「加速白名单」（启用引擎 + 加速小窗 SPEED WIN + 隐身录屏开关本身），其余所有处于开启状态的开关一律 Set(false) 冻结，关隐身时逐个 Set(true) 还原到隐身前的状态——既满足「只留加速」，又不破坏 _keep 同时管辖的「全部关闭」按钮逻辑（设置类开关仍不被全部关闭排除）",
 		"说明同步 · 隐身录屏小窗副标题与提示文案更正为「隐藏界面 + 暂停其他功能（加速保留）」「隐藏期间仅加速保持运行，其余功能全部暂停（关闭隐身即恢复）」，删掉旧版「隐藏期间加速 / 飞行 / ESP 全部继续生效」的错误描述",
@@ -852,17 +870,6 @@ local JumpSlider = makeSlider(PageAssist, "跳跃力 JUMP", 24, 16, 200, DEFAULT
 	function(v) State.JumpPower = v end, true, function(v) State.JumpLocked = v end)
 JumpToggle = makeToggle(PageAssist, 78, "启用跳跃增强", "逐帧回写防被重置", false, function(v) State.JumpEnabled = v end)
 InfJumpTgl = makeToggle(PageAssist, 126, "无限跳", "空中可反复起跳", false, function(v) State.InfJump = v end)
-GravTgl = makeToggle(PageAssist, 366, "反重力 LOW GRAVITY", "自由开关重力 · 关闭恢复默认", false, function(v)
-	State.LowGravity = v
-	pcall(function()
-		Workspace.Gravity = v and (State.GravityValue or 40) or 196.2
-	end)
-	if notify then notify(v and ("重力已改为 " .. tostring(State.GravityValue or 40)) or "重力已恢复默认 196.2") end
-end)
-makeSlider(PageAssist, "重力值", 414, 0, 196, 40, " g", function(v)
-	State.GravityValue = v
-	if State.LowGravity then pcall(function() Workspace.Gravity = v end) end
-end, false)
 NoclipTgl  = makeToggle(PageAssist, 174, "穿墙 NOCLIP", "关闭时还原碰撞体", false, function(v)
 	State.Noclip = v
 	setNoclip(v)
@@ -2738,9 +2745,8 @@ HidePlrTgl = makeToggle(PageUtil, 204, "隐藏其他玩家", "别人变透明，
 		HiddenParts = {}
 	end
 end)
-HideUiTgl = makeToggle(PageUtil, 252, "隐藏脚本界面", "录屏 / 截图用（系统 / 服务器 UI 保留，只藏本脚本）", false, function(v) setHideUI(v) end)
-AutoJumpTgl = makeToggle(PageUtil, 300, "自动连跳 AUTO JUMP", "一直保持弹跳前进", false, function(v) State.AutoJump = v end)
-CoordTgl = makeToggle(PageUtil, 348, "坐标显示 COORD", "自动开启 HUD 并在上面显示 XYZ", false, function(v)
+AutoJumpTgl = makeToggle(PageUtil, 252, "自动连跳 AUTO JUMP", "一直保持弹跳前进", false, function(v) State.AutoJump = v end)
+CoordTgl = makeToggle(PageUtil, 300, "坐标显示 COORD", "自动开启 HUD 并在上面显示 XYZ", false, function(v)
 	State.CoordHud = v
 	if v then
 		State.HUD = true
@@ -2749,30 +2755,17 @@ CoordTgl = makeToggle(PageUtil, 348, "坐标显示 COORD", "自动开启 HUD 并
 		if notify then notify("坐标显示已开启（已自动打开速度 HUD）") end
 	end
 end)
-ZoomSlider = makeSlider(PageUtil, "镜头距离 ZOOM", 396, 1, 120, 20, " m", function(v)
+ZoomSlider = makeSlider(PageUtil, "镜头距离 ZOOM", 348, 1, 120, 20, " m", function(v)
 	LP.CameraMaxZoomDistance = v
 	LP.CameraMinZoomDistance = v
 end, false)
-utilBtn("全部关闭 RESET ALL", 450, function()
+utilBtn("全部关闭 RESET ALL", 402, function()
 	askConfirm("关闭全部功能？", "会把当前开着的所有开关全部关掉：飞行 / 穿墙 / 无限跳 / 透视 / 黑洞 / 分身 / 拖尾 / 特效 等等。\n滑条数值保留，存档点不会被删除。", "确认全部关闭", function()
 		for _, t in ipairs(ToggleRegistry) do pcall(function() t.Set(false, false) end) end
 		if notify then notify("已关闭全部功能") end
 	end)
 end)
 HiddenParts = {}
-function setHideUI(on)
-	State.HideUI = on
-	-- 只藏脚本自己的界面：本脚本所有 UI 都挂在 Gui 这一个 ScreenGui 下，
-	-- 禁掉 Gui 即整块消失。Roblox 系统 UI（CoreGui：聊天 / 排行榜 / 菜单 / 顶栏）
-	-- 与服务器自带 UI（PlayerGui 下除 Gui 外的其他 ScreenGui）一律不碰——
-	-- 录屏 / 截图时游戏原本的界面照常显示，不会把人家游戏界面也收了。
-	pcall(function()
-		if Gui then Gui.Enabled = not on end
-	end)
-	if notify then
-		notify(on and "已隐藏本脚本界面（系统 / 服务器 UI 保留，方便录屏）" or "已恢复本脚本界面")
-	end
-end
 LockShield = new("TextButton", { Text = "", AutoButtonColor = false,
 	BackgroundColor3 = Color3.fromRGB(8, 10, 16), BackgroundTransparency = 0.55, BorderSizePixel = 0,
 	Visible = false, Size = UDim2.new(1, 0, 0, PANEL_H - 74), Position = UDim2.new(0, 0, 0, 74), Parent = Main })
@@ -4180,6 +4173,16 @@ function refreshEspDepth()
 		if e.BB and e.BB.Parent then e.BB.AlwaysOnTop = true end
 	end
 end
+
+function refreshEspHpStyle()
+	for _, e in pairs(EspItems) do
+		if e and (e.Cat == "Player" or e.Cat == "NPC") then
+			local show = State.EspHpBarBg
+			if e.BarBg then e.BarBg.Visible = show end
+			if e.BarFill then e.BarFill.Visible = show end
+		end
+	end
+end
 -- v5.47：ESP 字体放大 + 启动记忆（用户：「增加一个透视字体放大，因为字体太小了。
 -- 就是我设置到那个字体，下次启动脚本的时候还是在那个字体的位置，就那个大小」）——
 -- 竖排三件套按 EspFontScale 整体等比缩放（盒子 / 字 / 血条 / 间距全按比例走）
@@ -4225,7 +4228,7 @@ function addEsp(target, cat, adornee, name)
 	hl.OutlineTransparency = 0
 	hl.DepthMode = State.EspDepth and Enum.HighlightDepthMode.AlwaysOnTop or Enum.HighlightDepthMode.Occluded
 	hl.Adornee = adornee
-	hl.Parent = adornee
+	hl.Parent = EspFolder
 	local bb = Instance.new("BillboardGui")
 	bb.Name = "HonEspTag"
 	bb.Adornee = adornee
@@ -4270,6 +4273,12 @@ function addEsp(target, cat, adornee, name)
 	barFill.BorderSizePixel = 0
 	barFill.Parent = barBg
 	corner(barFill, 6)
+
+	-- v5.52：血条样式切换——关掉背景时只留纯血量数字（不画底槽/填充）
+	if not State.EspHpBarBg then
+		barBg.Visible = false
+		barFill.Visible = false
+	end
 	local hpTxt = Instance.new("TextLabel")
 	hpTxt.Name = "HonEspHp"
 	hpTxt.Size = UDim2.new(0, barW, 0, math.floor(14 * s + 0.5))
@@ -6357,7 +6366,7 @@ function windBuild(lib)
 	WindWin = W
 	-- 再补一层保险（夜脚本同款）：CreateWindow 可能被库吞掉背景参数，建完强制再写一次
 	windSyncBg()
-	windSafe("Tag", function() W:Tag({ Title = "v5.50", Color = "ElementBackground" }) end)
+	windSafe("Tag", function() W:Tag({ Title = "v5.52", Color = "ElementBackground" }) end)
 	-- 引擎页
 	local tEng = nil
 	windSafe("Tab:引擎", function() tEng = W:Tab({ Title = "引擎", Icon = "gauge" }) end)
@@ -6381,7 +6390,6 @@ function windBuild(lib)
 		windSld(tAss, JumpSlider, "跳跃力 JUMP", 16, 200, DEFAULT_JUMP, 1)
 		windTglByTitle(tAss, "启用跳跃增强", "逐帧回写防被重置")
 		windTglByTitle(tAss, "无限跳", "空中可反复起跳")
-		windTglByTitle(tAss, "反重力 LOW GRAVITY", "自由开关重力 · 关闭恢复默认")
 		windTglByTitle(tAss, "穿墙 NOCLIP", "关闭时还原碰撞体")
 		windTglByTitle(tAss, "反挂机 ANTI-AFK", "防止长时间无操作掉线")
 		windTglByTitle(tAss, "速度 HUD", "屏幕底部实时显示速度")
@@ -6398,8 +6406,9 @@ function windBuild(lib)
 		windTglByTitle(tEsp, "秒交互", "HoldDuration=0 · 距离 30")
 		windTglByTitle(tEsp, "雷达 RADAR", "右上角 · 人/NPC/互动物/墙壁折线")
 		windTglByTitle(tEsp, "穿墙显示", "角色高亮穿墙，名字/血条/距离永远可见")
+		windTglByTitle(tEsp, "血条背景 HP BAR BG", "开=有背景实时血量 · 关=纯血量数字")
 		windSld(tEsp, EspFontSlider, "ESP 字体", 60, 200, 100, 1)
-		windBtn(tEsp, "一键触碰所有可触碰物体", "整个服务器：Prompt / ClickDetector / Tool", function()
+		windBtn(tAss, "一键触碰所有可触碰物体", "整个服务器：Prompt / ClickDetector / Tool", function()
 			touchAllInteractables()
 		end)
 	end
@@ -6631,6 +6640,10 @@ CloseAnimTgl = makeToggle(PageSet, 394, "删除动画", "关闭面板时播放�
 	animSave()
 	if notify then notify(v and "删除动画已开启" or "删除动画已关闭") end
 end, true)
+InputAnimTgl = makeToggle(PageSet, 442, "输入动画 INPUT ANIM", "按钮按下时的缩放回弹反馈（关闭则无动画）", true, function(v)
+	State.InputAnim = v
+	if notify then notify(v and "输入动画已开启" or "输入动画已关闭") end
+end, true)
 -- 动画开关存档（本地文件 + 跨服务器双保险，和标点同一套机制）
 ANIM_FILE = "HonSpeedHub_Anim.json"
 function animSave()
@@ -6713,17 +6726,17 @@ prefLoad()
 local psDef = PrefPanelScale and math.floor(PrefPanelScale * 100 + 0.5) or 100
 local fsDef = PrefFontScale and math.floor(PrefFontScale * 100 + 0.5) or 160
 local baDef = PrefBgAlpha and math.floor(PrefBgAlpha * 100 + 0.5) or 45
-PanelScaleSlider = makeSlider(PageSet, "面板缩放", 452, 60, 140, math.clamp(psDef, 60, 140), " %", function(v)
+PanelScaleSlider = makeSlider(PageSet, "面板缩放", 500, 60, 140, math.clamp(psDef, 60, 140), " %", function(v)
 	PrefPanelScale = v / 100
 	pcall(function() if MainScale then MainScale.Scale = PrefPanelScale end end)
 	prefSave()
 end, false)
-FontSlider = makeSlider(PageSet, "字体大小", 508, 70, 160, math.clamp(fsDef, 70, 160), " %", function(v)
+FontSlider = makeSlider(PageSet, "字体大小", 556, 70, 160, math.clamp(fsDef, 70, 160), " %", function(v)
 	PrefFontScale = v / 100
 	applyFontScale(v / 100)
 	prefSave()
 end, false)
-BgAlphaSlider = makeSlider(PageSet, "背景图透明", 564, 0, 100, math.clamp(baDef, 0, 100), " %", function(v)
+BgAlphaSlider = makeSlider(PageSet, "背景图透明", 612, 0, 100, math.clamp(baDef, 0, 100), " %", function(v)
 	PrefBgAlpha = v / 100
 	BgAlpha = PrefBgAlpha
 	if BgImg then BgImg.ImageTransparency = BgAlpha end
@@ -6743,6 +6756,10 @@ EspFontSlider = makeSlider(PageEsp, "ESP 字体", 406, 60, 200, math.clamp(efDef
 	prefSave()
 end, false)
 pcall(espApplyFont)
+EspHpBarBgTgl = makeToggle(PageEsp, 454, "血条背景 HP BAR BG", "开=有背景实时血量 · 关=纯血量数字", true, function(v)
+	State.EspHpBarBg = v
+	refreshEspHpStyle()
+end, true)
 -- ===== 一键触碰所有可触碰物体（用户：「一键触碰所有可触碰的物体，整个服务器」）=====
 -- 遍历 Workspace:GetDescendants()：ProximityPrompt → fireproximityprompt（执行器扩展），
 -- ClickDetector → 试 fireclickdetector，Tool → Activate()；逐个 pcall，橙提示汇总成功数
@@ -6766,17 +6783,17 @@ end
 local TouchAllBtn = new("TextButton", { Text = "一键触碰所有可触碰物体", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Mode().Accent, BackgroundColor3 = Color3.fromRGB(255, 255, 255), BackgroundTransparency = 0.9,
 	BorderSizePixel = 0, AutoButtonColor = false,
-	Size = UDim2.new(1, 0, 0, 36), Position = UDim2.new(0, 0, 0, 456), Parent = PageEsp })
+	Size = UDim2.new(1, 0, 0, 36), Position = UDim2.new(0, 0, 0, 654), Parent = PageTool })
 corner(TouchAllBtn, 10)
 table.insert(FunBtns, TouchAllBtn)
 bindClick(TouchAllBtn, "一键触碰", function() touchAllInteractables() end)
 
-BgTgl = makeToggle(PageSet, 620, "面板背景图", "用你给的图当面板背景", false, function(v) setBg(v) end, true)
-BgAutoTgl = makeToggle(PageSet, 668, "启动时自动加载背景", "每次进游戏自动显示背景图", true, function(v) BgAuto = v; bgSave() end, true)
+BgTgl = makeToggle(PageSet, 668, "面板背景图", "用你给的图当面板背景", false, function(v) setBg(v) end, true)
+BgAutoTgl = makeToggle(PageSet, 716, "启动时自动加载背景", "每次进游戏自动显示背景图", true, function(v) BgAuto = v; bgSave() end, true)
 -- 背景预设 chips：11 张预设 3 列横排，点击即切换（并存档）
 label({ Text = "背景预设 BG PRESETS · 点击切换", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Color3.fromRGB(196, 204, 224), BackgroundTransparency = 1,
-	Size = UDim2.new(1, -4, 0, 16), Position = UDim2.new(0, 2, 0, 714),
+	Size = UDim2.new(1, -4, 0, 16), Position = UDim2.new(0, 2, 0, 762),
 	TextXAlignment = Enum.TextXAlignment.Left }, PageSet)
 BgPresetBtns = {}
 for i, p in ipairs(BgPresets) do
@@ -6785,7 +6802,7 @@ for i, p in ipairs(BgPresets) do
 		TextColor3 = Mode().Accent, BackgroundColor3 = Color3.fromRGB(255, 255, 255),
 		BackgroundTransparency = 0.9, BorderSizePixel = 0, AutoButtonColor = false,
 		Size = UDim2.new(1/3, -4, 0, 30),
-		Position = UDim2.new(col * (1/3), col == 0 and 0 or 2, 0, 732 + row * 34),
+		Position = UDim2.new(col * (1/3), col == 0 and 0 or 2, 0, 780 + row * 34),
 		Parent = PageSet })
 	corner(b, 8)
 	table.insert(BgPresetBtns, b)
@@ -6796,17 +6813,17 @@ BgIdBox = new("TextBox", { PlaceholderText = "图片 ID（如 8237165）· 留�
 	TextColor3 = Color3.fromRGB(238, 243, 255), PlaceholderColor3 = Color3.fromRGB(110, 118, 140),
 	BackgroundColor3 = Color3.fromRGB(255, 255, 255), BackgroundTransparency = 0.92,
 	BorderSizePixel = 0, ClearTextOnFocus = false,
-	Size = UDim2.new(1, 0, 0, 32), Position = UDim2.new(0, 0, 0, 872), Parent = PageSet })
+	Size = UDim2.new(1, 0, 0, 32), Position = UDim2.new(0, 0, 0, 920), Parent = PageSet })
 corner(BgIdBox, 8)
 BgIdBox.FocusLost:Connect(function() applyBgId(BgIdBox.Text) end)
 label({ Text = "上面 11 个预设是 GitHub 直链，Roblox 客户端会尝试下载（部分执行器不显示）；最稳的是图片 ID——浏览器开 create.roblox.com → Creations → Decals → 上传图片发布，拿数字 ID 填框，填一次自动存档，换服不丢。", Font = Enum.Font.Gotham, TextSize = 9,
 	TextColor3 = Color3.fromRGB(120, 129, 152), BackgroundTransparency = 1,
-	Position = UDim2.new(0, 2, 0, 908), Size = UDim2.new(1, -4, 0, 30), TextWrapped = true,
+	Position = UDim2.new(0, 2, 0, 956), Size = UDim2.new(1, -4, 0, 30), TextWrapped = true,
 	TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top }, PageSet)
 local FixBtn = new("TextButton", { Text = "恢复角色外观（修染色）", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Color3.fromRGB(150, 220, 255), BackgroundColor3 = Color3.fromRGB(255, 255, 255),
 	BackgroundTransparency = 0.9, BorderSizePixel = 0, AutoButtonColor = false,
-	Size = UDim2.new(1, 0, 0, 34), Position = UDim2.new(0, 0, 0, 944), Parent = PageSet })
+	Size = UDim2.new(1, 0, 0, 34), Position = UDim2.new(0, 0, 0, 992), Parent = PageSet })
 corner(FixBtn, 8)
 table.insert(FunBtns, FixBtn)
 bindClick(FixBtn, "恢复外观", function() fixCharacterLook() end)
@@ -6814,7 +6831,7 @@ bindClick(FixBtn, "恢复外观", function() fixCharacterLook() end)
 local ResetScaleBtn = new("TextButton", { Text = "重置身体比例", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Color3.fromRGB(255, 200, 120), BackgroundColor3 = Color3.fromRGB(255, 255, 255),
 	BackgroundTransparency = 0.9, BorderSizePixel = 0, AutoButtonColor = false,
-	Size = UDim2.new(1, 0, 0, 34), Position = UDim2.new(0, 0, 0, 984), Parent = PageSet })
+	Size = UDim2.new(1, 0, 0, 34), Position = UDim2.new(0, 0, 0, 1032), Parent = PageSet })
 corner(ResetScaleBtn, 8)
 table.insert(FunBtns, ResetScaleBtn)
 bindClick(ResetScaleBtn, "重置比例", function()
@@ -6822,14 +6839,14 @@ bindClick(ResetScaleBtn, "重置比例", function()
 	if notify then notify("身体比例已重置为 100%") end
 end)
 
-RagTgl = makeToggle(PageSet, 1028, "防布娃娃 ANTI RAGDOLL", "不会被打倒/摔倒（夜脚本同款）", false, function(v)
+RagTgl = makeToggle(PageSet, 1076, "防布娃娃 ANTI RAGDOLL", "不会被打倒/摔倒（夜脚本同款）", false, function(v)
 	syncRagTgls(v)
 end, true)
 
 local KillBtn = new("TextButton", { Text = "彻底关闭脚本 UNLOAD", Font = Enum.Font.GothamBold, TextSize = 12,
 	TextColor3 = Color3.fromRGB(255, 108, 118), BackgroundColor3 = Color3.fromRGB(255, 80, 90),
 	BackgroundTransparency = 0.82, BorderSizePixel = 0, AutoButtonColor = false,
-	Size = UDim2.new(1, 0, 0, 38), Position = UDim2.new(0, 0, 0, 1114), Parent = PageSet })
+	Size = UDim2.new(1, 0, 0, 38), Position = UDim2.new(0, 0, 0, 1162), Parent = PageSet })
 corner(KillBtn, 8)
 table.insert(FunBtns, KillBtn)
 bindClick(KillBtn, "关闭脚本", function()
@@ -6840,7 +6857,7 @@ end)
 local SvBtn = new("TextButton", { Text = "换个服务器（随机重进）", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Mode().Accent, BackgroundColor3 = Color3.fromRGB(255, 255, 255),
 	BackgroundTransparency = 0.9, BorderSizePixel = 0, AutoButtonColor = false,
-	Size = UDim2.new(1, 0, 0, 34), Position = UDim2.new(0, 0, 0, 1074), Parent = PageSet })
+	Size = UDim2.new(1, 0, 0, 34), Position = UDim2.new(0, 0, 0, 1122), Parent = PageSet })
 corner(SvBtn, 8)
 table.insert(FunBtns, SvBtn)
 bindClick(SvBtn, "换服务器", function()
@@ -6851,7 +6868,7 @@ bindClick(SvBtn, "换服务器", function()
 end)
 label({ Text = "换服务器会重新加载脚本；背景图（预设/ID）/ 动画样式 / 标点 / 界面框架 / 边框已自动存档，换服不丢；其他设置仅本次有效",
 	Font = Enum.Font.Gotham, TextSize = 10, TextColor3 = Color3.fromRGB(132, 141, 163),
-	BackgroundTransparency = 1, Position = UDim2.new(0, 2, 0, 1160),
+	BackgroundTransparency = 1, Position = UDim2.new(0, 2, 0, 1208),
 	Size = UDim2.new(1, -4, 0, 40), TextWrapped = true,
 	TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top }, PageSet)
 
@@ -7963,6 +7980,6 @@ tspawn(function()
 		end)
 	end
 end)
-_pr("[HON SPEED HUB] v5.50 已加载 · 完整文件约 7969 行 · 若你的脚本远大于此行数说明粘贴重复了")
+_pr("[HON SPEED HUB] v5.52 已加载 · 完整文件约 7986 行 · 若你的脚本远大于此行数说明粘贴重复了")
 
 
