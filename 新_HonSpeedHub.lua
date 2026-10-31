@@ -1,5 +1,5 @@
 local _pr = (type(print) == "function") and print or (type(warn) == "function" and warn) or function() end
-_pr("[HON SPEED HUB] 载入中 · v5.53 · 若只看到这一行说明文件在中途中断")
+_pr("[HON SPEED HUB] 载入中 · v5.54 · 若只看到这一行说明文件在中途中断")
 local twait  = (type(task) == "table" and task.wait)  or wait  or function() end
 local tspawn = (type(task) == "table" and task.spawn) or spawn or function(f, ...) return f(...) end
 if type(twait) ~= "function" then twait = function() end end
@@ -104,6 +104,8 @@ local State = {
 	ThirdPerson = false, NoFall = false, ShowHP = false, ShowFunList = false,
 	AntiKB = false, AntiStun = false, Countdown = false,
 	SafePos = nil,
+	CuteFxExtra = true,        -- 可爱风额外特效（爱心 + 泡泡）随樱花一起飘
+	StyleFxPanelOnly = false,  -- 屏幕特效仅面板开启时显示（false = 全程显示）
 }
 function bindClick(btn, tag, fn)
 	if not btn then return end
@@ -216,7 +218,7 @@ label({ Text = "HON SPEED HUB", Font = Enum.Font.GothamBold, TextSize = 21,
 	TextColor3 = Color3.fromRGB(238, 243, 255),
 	Position = UDim2.new(0, 36, 0, 16), Size = UDim2.new(0, 200, 0, 24),
 	TextXAlignment = Enum.TextXAlignment.Left }, Header)
-label({ Text = "Universal Hub  ·  W / V / CF  ·  v5.53", Font = Enum.Font.Gotham, TextSize = 11,
+label({ Text = "Universal Hub  ·  W / V / CF  ·  v5.54", Font = Enum.Font.Gotham, TextSize = 11,
 	TextColor3 = Color3.fromRGB(140, 149, 172),
 	Position = UDim2.new(0, 36, 0, 42), Size = UDim2.new(0, 240, 0, 16),
 	TextXAlignment = Enum.TextXAlignment.Left }, Header)
@@ -256,6 +258,12 @@ iconBtn("×", -34, Color3.fromRGB(255, 108, 118), function()
 end)
 -- ---------- 更新公告 ----------
 CHANGELOG = {
+	{ v = "v5.54", t = {
+		"重要修复 · 所有小窗都启动不了、倒计时长按缩小后原地又冒出一个重复小窗（一直有两个）：根因是 v5.53 把小窗位置记到了 Roblox 实例的自定义属性上（如 X.SavedPos），执行器里纯 Lua 表不校验、测试通过，但真机对实例挂自定义属性会抛「not a valid member」导致整个窗口创建流程中断、连锁报错；v5.54 改用普通 Lua 表（WinPos）记忆四个小窗（加速 / 倒计时 / 标点 / 飞行）的位置，关掉再开、最小化 / 展开切换都能恢复到关闭前的位置，且不再产生重复窗",
+		"布局修复 · 传送页小窗开关（WPWinTgl）和「查看玩家 ViewBtn」「恢复视角 CamBackBtn」重叠挤到一起：把两个按钮整体下移 36px 让出开关所在那一行约 48px 高的空间，三控件不再碰撞",
+		"布局修复 · 右边页面标签栏切换数字乱摆不整齐：TabBar 原本手动按 44px 间距定位 11 个分页按钮，部分执行器下 AutomaticCanvasSize 失效导致散开；改成在 TabBar 里加 UIListLayout + UIPadding 兜底，纵向自动对齐、整齐排布",
+		"功能新增 · 可爱风屏幕特效在樱花之外再加爱心 ♥ + 泡泡：设置页新增「可爱风额外特效 CUTE EXTRA」开关（默认开），开启后樱花飘落的同时粉色爱心与半透明泡泡一起飘（爱心下落、泡泡上浮）；外加「特效仅面板开启 FX PANEL-ONLY」开关，开 = 只有面板打开时才显示屏幕特效，关 = 全程一直显示",
+	}},
 	{ v = "v5.53", t = {
 		"重要修复 · 特殊小窗（加速小窗 / 倒计时 / 标点小窗 / 飞行窗口）的数字不再能被拖走：此前数字 / 时间 / 坐标这些文字标签被错当成拖动手柄，按住数字拖动会把它从窗内拽飞、而窗口框本身没动，看起来就像「窗口回到初始位置、数字乱跑」；现在只保留窗体 / 标题条作为把手，数字固定在窗内不漂移（点数字拖动会整体移动窗口，数字相对窗口位置不变）",
 		"重要修复 · 小窗关闭后再开启回到初始位置：此前窗口位置没有记忆，关掉再打开就弹回默认坐标；现在拖动时实时记下位置，关闭后再开启（含最小化 / 展开切换）都恢复到关闭前的位置——加速 / 倒计时 / 标点 / 飞行四个窗统一处理",
@@ -603,6 +611,11 @@ local TabBar = new("ScrollingFrame", { Name = "Sidebar", Size = UDim2.new(0, 168
 	ScrollBarImageTransparency = 0.7, ScrollBarImageColor3 = Modes[1].Accent,
 	CanvasSize = UDim2.new(0, 0, 0, 470), AutomaticCanvasSize = Enum.AutomaticSize.Y,
 	ScrollingDirection = Enum.ScrollingDirection.Y, Parent = Main })
+-- v5.54：用 UIListLayout 兜底排布，避免部分执行器下 AutomaticCanvasSize 失效导致标签栏散开
+new("UIListLayout", { Padding = UDim.new(0, 4), FillDirection = Enum.FillDirection.Vertical,
+	HorizontalAlignment = Enum.HorizontalAlignment.Left, VerticalAlignment = Enum.VerticalAlignment.Top,
+	SortOrder = Enum.SortOrder.LayoutOrder, Parent = TabBar })
+new("UIPadding", { PaddingTop = UDim.new(0, 10), PaddingLeft = UDim.new(0, 8), PaddingRight = UDim.new(0, 8), Parent = TabBar })
 SideLine = new("Frame", { Size = UDim2.new(0, 1, 1, 0), Position = UDim2.new(0, 167, 0, 0),
 	BackgroundColor3 = Color3.fromRGB(255, 255, 255), BackgroundTransparency = 0.93, BorderSizePixel = 0, Parent = Main })
 local TabBtns = {}
@@ -614,7 +627,7 @@ do
 		local b = new("TextButton", { Text = n, Font = Enum.Font.GothamBold, TextSize = 13,
 			TextColor3 = Color3.fromRGB(140, 149, 172), BackgroundTransparency = 1,
 			BorderSizePixel = 0, AutoButtonColor = false,
-			Size = UDim2.new(1, -16, 0, 40), Position = UDim2.new(0, 8, 0, 10 + (i - 1) * 44), Parent = TabBar })
+			Size = UDim2.new(1, -16, 0, 40), Position = UDim2.new(0, 0, 0, 0), Parent = TabBar })
 		local ul = new("Frame", { Size = UDim2.new(0, 4, 0, 26), Position = UDim2.new(0, 0, 0.5, -13),
 			BackgroundColor3 = Modes[1].Accent, BackgroundTransparency = 1, BorderSizePixel = 0, Parent = b })
 		corner(ul, 1)
@@ -637,7 +650,7 @@ do
 end
 local PageHost = new("Frame", { Name = "Content", Size = UDim2.new(0, 464, 0, 336), Position = UDim2.new(0, 180, 0, 84),
 	BackgroundTransparency = 1, BorderSizePixel = 0, ClipsDescendants = true, Parent = Main })
-local PAGE_H = { 620, 380, 500, 680, 660, 2040, 560, 660, 1260, 1200, 1080 }
+local PAGE_H = { 620, 380, 500, 680, 660, 2040, 560, 660, 1260, 1296, 1080 }
 PageList = {}
 local function mkPage(i, visible)
 	return new("ScrollingFrame", { Name = "Page" .. tostring(i),
@@ -865,7 +878,7 @@ end)
 SpeedWinTgl = makeToggle(PageEng, 552, "加速小窗 SPEED WIN", "屏幕小窗 · 切模式 / 调速度，把手可拖动", false, function(v)
 	speedWinBuild()
 	if SpeedWin then
-		if v and SpeedWin.SavedPos then SpeedWin.Position = SpeedWin.SavedPos end
+		if v and WinPos.SpeedWin then SpeedWin.Position = WinPos.SpeedWin end
 		SpeedWin.Visible = v
 	end
 	if v then speedWinRefresh() end
@@ -1083,6 +1096,9 @@ function cdFmt(s)
 	s = math.max(0, math.floor(s + 0.5))
 	return string.format("%02d:%02d", math.floor(s / 60), s % 60)
 end
+-- v5.54：小窗位置记忆改用普通 Lua 表（Roblox 实例不能随便挂自定义属性，
+-- 之前用 instance.SavedPos 赋值会在真机每帧拖动时抛 not a valid member，导致小窗行为异常）
+WinPos = {}
 function cdBuild()
 	if CdFrame then return end
 	CdFrame = new("Frame", { Name = "HonCountdown",
@@ -1171,14 +1187,14 @@ function cdBuild()
 			end
 		end)
 	end
-	cdDragHook(CdFrame, function(p) CdFrame.SavedPos = p end)
-	cdDragHook(CdTitleL, function(p) CdFrame.SavedPos = p end)
-	cdDragHook(CdMini, function(p) CdMini.SavedPos = p end)   -- 最小化 pill 也能随手挪
+	cdDragHook(CdFrame, function(p) WinPos.CdFrame = p end)
+	cdDragHook(CdTitleL, function(p) WinPos.CdFrame = p end)
+	cdDragHook(CdMini, function(p) WinPos.CdMini = p end)   -- 最小化 pill 也能随手挪
 end
 function cdSetMini(on)
 	CdMinimized = on and true or false
-	if CdFrame then CdFrame.Visible = not on; if (not on) and CdFrame.SavedPos then CdFrame.Position = CdFrame.SavedPos end end
-	if CdMini then CdMini.Visible = on; if on and CdMini.SavedPos then CdMini.Position = CdMini.SavedPos end end
+	if CdFrame then CdFrame.Visible = not on; if (not on) and WinPos.CdFrame then CdFrame.Position = WinPos.CdFrame end end
+	if CdMini then CdMini.Visible = on; if on and WinPos.CdMini then CdMini.Position = WinPos.CdMini end end
 	cdPaint()
 end
 function cdPaint()
@@ -1333,7 +1349,7 @@ function speedWinBuild()
 			end
 		end)
 	end
-	swDragHook(SpeedWin, function(p) SpeedWin.SavedPos = p end)
+	swDragHook(SpeedWin, function(p) WinPos.SpeedWin = p end)
 	winMinSetup(SpeedWin, SpeedWinMinBtn, { SpeedWinTitleL, SpeedWinCloseBtn })
 end
 function speedWinStep(d)
@@ -1365,9 +1381,9 @@ CdTgl = makeToggle(PageTool, 152, "倒计时器 COUNTDOWN", "屏幕小 UI · 输
 	if v then
 		-- 最小化过就回顶部中间的小 pill，否则给完整小窗（都恢复到关闭前位置）
 		if CdMinimized then
-			if CdMini then CdMini.Visible = true; if CdMini.SavedPos then CdMini.Position = CdMini.SavedPos end end
+			if CdMini then CdMini.Visible = true; if WinPos.CdMini then CdMini.Position = WinPos.CdMini end end
 		elseif CdFrame then
-			CdFrame.Visible = true; if CdFrame.SavedPos then CdFrame.Position = CdFrame.SavedPos end
+			CdFrame.Visible = true; if WinPos.CdFrame then CdFrame.Position = WinPos.CdFrame end
 		end
 		cdPaint()
 	else
@@ -1407,7 +1423,7 @@ label({ Text = "传 送 玩 家 PLAYER TP", Font = Enum.Font.GothamBold, TextSiz
 local ViewBtn = new("TextButton", { Text = "查看玩家 VIEW PLAYER", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Mode().Accent, BackgroundColor3 = Color3.fromRGB(255, 255, 255), BackgroundTransparency = 0.9,
 	BorderSizePixel = 0, AutoButtonColor = false,
-	Size = UDim2.new(1, 0, 0, 34), Position = UDim2.new(0, 0, 0, 1062), Parent = PageTp })
+	Size = UDim2.new(1, 0, 0, 34), Position = UDim2.new(0, 0, 0, 1098), Parent = PageTp })
 corner(ViewBtn, 10)
 table.insert(FunBtns, ViewBtn)
 bindClick(ViewBtn, "查看玩家", function()
@@ -1425,7 +1441,7 @@ end)
 local CamBackBtn = new("TextButton", { Text = "恢复自己的视角", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Color3.fromRGB(190, 198, 220), BackgroundColor3 = Color3.fromRGB(255, 255, 255),
 	BackgroundTransparency = 0.9, BorderSizePixel = 0, AutoButtonColor = false,
-	Size = UDim2.new(1, 0, 0, 34), Position = UDim2.new(0, 0, 0, 1102), Parent = PageTp })
+	Size = UDim2.new(1, 0, 0, 34), Position = UDim2.new(0, 0, 0, 1138), Parent = PageTp })
 corner(CamBackBtn, 10)
 table.insert(FunBtns, CamBackBtn)
 bindClick(CamBackBtn, "恢复视角", function()
@@ -1824,7 +1840,7 @@ function wpWinBuild()
 		wpSave(); wpRefresh()   -- wpRefresh 尾部会顺带刷小窗
 		if notify then notify("已保存标点：" .. nm .. "（共 " .. #Waypoints .. " 个）") end
 	end)
-	honDragHook(WPWin, function(p) WPWin.SavedPos = p end)
+	honDragHook(WPWin, function(p) WinPos.WPWin = p end)
 	winMinSetup(WPWin, WPWinMinBtn, { WPWinTitleL, WPWinCloseBtn })
 end
 function wpWinRefresh()
@@ -1869,7 +1885,7 @@ end
 WPWinTgl = makeToggle(PageTp, 1044, "标点小窗 WP WIN", "屏幕小窗 · 看坐标 / 存标点 / ★ 选中传送", false, function(v)
 	wpWinBuild()
 	if WPWin then
-		if v and WPWin.SavedPos then WPWin.Position = WPWin.SavedPos end
+		if v and WinPos.WPWin then WPWin.Position = WinPos.WPWin end
 		WPWin.Visible = v
 	end
 	if v then wpWinRefresh() end
@@ -3978,7 +3994,7 @@ do
 		if fDrag and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
 			local d = input.Position - fMouse
 			FlyWin.Position = UDim2.new(fPos.X.Scale, fPos.X.Offset + d.X, fPos.Y.Scale, fPos.Y.Offset + d.Y)
-			FlyWin.SavedPos = FlyWin.Position
+			WinPos.FlyWin = FlyWin.Position
 		end
 	end)
 	UserInputService.InputEnded:Connect(function(input)
@@ -4129,7 +4145,7 @@ function setFly(on)
 	FlyHoldY = (HRP and HRP.Parent) and HRP.Position.Y or nil
 end
 function setFlyWindow(on)
-	if on and FlyWin.SavedPos then FlyWin.Position = FlyWin.SavedPos end
+	if on and WinPos.FlyWin then FlyWin.Position = WinPos.FlyWin end
 	FlyWin.Visible = on
 	UpBtn.Visible = on
 	DownBtn.Visible = on
@@ -5963,6 +5979,40 @@ function clearStyleFx()
 	StyleFxRoot = nil
 	pcall(function() RunService:UnbindFromRenderStep("HonStyleFx") end)
 end
+-- 爱心：粉色 ♥ 飘落（摇摆 + 旋转 + 循环）；泡泡：半透明圆形上浮（可爱风额外特效）
+-- 放在 fxSakura 之前定义，避免 Lua 局部函数前向引用在真机结算为全局 nil
+local function fxHeart()
+	local W = Cam.ViewportSize.X
+	for k = 1, 10 do
+		local sz = 14 + (k % 4) * 5
+		local f = new("TextLabel", { Size = UDim2.new(0, sz, 0, sz),
+			BackgroundTransparency = 1, BorderSizePixel = 0,
+			Text = "♥", TextColor3 = Color3.fromRGB(255, 96, 144), TextSize = sz,
+			TextTransparency = 0.15 + (k % 3) * 0.12,
+			Font = Enum.Font.SourceSansBold, Parent = StyleFxRoot })
+		table.insert(StyleFxParts, { K = "heart", F = f,
+			X = 20 + math.random() * (W - 40), Y = math.random() * 760,
+			V = 22 + math.random() * 30, SW = 14 + math.random() * 30,
+			Fq = 0.4 + math.random() * 0.8, Ph = math.random() * 6.283,
+			R = (math.random() - 0.5) * 70 })
+	end
+end
+local function fxBubble()
+	local W, H = Cam.ViewportSize.X, Cam.ViewportSize.Y
+	for k = 1, 12 do
+		local sz = 8 + (k % 6) * 4
+		local f = new("Frame", { Size = UDim2.new(0, sz, 0, sz),
+			BackgroundColor3 = Color3.fromRGB(255, 210, 235), BackgroundTransparency = 0.55,
+			BorderSizePixel = 0, Parent = StyleFxRoot })
+		corner(f, sz / 2)
+		pcall(function() new("UIStroke", { Color = Color3.fromRGB(255, 255, 255),
+			Transparency = 0.55, Thickness = 1, Parent = f }) end)
+		table.insert(StyleFxParts, { K = "bubble", F = f,
+			X = 20 + math.random() * (W - 40), Y = H + math.random() * 200,
+			V = 18 + math.random() * 28, SW = 10 + math.random() * 24,
+			Fq = 0.3 + math.random() * 0.6, Ph = math.random() * 6.283 })
+	end
+end
 -- 樱花花瓣
 local function fxSakura()
 	local pal = { Color3.fromRGB(255, 183, 206), Color3.fromRGB(255, 205, 226),
@@ -5979,6 +6029,11 @@ local function fxSakura()
 			V = 26 + math.random() * 46, SW = 18 + math.random() * 42,
 			Fq = 0.5 + math.random() * 0.9, Ph = math.random() * 6.283,
 			R = (math.random() - 0.5) * 150 })
+	end
+	-- 可爱风额外特效：樱花之外再飘粉色爱心 + 上浮泡泡（用户：「不能只有樱花落下」）
+	if State and State.CuteFxExtra then
+		fxHeart()
+		fxBubble()
 	end
 end
 -- 科技风：扫描线 + 四角 HUD 支架
@@ -6077,6 +6132,13 @@ function buildStyleFx(i)
 	if #StyleFxParts > 0 then
 		RunService:BindToRenderStep("HonStyleFx", 2002, function(dt)
 			if HON_SHUTDOWN or not StyleFxRoot or not StyleFxRoot.Parent then return end
+			-- 特效仅面板开启时显示：面板全关则隐藏整层并跳过，不烧帧
+			if State and State.StyleFxPanelOnly
+				and not (Main and (Main.Visible or (Mini and Mini.Visible))) then
+				if StyleFxRoot.Visible then StyleFxRoot.Visible = false end
+				return
+			end
+			if not StyleFxRoot.Visible then StyleFxRoot.Visible = true end
 			-- 整帧包一层：个别元素出问题只跳这一帧，不连带其他特效
 			pcall(function()
 			StyleFxT = StyleFxT + dt
@@ -6089,6 +6151,15 @@ function buildStyleFx(i)
 					if d.Y > H + 16 then d.Y = -16; d.X = 30 + math.random() * (W - 60) end
 					d.F.Position = UDim2.new(0, d.X + math.sin(t * d.Fq + d.Ph) * d.SW, 0, d.Y)
 					d.F.Rotation = (d.F.Rotation + d.R * dt) % 360
+				elseif d.K == "heart" then
+					d.Y = d.Y + d.V * dt
+					if d.Y > H + 20 then d.Y = -20; d.X = 20 + math.random() * (W - 40) end
+					d.F.Position = UDim2.new(0, d.X + math.sin(t * d.Fq + d.Ph) * d.SW, 0, d.Y)
+					d.F.Rotation = (d.F.Rotation + d.R * dt) % 360
+				elseif d.K == "bubble" then
+					d.Y = d.Y - d.V * dt
+					if d.Y < -20 then d.Y = H + math.random() * 120; d.X = 20 + math.random() * (W - 40) end
+					d.F.Position = UDim2.new(0, d.X + math.sin(t * d.Fq + d.Ph) * d.SW, 0, d.Y)
 				elseif d.K == "scan" then
 					local y = (t * d.V) % (H + 60) - 40
 					d.Band.Position = UDim2.new(0, 0, 0, y - 13)
@@ -6378,7 +6449,7 @@ function windBuild(lib)
 	WindWin = W
 	-- 再补一层保险（夜脚本同款）：CreateWindow 可能被库吞掉背景参数，建完强制再写一次
 	windSyncBg()
-	windSafe("Tag", function() W:Tag({ Title = "v5.53", Color = "ElementBackground" }) end)
+	windSafe("Tag", function() W:Tag({ Title = "v5.54", Color = "ElementBackground" }) end)
 	-- 引擎页
 	local tEng = nil
 	windSafe("Tab:引擎", function() tEng = W:Tab({ Title = "引擎", Icon = "gauge" }) end)
@@ -6656,6 +6727,15 @@ InputAnimTgl = makeToggle(PageSet, 442, "输入动画 INPUT ANIM", "按钮按下
 	State.InputAnim = v
 	if notify then notify(v and "输入动画已开启" or "输入动画已关闭") end
 end, true)
+-- v5.54：可爱风额外特效（爱心 + 泡泡）随樱花一起飘；以及屏幕特效的显示时机（仅面板开启 / 全程）
+CuteFxExtraTgl = makeToggle(PageSet, 490, "可爱风额外特效 CUTE EXTRA", "可爱风在樱花外再加爱心 + 泡泡飘落", true, function(v)
+	State.CuteFxExtra = v
+	pcall(buildStyleFx, UiStyleIdx or 1)
+end, true)
+StyleFxPanelOnlyTgl = makeToggle(PageSet, 538, "特效仅面板开启 FX PANEL-ONLY", "开=只有面板打开时才显示特效；关=全程一直显示", false, function(v)
+	State.StyleFxPanelOnly = v
+	if StyleFxRoot then StyleFxRoot.Visible = (not v) or (Main and (Main.Visible or (Mini and Mini.Visible))) end
+end, true)
 -- 动画开关存档（本地文件 + 跨服务器双保险，和标点同一套机制）
 ANIM_FILE = "HonSpeedHub_Anim.json"
 function animSave()
@@ -6738,17 +6818,17 @@ prefLoad()
 local psDef = PrefPanelScale and math.floor(PrefPanelScale * 100 + 0.5) or 100
 local fsDef = PrefFontScale and math.floor(PrefFontScale * 100 + 0.5) or 160
 local baDef = PrefBgAlpha and math.floor(PrefBgAlpha * 100 + 0.5) or 45
-PanelScaleSlider = makeSlider(PageSet, "面板缩放", 500, 60, 140, math.clamp(psDef, 60, 140), " %", function(v)
+PanelScaleSlider = makeSlider(PageSet, "面板缩放", 596, 60, 140, math.clamp(psDef, 60, 140), " %", function(v)
 	PrefPanelScale = v / 100
 	pcall(function() if MainScale then MainScale.Scale = PrefPanelScale end end)
 	prefSave()
 end, false)
-FontSlider = makeSlider(PageSet, "字体大小", 556, 70, 160, math.clamp(fsDef, 70, 160), " %", function(v)
+FontSlider = makeSlider(PageSet, "字体大小", 652, 70, 160, math.clamp(fsDef, 70, 160), " %", function(v)
 	PrefFontScale = v / 100
 	applyFontScale(v / 100)
 	prefSave()
 end, false)
-BgAlphaSlider = makeSlider(PageSet, "背景图透明", 612, 0, 100, math.clamp(baDef, 0, 100), " %", function(v)
+BgAlphaSlider = makeSlider(PageSet, "背景图透明", 708, 0, 100, math.clamp(baDef, 0, 100), " %", function(v)
 	PrefBgAlpha = v / 100
 	BgAlpha = PrefBgAlpha
 	if BgImg then BgImg.ImageTransparency = BgAlpha end
@@ -6800,8 +6880,8 @@ corner(TouchAllBtn, 10)
 table.insert(FunBtns, TouchAllBtn)
 bindClick(TouchAllBtn, "一键触碰", function() touchAllInteractables() end)
 
-BgTgl = makeToggle(PageSet, 668, "面板背景图", "用你给的图当面板背景", false, function(v) setBg(v) end, true)
-BgAutoTgl = makeToggle(PageSet, 716, "启动时自动加载背景", "每次进游戏自动显示背景图", true, function(v) BgAuto = v; bgSave() end, true)
+BgTgl = makeToggle(PageSet, 764, "面板背景图", "用你给的图当面板背景", false, function(v) setBg(v) end, true)
+BgAutoTgl = makeToggle(PageSet, 812, "启动时自动加载背景", "每次进游戏自动显示背景图", true, function(v) BgAuto = v; bgSave() end, true)
 -- 背景预设 chips：11 张预设 3 列横排，点击即切换（并存档）
 label({ Text = "背景预设 BG PRESETS · 点击切换", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Color3.fromRGB(196, 204, 224), BackgroundTransparency = 1,
@@ -6825,7 +6905,7 @@ BgIdBox = new("TextBox", { PlaceholderText = "图片 ID（如 8237165）· 留�
 	TextColor3 = Color3.fromRGB(238, 243, 255), PlaceholderColor3 = Color3.fromRGB(110, 118, 140),
 	BackgroundColor3 = Color3.fromRGB(255, 255, 255), BackgroundTransparency = 0.92,
 	BorderSizePixel = 0, ClearTextOnFocus = false,
-	Size = UDim2.new(1, 0, 0, 32), Position = UDim2.new(0, 0, 0, 920), Parent = PageSet })
+	Size = UDim2.new(1, 0, 0, 32), Position = UDim2.new(0, 0, 0, 1016), Parent = PageSet })
 corner(BgIdBox, 8)
 BgIdBox.FocusLost:Connect(function() applyBgId(BgIdBox.Text) end)
 label({ Text = "上面 11 个预设是 GitHub 直链，Roblox 客户端会尝试下载（部分执行器不显示）；最稳的是图片 ID——浏览器开 create.roblox.com → Creations → Decals → 上传图片发布，拿数字 ID 填框，填一次自动存档，换服不丢。", Font = Enum.Font.Gotham, TextSize = 9,
@@ -6835,7 +6915,7 @@ label({ Text = "上面 11 个预设是 GitHub 直链，Roblox 客户端会尝试
 local FixBtn = new("TextButton", { Text = "恢复角色外观（修染色）", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Color3.fromRGB(150, 220, 255), BackgroundColor3 = Color3.fromRGB(255, 255, 255),
 	BackgroundTransparency = 0.9, BorderSizePixel = 0, AutoButtonColor = false,
-	Size = UDim2.new(1, 0, 0, 34), Position = UDim2.new(0, 0, 0, 992), Parent = PageSet })
+	Size = UDim2.new(1, 0, 0, 34), Position = UDim2.new(0, 0, 0, 1088), Parent = PageSet })
 corner(FixBtn, 8)
 table.insert(FunBtns, FixBtn)
 bindClick(FixBtn, "恢复外观", function() fixCharacterLook() end)
@@ -6843,7 +6923,7 @@ bindClick(FixBtn, "恢复外观", function() fixCharacterLook() end)
 local ResetScaleBtn = new("TextButton", { Text = "重置身体比例", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Color3.fromRGB(255, 200, 120), BackgroundColor3 = Color3.fromRGB(255, 255, 255),
 	BackgroundTransparency = 0.9, BorderSizePixel = 0, AutoButtonColor = false,
-	Size = UDim2.new(1, 0, 0, 34), Position = UDim2.new(0, 0, 0, 1032), Parent = PageSet })
+	Size = UDim2.new(1, 0, 0, 34), Position = UDim2.new(0, 0, 0, 1128), Parent = PageSet })
 corner(ResetScaleBtn, 8)
 table.insert(FunBtns, ResetScaleBtn)
 bindClick(ResetScaleBtn, "重置比例", function()
@@ -6851,14 +6931,14 @@ bindClick(ResetScaleBtn, "重置比例", function()
 	if notify then notify("身体比例已重置为 100%") end
 end)
 
-RagTgl = makeToggle(PageSet, 1076, "防布娃娃 ANTI RAGDOLL", "不会被打倒/摔倒（夜脚本同款）", false, function(v)
+RagTgl = makeToggle(PageSet, 1172, "防布娃娃 ANTI RAGDOLL", "不会被打倒/摔倒（夜脚本同款）", false, function(v)
 	syncRagTgls(v)
 end, true)
 
 local KillBtn = new("TextButton", { Text = "彻底关闭脚本 UNLOAD", Font = Enum.Font.GothamBold, TextSize = 12,
 	TextColor3 = Color3.fromRGB(255, 108, 118), BackgroundColor3 = Color3.fromRGB(255, 80, 90),
 	BackgroundTransparency = 0.82, BorderSizePixel = 0, AutoButtonColor = false,
-	Size = UDim2.new(1, 0, 0, 38), Position = UDim2.new(0, 0, 0, 1162), Parent = PageSet })
+	Size = UDim2.new(1, 0, 0, 38), Position = UDim2.new(0, 0, 0, 1258), Parent = PageSet })
 corner(KillBtn, 8)
 table.insert(FunBtns, KillBtn)
 bindClick(KillBtn, "关闭脚本", function()
@@ -6869,7 +6949,7 @@ end)
 local SvBtn = new("TextButton", { Text = "换个服务器（随机重进）", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Mode().Accent, BackgroundColor3 = Color3.fromRGB(255, 255, 255),
 	BackgroundTransparency = 0.9, BorderSizePixel = 0, AutoButtonColor = false,
-	Size = UDim2.new(1, 0, 0, 34), Position = UDim2.new(0, 0, 0, 1122), Parent = PageSet })
+	Size = UDim2.new(1, 0, 0, 34), Position = UDim2.new(0, 0, 0, 1218), Parent = PageSet })
 corner(SvBtn, 8)
 table.insert(FunBtns, SvBtn)
 bindClick(SvBtn, "换服务器", function()
@@ -7992,6 +8072,6 @@ tspawn(function()
 		end)
 	end
 end)
-_pr("[HON SPEED HUB] v5.53 已加载 · 完整文件约 7998 行 · 若你的脚本远大于此行数说明粘贴重复了")
+_pr("[HON SPEED HUB] v5.54 已加载 · 完整文件约 8078 行 · 若你的脚本远大于此行数说明粘贴重复了")
 
 
