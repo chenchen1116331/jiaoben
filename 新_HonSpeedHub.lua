@@ -1,5 +1,5 @@
 local _pr = (type(print) == "function") and print or (type(warn) == "function" and warn) or function() end
-_pr("[HON SPEED HUB] 载入中 · v5.56 · 若只看到这一行说明文件在中途中断")
+_pr("[HON SPEED HUB] 载入中 · v5.58 · 若只看到这一行说明文件在中途中断")
 local twait  = (type(task) == "table" and task.wait)  or wait  or function() end
 local tspawn = (type(task) == "table" and task.spawn) or spawn or function(f, ...) return f(...) end
 if type(twait) ~= "function" then twait = function() end end
@@ -98,6 +98,7 @@ local State = {
 	TPLoop = false, TPInterval = 0, TPOffsetY = 3,
 	MoveGameUI = false, UILayoutLocked = false,
 	Stealth = false, StealthHideGame = false,
+	CamNoclip = false,
 	BlackHole = false, BlackHoleForce = 60, HeroFly = false, Car = false,
 	EngineOutline = true, Trail = false, CloneArmy = false, OrbitFx = false,
 	HeadRide = false, Shake = false, SpinCam = false, Magnet = false,
@@ -222,7 +223,7 @@ label({ Text = "HON SPEED HUB", Font = Enum.Font.GothamBold, TextSize = 21,
 	TextColor3 = Color3.fromRGB(238, 243, 255),
 	Position = UDim2.new(0, 36, 0, 16), Size = UDim2.new(0, 200, 0, 24),
 	TextXAlignment = Enum.TextXAlignment.Left }, Header)
-label({ Text = "Universal Hub  ·  W / V / CF  ·  v5.56", Font = Enum.Font.Gotham, TextSize = 11,
+label({ Text = "Universal Hub  ·  W / V / CF  ·  v5.58", Font = Enum.Font.Gotham, TextSize = 11,
 	TextColor3 = Color3.fromRGB(140, 149, 172),
 	Position = UDim2.new(0, 36, 0, 42), Size = UDim2.new(0, 240, 0, 16),
 	TextXAlignment = Enum.TextXAlignment.Left }, Header)
@@ -262,6 +263,13 @@ iconBtn("×", -34, Color3.fromRGB(255, 108, 118), function()
 end)
 -- ---------- 更新公告 ----------
 CHANGELOG = {
+	{ v = "v5.58", t = {
+		"新增 · 辅助页「相机穿墙 CAMERA NOCLIP」：开启后镜头不被墙 / 地形遮挡，可看穿墙体（每帧在相机模块摆好镜头之后，把相机沿当前朝向推回当前缩放距离，但不做任何遮挡射线检测，鼠标转向照常、只是不再被拉近；关闭即解绑，不改动相机类型 / 状态）",
+		"改动 · 隐身录屏改为开启即在右上角弹出固定小窗「隐身 STEALTH」（与飞行小窗同款样式、固定在右上角、不可最小化），点 × 或「开关隐身」即关闭、窗随隐身一起收起；关闭隐身时小窗同步收起。内部「开关隐身」开关建好后立即移出 ToggleRegistry，避免被「隐身冻结 / 全部关闭」误伤",
+	}},
+	{ v = "v5.57", t = {
+		"重要修复 · 飞行「只能上下、不能前后左右」：根因是飞行水平移动的方向取自 keyDir()，而 keyDir 只靠 UserInputService:IsKeyDown 判断 WASD 是否按下——飞行 / PlatformStand 状态下个别执行器 IsKeyDown 不可靠地返回 false，WASD 判定全失败、水平方向恒为 0，于是只剩右上角 UP/DOWN 按钮能驱动的上下移动。v5.57 用 InputBegan / InputEnded 维护一份可靠的「按下按键集合」，与 IsKeyDown 取并集，所有依赖该判定的移动（飞行水平、普通行走方向）都一并变稳；并防卡键（松开时清状态）",
+	}},
 	{ v = "v5.56", t = {
 		"重要修复 · 小窗上面的按钮「点一下就缩小、越点越小直到点不到」：根因有两点——① bindClick 一个点击同时挂了 MouseButton1Click + Activated + TouchTap + InputBegan 四个事件，一次点击会触发 2~3 次 pressPop 叠加；② pressPop 每次从「当前尺寸」取基准，多次叠加后把已经缩小的尺寸当成原尺寸存回，于是越点越小。v5.56 改成只保留统一的 Activated 事件（本就涵盖鼠标/触屏/手柄），并在绑定时锁死「原始尺寸」作回弹基准、回弹永远回到它，外加 popping 防重入——现在点击是「往里弹一下再弹回原大小」的反馈，不再永久性缩小",
 	}},
@@ -660,7 +668,7 @@ do
 end
 local PageHost = new("Frame", { Name = "Content", Size = UDim2.new(0, 464, 0, 336), Position = UDim2.new(0, 180, 0, 84),
 	BackgroundTransparency = 1, BorderSizePixel = 0, ClipsDescendants = true, Parent = Main })
-local PAGE_H = { 620, 380, 500, 680, 660, 2040, 560, 660, 1260, 1000, 1080 }
+local PAGE_H = { 620, 440, 500, 680, 660, 2040, 560, 660, 1260, 1000, 1080 }
 PageList = {}
 local function mkPage(i, visible)
 	return new("ScrollingFrame", { Name = "Page" .. tostring(i),
@@ -910,6 +918,10 @@ local HudTgl     = makeToggle(PageAssist, 270, "速度 HUD", "屏幕底部实时
 end)
 local FlyTgl     = makeToggle(PageAssist, 318, "飞行窗口 FLY", "打开小窗 + 右上角上下键", false, function(v)
 	setFlyWindow(v)
+end)
+CamNoclipTgl = makeToggle(PageAssist, 366, "相机穿墙 CAMERA NOCLIP", "镜头不被墙/地形遮挡，可看穿墙体", false, function(v)
+	State.CamNoclip = v
+	setCamNoclip(v)
 end)
 label({ Text = "视 觉 增 强", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Color3.fromRGB(120, 129, 152), Size = UDim2.new(1, 0, 0, 18),
@@ -2724,7 +2736,7 @@ StealthTgl = makeToggle(PageUtil, 516, "隐身录屏 STEALTH", "隐藏界面 + �
 	setStealth(v)
 end, true)
 
-label({ Text = "开启后右上角出现一个 REC 悬浮窗：点一下恢复全部界面，再点一下重新隐藏。\n隐藏期间仅「加速」保持运行（启用引擎 + 加速小窗），其余功能全部暂停，关闭隐身即原样恢复。\n注：注入器若是独立原生窗口，脚本无法控制它，请用它自己的快捷键。",
+label({ Text = "开启后右上角弹出「隐身 STEALTH」小窗：点 × 或「开关隐身」即可关闭，窗随隐身一起收起。\n隐藏期间仅「加速」保持运行（启用引擎 + 加速小窗），其余功能全部暂停，关闭隐身即原样恢复。\n注：注入器若是独立原生窗口，脚本无法控制它，请用它自己的快捷键。",
 	Font = Enum.Font.Gotham, TextSize = 10, TextColor3 = Color3.fromRGB(132, 141, 163),
 	Position = UDim2.new(0, 2, 0, 564), Size = UDim2.new(1, -4, 0, 56),
 	TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top }, PageUtil)
@@ -4015,8 +4027,22 @@ KEY_FWD  = { Enum.KeyCode.W, Enum.KeyCode.Up }
 KEY_BACK = { Enum.KeyCode.S, Enum.KeyCode.Down }
 KEY_LEFT = { Enum.KeyCode.A, Enum.KeyCode.Left }
 KEY_RIGHT = { Enum.KeyCode.D, Enum.KeyCode.Right }
+
+-- v5.57：键盘按键状态集（兜底 IsKeyDown）——飞行水平移动此前「只能上下、不能前后」，
+-- 根因是 anyDown 只靠 UserInputService:IsKeyDown，飞行/PlatformStand 等状态下个别执行器
+-- IsKeyDown 不可靠地返回 false，导致 WASD 判定全失败、水平方向恒为 0；改成用 InputBegan/
+-- InputEnded 维护一份可靠的「按下集合」，与 IsKeyDown 取并集，所有依赖 anyDown 的移动都变稳
+local KeysDown = {}
+pcall(function()
+	UserInputService.InputBegan:Connect(function(i, processed)
+		if i and i.UserInputType == Enum.UserInputType.Keyboard then KeysDown[i.KeyCode] = true end
+	end)
+	UserInputService.InputEnded:Connect(function(i, processed)
+		if i and i.UserInputType == Enum.UserInputType.Keyboard then KeysDown[i.KeyCode] = nil end
+	end)
+end)
 function anyDown(list)
-	for _, k in ipairs(list) do if UserInputService:IsKeyDown(k) then return true end end
+	for _, k in ipairs(list) do if KeysDown[k] or UserInputService:IsKeyDown(k) then return true end end
 	return false
 end
 function horiz(v)
@@ -4098,6 +4124,30 @@ RunService.Stepped:Connect(function()
 		end
 	end
 end)
+-- v5.58：相机穿墙（CAMERA NOCLIP）——镜头不被墙/地形遮挡，可看穿墙体。
+-- 做法：每帧在相机模块把镜头摆好之后（RenderPriority.Camera 之后跑），把相机沿其当前
+-- 朝向推回「当前缩放距离」，但全程不做任何遮挡射线检测，于是相机停在墙体外侧、能看穿墙；
+-- 鼠标转向由相机模块照常处理，本步只改「距离」不改「朝向」，所以转向照常、只是不再被拉近。
+-- 关闭时解绑即可，不改动相机类型/状态，下一帧由相机模块正常接管。
+local CamNoclipConn = nil
+function setCamNoclip(on)
+	State.CamNoclip = on
+	if CamNoclipConn then pcall(function() CamNoclipConn:Disconnect() end) end
+	CamNoclipConn = nil
+	if not on then return end
+	CamNoclipConn = RunService:BindToRenderStep("HonCamClip",
+		(Enum.RenderPriority.Camera.Value or 200) + 1, function()
+		if HON_SHUTDOWN or not Cam then return end
+		if not (HRP and HRP.Parent) then return end
+		if not (LP and LP.Parent) then return end
+		local head = HRP.Position
+		local cur = Cam.CFrame.Position - head
+		local dist = cur.Magnitude
+		if dist < 0.1 then return end
+		local look = Cam.CFrame.LookVector
+		Cam.CFrame = CFrame.new(head - look * dist, head)
+	end)
+end
 pcall(function() RunService:UnbindFromRenderStep("HonPadMove") end)
 RunService:BindToRenderStep("HonPadMove", 10000, function()
 	if HON_SHUTDOWN then return end
@@ -6323,7 +6373,7 @@ function windBuild(lib)
 	if not W then return false end
 	WindWin = W
 	-- 再补一层保险（夜脚本同款）：CreateWindow 可能被库吞掉背景参数，建完强制再写一次
-	windSafe("Tag", function() W:Tag({ Title = "v5.56", Color = "ElementBackground" }) end)
+	windSafe("Tag", function() W:Tag({ Title = "v5.58", Color = "ElementBackground" }) end)
 	-- 引擎页
 	local tEng = nil
 	windSafe("Tab:引擎", function() tEng = W:Tab({ Title = "引擎", Icon = "gauge" }) end)
@@ -6351,6 +6401,7 @@ function windBuild(lib)
 		windTglByTitle(tAss, "反挂机 ANTI-AFK", "防止长时间无操作掉线")
 		windTglByTitle(tAss, "速度 HUD", "屏幕底部实时显示速度")
 		windTglByTitle(tAss, "飞行窗口 FLY", "打开小窗 + 右上角上下键")
+		windTglByTitle(tAss, "相机穿墙 CAMERA NOCLIP", "镜头不被墙/地形遮挡，可看穿墙体")
 	end
 	-- 视觉页
 	local tEsp = nil
@@ -7424,43 +7475,45 @@ end
 if SearchBox then
 	SearchBox:GetPropertyChangedSignal("Text"):Connect(function() applySearch(SearchBox.Text) end)
 end
-StealthBall, StealthBallText = nil, nil
+StealthWin, StealthRecText = nil, nil
 StealthOwn, StealthHiddenGui = {}, {}
 stealthTime, stealthAcc = 0, 0
-function buildStealthBall()
-	if StealthBall then return end
-	local b = new("TextButton", { Name = "HonStealth", Text = "",
-		Size = UDim2.new(0, 108, 0, 38), Position = UDim2.new(1, -124, 0, 14),
-		BackgroundColor3 = Color3.fromRGB(12, 14, 20), BackgroundTransparency = 0.22,
-		BorderSizePixel = 0, AutoButtonColor = false, Active = true, Visible = false, Parent = Gui })
-	corner(b, 19)
-	new("UIStroke", { Color = Color3.fromRGB(255, 86, 96), Transparency = 0.35, Thickness = 1, Parent = b })
-	local dot = new("Frame", { Size = UDim2.new(0, 10, 0, 10), Position = UDim2.new(0, 13, 0.5, -5),
-		BackgroundColor3 = Color3.fromRGB(255, 86, 96), BorderSizePixel = 0, Parent = b })
+-- v5.58：隐身小窗（右上角）——开启隐身即在右上角弹出，固定不最小化；关闭隐身即收起。
+-- 命名 HonStealth：stealthHideOwn 只藏 Gui 下非 HonStealth 的子级，本窗作为「录制指示器」
+-- 在隐身期间保持可见（与旧版 REC 悬浮钮同一个豁免名，行为一致）。
+function buildStealthWin()
+	if StealthWin then return end
+	local w = new("Frame", { Name = "HonStealth", Size = UDim2.new(0, 224, 0, 132),
+		Position = UDim2.new(1, -244, 0, 320),
+		BackgroundColor3 = Color3.fromRGB(13, 15, 23), BackgroundTransparency = 0.06,
+		BorderSizePixel = 0, Visible = false, Active = true, Parent = Gui })
+	corner(w, 16)
+	new("UIStroke", { Color = Color3.fromRGB(255, 86, 96), Transparency = 0.5, Thickness = 1, Parent = w })
+	local bar = new("Frame", { Size = UDim2.new(1, 0, 0, 38), BackgroundTransparency = 1, Parent = w })
+	label({ Text = "STEALTH", Font = Enum.Font.GothamBold, TextSize = 14, TextColor3 = Color3.fromRGB(238, 243, 255),
+		Position = UDim2.new(0, 16, 0, 9), Size = UDim2.new(0, 130, 0, 20), TextXAlignment = Enum.TextXAlignment.Left }, bar)
+	local dot = new("Frame", { Size = UDim2.new(0, 10, 0, 10), Position = UDim2.new(1, -66, 0.5, -5),
+		BackgroundColor3 = Color3.fromRGB(255, 86, 96), BorderSizePixel = 0, Parent = bar })
 	corner(dot, 5)
-	StealthBallText = label({ Text = "REC 00:00", Font = Enum.Font.GothamBold, TextSize = 11,
-		TextColor3 = Color3.fromRGB(238, 243, 255), Position = UDim2.new(0, 30, 0, 0),
-		Size = UDim2.new(1, -36, 1, 0), TextXAlignment = Enum.TextXAlignment.Left }, b)
-	StealthBall = b
-	local dragging, startMouse, basePos, moved = false, nil, nil, 0
-	b.InputBegan:Connect(function(i)
-		if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then
-			dragging, startMouse, basePos, moved = true, i.Position, b.Position, 0
-		end
-	end)
-	UserInputService.InputChanged:Connect(function(i)
-		if dragging and (i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseMovement) then
-			local d = i.Position - startMouse
-			moved = math.max(moved, math.abs(d.X) + math.abs(d.Y))
-			b.Position = UDim2.new(basePos.X.Scale, basePos.X.Offset + d.X, basePos.Y.Scale, basePos.Y.Offset + d.Y)
-		end
-	end)
-	UserInputService.InputEnded:Connect(function(i)
-		if dragging and (i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1) then
-			dragging = false
-			if moved < 6 then setStealth(not State.Stealth) end
-		end
-	end)
+	local close = new("TextButton", { Text = "×", Font = Enum.Font.GothamBold, TextSize = 16,
+		TextColor3 = Color3.fromRGB(255, 108, 118), BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+		BackgroundTransparency = 0.94, BorderSizePixel = 0, AutoButtonColor = false,
+		Position = UDim2.new(1, -36, 0, 7), Size = UDim2.new(0, 26, 0, 26), Parent = bar })
+	corner(close, 8)
+	-- ×：关掉隐身，窗随隐身一起收起
+	close.MouseButton1Click:Connect(function() setStealth(false) end)
+	-- 内部「开关隐身」：注册进 ToggleRegistry 后立刻移出，避免被「隐身冻结 / 全部关闭」误伤
+	local StToggle = makeToggle(w, 48, "开关隐身", "关闭即收起本窗", false, function(v) setStealth(v) end)
+	for i = #ToggleRegistry, 1, -1 do
+		if ToggleRegistry[i] == StToggle then table.remove(ToggleRegistry, i) break end
+	end
+	StealthRecText = label({ Text = "REC 00:00", Font = Enum.Font.GothamBold, TextSize = 13,
+		TextColor3 = Color3.fromRGB(255, 120, 130), Position = UDim2.new(0, 16, 0, 90),
+		Size = UDim2.new(1, -32, 0, 22), TextXAlignment = Enum.TextXAlignment.Left }, w)
+	label({ Text = "隐藏界面 · 暂停其他功能（加速保留）", Font = Enum.Font.Gotham, TextSize = 10,
+		TextColor3 = Color3.fromRGB(132, 141, 163), Position = UDim2.new(0, 16, 0, 112),
+		Size = UDim2.new(1, -32, 0, 18), TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top }, w)
+	StealthWin = w
 end
 function stealthHideOwn()
 	StealthOwn = {}
@@ -7512,20 +7565,20 @@ end
 
 function setStealth(on)
 	State.Stealth = on
-	buildStealthBall()
+	buildStealthWin()
 	if on then
 		local n = stealthFreeze()
 		stealthHideOwn()
 		-- 开隐身自动清身上方块（v5.45，用户：「开启隐身之后自动清除」）——
 		-- 录屏的时候角色光溜的，不戴帽子不挂配件
 		pcall(hideBodyBlocks, true)
-		if StealthBall then StealthBall.Visible = true end
+		if StealthWin then StealthWin.Visible = true end
 		stealthTime, stealthAcc = 0, 0
 		if notify then notify("隐身录屏开启 · 已暂停 " .. n .. " 个功能（仅加速保持运行）") end
 	else
 		local n = stealthRestore()
 		stealthShowOwn()
-		if StealthBall then StealthBall.Visible = false end
+		if StealthWin then StealthWin.Visible = false end
 		if notify then notify("已恢复界面 · 并恢复 " .. n .. " 个功能") end
 	end
 	if StealthTgl then StealthTgl.Set(on, true) end
@@ -7537,8 +7590,8 @@ RunService.Heartbeat:Connect(function(dt)
 	stealthAcc = stealthAcc + dt
 	if stealthAcc >= 0.5 then
 		stealthAcc = 0
-		if StealthBallText then
-			StealthBallText.Text = string.format("REC %02d:%02d",
+		if StealthRecText then
+			StealthRecText.Text = string.format("REC %02d:%02d",
 				math.floor(stealthTime / 60), math.floor(stealthTime % 60))
 		end
 	end
@@ -7874,6 +7927,6 @@ tspawn(function()
 		end)
 	end
 end)
-_pr("[HON SPEED HUB] v5.56 已加载 · 完整文件约 7880 行 · 若你的脚本远大于此行数说明粘贴重复了")
+_pr("[HON SPEED HUB] v5.58 已加载 · 完整文件约 7933 行 · 若你的脚本远大于此行数说明粘贴重复了")
 
 
