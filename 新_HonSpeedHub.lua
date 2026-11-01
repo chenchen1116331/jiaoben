@@ -1,5 +1,5 @@
 local _pr = (type(print) == "function") and print or (type(warn) == "function" and warn) or function() end
-_pr("[HON SPEED HUB] 载入中 · v5.61 · 若只看到这一行说明文件在中途中断")
+_pr("[HON SPEED HUB] 载入中 · v5.63 · 若只看到这一行说明文件在中途中断")
 local twait  = (type(task) == "table" and task.wait)  or wait  or function() end
 local tspawn = (type(task) == "table" and task.spawn) or spawn or function(f, ...) return f(...) end
 if type(twait) ~= "function" then twait = function() end end
@@ -290,7 +290,7 @@ label({ Text = "HON SPEED HUB", Font = Enum.Font.GothamBold, TextSize = 21,
 	TextColor3 = Color3.fromRGB(238, 243, 255),
 	Position = UDim2.new(0, 36, 0, 16), Size = UDim2.new(0, 200, 0, 24),
 	TextXAlignment = Enum.TextXAlignment.Left }, Header)
-label({ Text = "Universal Hub  ·  W / V / CF  ·  v5.61", Font = Enum.Font.Gotham, TextSize = 11,
+label({ Text = "Universal Hub  ·  W / V / CF  ·  v5.63", Font = Enum.Font.Gotham, TextSize = 11,
 	TextColor3 = Color3.fromRGB(140, 149, 172),
 	Position = UDim2.new(0, 36, 0, 42), Size = UDim2.new(0, 240, 0, 16),
 	TextXAlignment = Enum.TextXAlignment.Left }, Header)
@@ -335,6 +335,15 @@ CHANGELOG = {
 	}},
 	{ v = "v5.59", t = {
 		"功能新增 · 辅助页「踏空行走 AIR WALK」：开启后锁定当前高度作为「行走平面」，角色踩在看不见的玻璃平面上水平自由行走而不坠落——每帧把 HumanoidRootPart 的 Y 锁回锁定的 WalkY、竖直速度清零抵消重力，水平移动完全正常（PlatformStand 保持 false 才能走）；飞行开启时不接管避免两套位移打架；角色重生时 WalkY 自动重置到新出生高度",
+	}},
+	{ v = "v5.63", t = {
+		"重要修复 · 移动端飞行不能用罗布乐思官方原生触屏摇杆移动（用户：「我用的移动端，需要不开脚本虚拟键盘就能用官方自带的移动键移动」）：旧飞行在 PlatformStand=true 下 Humanoid.MoveDirection 被清零，而横向只读了脚本自己的虚拟方向键(PadActive)和键盘(KeysDown)——移动端没键盘、又不点脚本虚拟键盘，就完全没横向输入，只能上下。新版：移动端(TouchEnabled)飞行时关掉 PlatformStand 让官方左手摇杆写入的 MoveDirection 生效，并把 WalkSpeed 临时置 0（防人形自己走路 / 防个别执行器抢速度），横向位移仍由渲染步每帧写 AssemblyLinearVelocity（在物理步之后稳赢）；flyDir 优先脚本虚拟键 → 再读原生 MoveDirection（覆盖官方触屏摇杆 + PC 键盘）→ 最后 KeysDown 兜底。PC 端保持原手感(PlatformStand=true)完全不变。踏空行走本就 PlatformStand=false，原生移动照常，无需改动",
+	}},
+	{ v = "v5.62", t = {
+		"重要修复 · 分身隐身 FAKE CHAR 开一次就失效 + 被甩到万米高空：旧机制把本体瞬移到 FAKE_Y=100000 再让镜头去跟替身，一旦镜头没切到替身（执行器差异）本体和视角就一起飞到十万米；且关掉再开容易卡死。新版改为——本体原地「隐身」（全部 BasePart 透明度=1、碰撞保留，仍能正常站立 / 行走），相机始终跟随本体，绝不再飞高空；另造一个可见克隆体在脚下、每帧同步本体位移作为替身。可反复开关，不再失效",
+		"改动 · 分身隐身改回右上角独立快速键（非可缩小小窗）：点击开 / 关，并与主 UI「分身隐身 FAKE CHAR」双向同步（点这里关掉，主 UI 开关也同步关闭；主 UI 关掉，这里也回到「隐身 STEALTH」），开启时按键变红显示「隐身中 ON」",
+		"功能新增 · 踏空行走 AIR WALK 加小窗（与飞行小窗同款，在右侧）：开启踏空即弹出，含 UP/DOWN 调整脚下水平面高度（约 40 格/秒）、× 关闭，窗内「开关踏空」与主 UI 双向同步",
+		"重要修复 · 飞行「只能上下、不能前后左右」复发：在 v5.57 的 KeysDown 并集基础上再加一道兜底——每次轮询 UserInputService:GetKeysPressed() 取当前按下键列表再判 WASD，最大化横向移动命中率（部分执行器在 PlatformStand / 飞行状态下 IsKeyDown 与 InputBegan 都不靠谱）",
 	}},
 	{ v = "v5.61", t = {
 		"修正 · 固定小窗挂错对象：v5.58 误把「右上角固定小窗」加到了隐藏脚本的「隐身录屏」（带 REC），本次纠正——隐身录屏保持原样（旧版 REC 悬浮钮，不改动），而工具页的「分身隐身 FAKE CHAR」才应开启即在右上角弹固定小窗「FAKE CHAR」（与飞行小窗同款样式、固定在右上角、不可最小化），点 × 或「开关分身」即关闭、窗随分身隐身一起收起；关闭分身隐身时小窗同步收起。内部「开关分身」开关建好后立即移出 ToggleRegistry，避免被「全部关闭」误伤",
@@ -1002,7 +1011,7 @@ CamNoclipTgl = makeToggle(PageAssist, 366, "相机穿墙 CAMERA NOCLIP", "镜头
 	State.CamNoclip = v
 	setCamNoclip(v)
 end)
-AirWalkTgl = makeToggle(PageAssist, 414, "踏空行走 AIR WALK", "锁定水平面 · 在空中平面行走不坠落", false, function(v)
+AirWalkTgl = makeToggle(PageAssist, 414, "踏空行走 AIR WALK", "锁定水平面行走 · 小窗 UP/DOWN 调高度", false, function(v)
 	State.AirWalk = v
 	setAirWalk(v)
 end)
@@ -1471,7 +1480,7 @@ end, true)
 AntiVoidTgl = makeToggle(PageTool, 200, "防坠落 ANTI-VOID", "掉出地图自动拉回安全点", false, function(v)
 	State.AntiVoid = v
 end)
-   local FakeTgl = makeToggle(PageTool, 248, "分身隐身 FAKE CHAR", "改的是本体（有网络所有权，会同步）", false, function(v)
+   local FakeTgl = makeToggle(PageTool, 248, "分身隐身 FAKE CHAR", "本体原地隐身 · 克隆替身顶上（不飞高空）", false, function(v)
 	setFakeChar(v)
 end)
 BrightTgl = makeToggle(PageTool, 296, "夜视 FULLBRIGHT", "去雾 + 全亮，关闭时还原", false, function(v)
@@ -2028,83 +2037,92 @@ RunService.Stepped:Connect(function()
 		pcall(hideBodyBlocks, true)
 	end
 end)
-FAKE_Y = 100000
-FakeClone, FakePlatform, FakeBase, FakeAnchor = nil, nil, nil, nil
-FakeWin, FakeWinToggle = nil, nil
+FakeClone, FakeBase, FakeAnchor = nil, nil, nil
+FakeOrigT = {}
+-- 隐身时把本体「藏起来」：把所有 BasePart 透明度设为 1（保存原值以便还原），不改碰撞——
+-- 本体原地隐身、仍能正常站立 / 行走，相机继续跟随本体，绝不会被甩到万米高空。
+function hideRealBody(on)
+	if not (HRP and HRP.Parent) then return end
+	for _, d in ipairs(HRP.Parent:GetDescendants()) do
+		if d:IsA("BasePart") then
+			if on then
+				if FakeOrigT[d] == nil then FakeOrigT[d] = d.Transparency end
+				d.Transparency = 1
+			else
+				if FakeOrigT[d] ~= nil then d.Transparency = FakeOrigT[d] end
+				FakeOrigT[d] = nil
+			end
+		end
+	end
+end
 function cleanupFake()
 	if FakeClone then pcall(function() FakeClone:Destroy() end) end
-	if FakePlatform then pcall(function() FakePlatform:Destroy() end) end
-	FakeClone, FakePlatform, FakeBase, FakeAnchor = nil, nil, nil, nil
+	FakeClone, FakeBase, FakeAnchor = nil, nil, nil
+	FakeOrigT = {}
 end
--- 分身隐身小窗（右上角固定）——开启分身隐身即在右上角弹出，固定在右上角、不可最小化；
--- 点 × 或「开关分身」即关闭、窗随分身隐身一起收起；关闭分身隐身时小窗同步收起。
--- 内部「开关分身」开关建好后立即移出 ToggleRegistry，避免被「全部关闭」误伤。
-function buildFakeWin()
-	if FakeWin then return end
-	local w = new("Frame", { Name = "HonFakeWin", Size = UDim2.new(0, 224, 0, 132),
-		Position = UDim2.new(1, -244, 0, 320),
-		BackgroundColor3 = Color3.fromRGB(13, 15, 23), BackgroundTransparency = 0.06,
-		BorderSizePixel = 0, Visible = false, Active = true, Parent = Gui })
-	corner(w, 16)
-	new("UIStroke", { Color = Modes[1].Accent, Transparency = 0.5, Thickness = 1, Parent = w })
-	local bar = new("Frame", { Size = UDim2.new(1, 0, 0, 38), BackgroundTransparency = 1, Parent = w })
-	label({ Text = "FAKE CHAR", Font = Enum.Font.GothamBold, TextSize = 14, TextColor3 = Color3.fromRGB(238, 243, 255),
-		Position = UDim2.new(0, 16, 0, 9), Size = UDim2.new(0, 130, 0, 20), TextXAlignment = Enum.TextXAlignment.Left }, bar)
-	local close = new("TextButton", { Text = "×", Font = Enum.Font.GothamBold, TextSize = 16,
-		TextColor3 = Color3.fromRGB(255, 108, 118), BackgroundColor3 = Color3.fromRGB(255, 255, 255),
-		BackgroundTransparency = 0.94, BorderSizePixel = 0, AutoButtonColor = false,
-		Position = UDim2.new(1, -36, 0, 7), Size = UDim2.new(0, 26, 0, 26), Parent = bar })
-	corner(close, 8)
-	close.MouseButton1Click:Connect(function() setFakeChar(false) end)
-	local FakeToggle = makeToggle(w, 48, "开关分身", "关闭即收起本窗", false, function(v) setFakeChar(v) end)
-	for i = #ToggleRegistry, 1, -1 do
-		if ToggleRegistry[i] == FakeToggle then table.remove(ToggleRegistry, i) break end
+-- 分身隐身快速键：屏幕右上角独立按钮（非可缩小小窗）。点击开 / 关，并与主 UI「分身隐身 FAKE CHAR」
+-- 双向同步（点这里关掉，主 UI 开关也同步关闭；主 UI 关掉，这里也回到「隐身 STEALTH」）。
+FakeBtn, FakeBtnText, FakeBtnDot, FakeBtnStroke = nil, nil, nil, nil
+function buildFakeBtn()
+	if FakeBtn then return end
+	FakeBtn = new("TextButton", { Name = "HonFakeBtn",
+		Size = UDim2.new(0, 108, 0, 44), Position = UDim2.new(1, -124, 0, 12),
+		BackgroundColor3 = Color3.fromRGB(24, 27, 38), BackgroundTransparency = 0.12,
+		BorderSizePixel = 0, AutoButtonColor = false, Text = "", Parent = Gui })
+	corner(FakeBtn, 12)
+	FakeBtnStroke = new("UIStroke", { Color = Modes[1].Accent, Transparency = 0.4, Thickness = 2, Parent = FakeBtn })
+	FakeBtnDot = new("Frame", { Size = UDim2.new(0, 12, 0, 12), Position = UDim2.new(0, 14, 0.5, -6),
+		BackgroundColor3 = Color3.fromRGB(120, 130, 150), BorderSizePixel = 0, Parent = FakeBtn })
+	corner(FakeBtnDot, 6)
+	FakeBtnText = label({ Text = "隐身 STEALTH", Font = Enum.Font.GothamBold, TextSize = 12,
+		TextColor3 = Color3.fromRGB(200, 206, 222), Position = UDim2.new(0, 34, 0, 0),
+		Size = UDim2.new(1, -40, 1, 0), TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Center }, FakeBtn)
+	FakeBtn.MouseButton1Click:Connect(function() pcall(function() setFakeChar(not State.FakeChar) end) end)
+end
+function paintFakeBtn(on)
+	if not FakeBtn then return end
+	if on then
+		FakeBtnText.Text = "隐身中 ON"
+		FakeBtnText.TextColor3 = Color3.fromRGB(255, 96, 108)
+		FakeBtnDot.BackgroundColor3 = Color3.fromRGB(255, 86, 96)
+		FakeBtnStroke.Color = Color3.fromRGB(255, 86, 96)
+	else
+		FakeBtnText.Text = "隐身 STEALTH"
+		FakeBtnText.TextColor3 = Color3.fromRGB(200, 206, 222)
+		FakeBtnDot.BackgroundColor3 = Color3.fromRGB(120, 130, 150)
+		FakeBtnStroke.Color = Modes[1].Accent
 	end
-	label({ Text = "分身隐身：本体隐藏，克隆体顶上\n（有网络所有权，会同步到别人）", Font = Enum.Font.Gotham, TextSize = 10,
-		TextColor3 = Color3.fromRGB(132, 141, 163), Position = UDim2.new(0, 16, 0, 92),
-		Size = UDim2.new(1, -32, 0, 36), TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top }, w)
-	FakeWin = w
-	FakeWinToggle = FakeToggle
-	saveWinDefault(FakeWin)
-	attachDrag(FakeWin, bar, UserInputService, nil, "WinLock")  -- 标题条作把手；锁定时不可拖
 end
 function setFakeChar(on)
 	State.FakeChar = on
-	buildFakeWin()
-	if FakeWin then FakeWin.Visible = on end
-	-- 静默同步主开关：点小窗 × 或内部「开关分身」时，工具页主开关状态一并更新（不回调，避免递归）
-	if FakeTgl then FakeTgl.Set(on, true) end
+	buildFakeBtn()
+	paintFakeBtn(on)
+	-- 与主 UI 开关双向同步（静默，不回调避免递归）
+	if FakeTgl then pcall(function() FakeTgl.Set(on, true) end) end
 	if not on then
-		if FakeClone and FakeClone.Parent and HRP and HRP.Parent then
-			HRP.CFrame = FakeClone:GetPivot()
-		end
+		-- 还原本体（取消隐藏）
+		pcall(hideRealBody, false)
 		cleanupFake()
 		lastTransp = -1
-		if Humanoid and Humanoid.Parent then Cam.CameraSubject = Humanoid end
 		return
 	end
 	if not (HRP and HRP.Parent) or not Humanoid then
 		State.FakeChar = false
-		if FakeWin then FakeWin.Visible = false end
+		paintFakeBtn(false)
+		if FakeTgl then pcall(function() FakeTgl.Set(false, true) end) end
 		return
 	end
+	-- 隐身机制：本体原地「隐身」（透明），相机仍跟随本体——不再飞到万米高空；
+	-- 另造一个可见克隆体在脚下，每帧同步本体位移，作为替身（你看到 / 别人看到的都是它）。
 	local hip = (Humanoid.HipHeight > 0) and Humanoid.HipHeight or 2.5
-	FakeAnchor = Vector3.new(HRP.Position.X, FAKE_Y, HRP.Position.Z)
+	FakeAnchor = HRP.Position
 	FakeBase   = HRP.Position - Vector3.new(0, hip, 0)
-	FakePlatform = Instance.new("Part")
-	FakePlatform.Name = "HonFakePlatform"
-	FakePlatform.Size = Vector3.new(400, 10, 400)
-	FakePlatform.Anchored = true
-	FakePlatform.CanCollide = true
-	FakePlatform.Transparency = 1
-	FakePlatform.CFrame = CFrame.new(FakeAnchor - Vector3.new(0, 5, 0))
-	FakePlatform.Parent = Workspace
 	FakeClone = HRP.Parent:Clone()
 	FakeClone.Name = "HonFakeClone"
 	FakeClone.Parent = Workspace
 	for _, d in ipairs(FakeClone:GetDescendants()) do
 		if d:IsA("BasePart") then
-			d.Transparency = 0.45
+			d.Transparency = 0
 			d.CanCollide = false
 			d.CastShadow = false
 		elseif d:IsA("Script") or d:IsA("LocalScript") then
@@ -2113,9 +2131,8 @@ function setFakeChar(on)
 	end
 	local fhrp = FakeClone:FindFirstChild("HumanoidRootPart")
 	if fhrp then fhrp.Anchored = true end
-	local fh = FakeClone:FindFirstChildOfClass("Humanoid")
-	if fh then Cam.CameraSubject = fh end
-	HRP.CFrame = CFrame.new(FakeAnchor + Vector3.new(0, hip + 1, 0))
+	pcall(hideRealBody, true)
+	if fhrp then fhrp.CFrame = CFrame.new(FakeBase) * (HRP.CFrame - HRP.Position) end
 	lastTransp = -1
 end
 pcall(function() RunService:UnbindFromRenderStep("HonFakeSync") end)
@@ -2125,9 +2142,7 @@ RunService:BindToRenderStep("HonFakeSync", 1999, function()
 	if not (FakeClone and FakeClone.Parent) or not (HRP and HRP.Parent) then return end
 	local fhrp = FakeClone:FindFirstChild("HumanoidRootPart")
 	if not fhrp then return end
-	if HRP.Position.Y < FAKE_Y - 300 then
-		HRP.CFrame = CFrame.new(FakeAnchor + Vector3.new(0, 3, 0))
-	end
+	-- 克隆体镜像本体的水平位移与朝向（本体已原地隐身，替身跟着走；不再有万米高空拉回）
 	local rel = HRP.Position - FakeAnchor
 	fhrp.CFrame = CFrame.new(FakeBase + rel) * (HRP.CFrame - HRP.Position)
 end)
@@ -2906,7 +2921,7 @@ corner(StatusFrame, 12)
 Status = label({ Text = "就绪", Font = Enum.Font.Gotham, TextSize = 11, TextColor3 = Color3.fromRGB(150, 159, 182),
 	Position = UDim2.new(0, 12, 0, 0), Size = UDim2.new(1, -24, 1, 0),
 	TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Center, RichText = true }, StatusFrame)
-label({ Text = "M 切引擎 · F2 开关 · L 锁面板 · 飞行升降看右上角 UP/DOWN · , . 切页 · RightCtrl 显隐",
+label({ Text = "M 切引擎 · F2 开关 · L 锁面板 · 飞行/踏空升降看右上角小窗 · , . 切页 · RightCtrl 显隐",
 	Font = Enum.Font.Gotham, TextSize = 9, TextColor3 = Color3.fromRGB(105, 113, 134),
 	Position = UDim2.new(0, 0, 1, -13), Size = UDim2.new(1, 0, 0, 12),
 	TextXAlignment = Enum.TextXAlignment.Center,
@@ -2962,6 +2977,7 @@ UpBtn, UpStroke = makeFlyBtn("UP", 96)
 DownBtn, DownStroke = makeFlyBtn("DOWN", 166)
 FlyUp, FlyDown = false, false
 FlyHoldY = nil
+FlySavedWalk = nil  -- 飞行期间临时置 0 的 WalkSpeed 备份（仅移动端用原生摇杆时）
 function bindHold(btn, setTrue)
 	btn.MouseButton1Down:Connect(function() setTrue(true) end)
 	btn.MouseButton1Up:Connect(function() setTrue(false) end)
@@ -2978,6 +2994,7 @@ bindHold(DownBtn, function(v) FlyDown = v end)
 UserInputService.InputEnded:Connect(function(i)
 	if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then
 		FlyUp, FlyDown = false, false
+		AirUpHold, AirDownHold = false, false
 	end
 end)
 TouchBtns = {}
@@ -4105,7 +4122,21 @@ pcall(function()
 	end)
 end)
 function anyDown(list)
-	for _, k in ipairs(list) do if KeysDown[k] or UserInputService:IsKeyDown(k) then return true end end
+	for _, k in ipairs(list) do
+		if KeysDown[k] then return true end
+		local ok, d = pcall(function() return UserInputService:IsKeyDown(k) end)
+		if ok and d then return true end
+	end
+	-- 兜底：部分执行器在飞行 / PlatformStand 状态下 IsKeyDown 与 InputBegan 都不可靠，
+	-- 用每次轮询的 GetKeysPressed（返回当前按下的键列表）再取一次并集，最大化横向移动命中率
+	local ok, pressed = pcall(function() return UserInputService:GetKeysPressed() end)
+	if ok and pressed then
+		for _, obj in ipairs(pressed) do
+			for _, k in ipairs(list) do
+				if obj and obj.KeyCode == k then return true end
+			end
+		end
+	end
 	return false
 end
 function horiz(v)
@@ -4139,11 +4170,19 @@ function keyDir()
 	return horiz(d)
 end
 function flyDir()
-	-- 飞行时 PlatformStand=true，Humanoid.MoveDirection 失效，
-	-- 而虚拟方向键的 Humanoid:Move 在飞行时也被跳过，所以这里直接读 PadDir
+	-- 优先用脚本自己的虚拟方向键（用户主动开的 Pad）
 	if PadActive and (PadDir.x ~= 0 or PadDir.y ~= 0) then
 		return padWorld()
 	end
+	-- 原生移动输入：罗布乐思官方自带的键盘 / 移动端左手触屏摇杆都会写入 Humanoid.MoveDirection。
+	-- 移动端飞行时 PlatformStand 已关，MoveDirection 实时反映摇杆方向——这样不用开脚本虚拟键盘也能飞。
+	if Humanoid and Humanoid.Parent then
+		local md = Humanoid.MoveDirection
+		if md and md.Magnitude > 0.05 then
+			return horiz(md)
+		end
+	end
+	-- PC 兜底：键盘 WASD（PlatformStand 下 MoveDirection 失效，改走 KeysDown 通道）
 	return keyDir()
 end
 function moveDir()
@@ -4234,18 +4273,68 @@ end
 -- 同时把竖直速度清零，抵消重力下坠；水平移动完全正常，于是就像踩在一块看不见的玻璃上。
 -- 飞行优先：Fly 开启时不接管，避免两套位移打架。
 local WalkY = nil
+-- 踏空行走小窗（与飞行小窗同款，在右侧）——开启踏空即弹出，含 UP/DOWN 调整脚下水平面高度、× 关闭。
+AirWin, AirWinStroke, AirBar, AirClose, AirToggle, AirUp, AirDown = nil, nil, nil, nil, nil, nil, nil
+AirUpHold, AirDownHold = false, false
+function buildAirWin()
+	if AirWin then return end
+	AirWin = new("Frame", { Size = UDim2.new(0, 224, 0, 244), Position = UDim2.new(1, -244, 0, 320),
+		BackgroundColor3 = Color3.fromRGB(13, 15, 23), BackgroundTransparency = 0.06,
+		BorderSizePixel = 0, Visible = false, Active = true, Parent = Gui })
+	saveWinDefault(AirWin)
+	corner(AirWin, 16)
+	AirWinStroke = new("UIStroke", { Color = Modes[1].Accent, Transparency = 0.5, Thickness = 1, Parent = AirWin })
+	AirBar = new("Frame", { Size = UDim2.new(1, 0, 0, 38), BackgroundTransparency = 1, Parent = AirWin })
+	label({ Text = "AIR WALK", Font = Enum.Font.GothamBold, TextSize = 14, TextColor3 = Color3.fromRGB(238, 243, 255),
+		Position = UDim2.new(0, 16, 0, 9), Size = UDim2.new(0, 130, 0, 20), TextXAlignment = Enum.TextXAlignment.Left }, AirBar)
+	AirClose = new("TextButton", { Text = "×", Font = Enum.Font.GothamBold, TextSize = 16,
+		TextColor3 = Color3.fromRGB(255, 108, 118), BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+		BackgroundTransparency = 0.94, BorderSizePixel = 0, AutoButtonColor = false,
+		Position = UDim2.new(1, -36, 0, 7), Size = UDim2.new(0, 26, 0, 26), Parent = AirBar })
+	corner(AirClose, 8)
+	AirClose.MouseButton1Click:Connect(function()
+		if AirWalkTgl then pcall(function() AirWalkTgl.Set(false) end) end
+	end)
+	AirToggle = makeToggle(AirWin, 44, "开关踏空", "锁定脚下水平面行走", false, function(v) setAirWalk(v) end)
+	label({ Text = "UP / DOWN 调整脚下平面高度\n主 UI 可关窗", Font = Enum.Font.Gotham, TextSize = 10,
+		TextColor3 = Color3.fromRGB(132, 141, 163), Position = UDim2.new(0, 16, 0, 96),
+		Size = UDim2.new(1, -32, 0, 40), TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top }, AirWin)
+	AirUp = new("TextButton", { Text = "▲ 升", Font = Enum.Font.GothamBold, TextSize = 13,
+		TextColor3 = Color3.fromRGB(238, 243, 255), BackgroundColor3 = Color3.fromRGB(16, 19, 28),
+		BackgroundTransparency = 0.12, BorderSizePixel = 0, AutoButtonColor = false,
+		Position = UDim2.new(1, -72, 0, 150), Size = UDim2.new(0, 56, 0, 36), Parent = AirWin })
+	corner(AirUp, 10)
+	AirDown = new("TextButton", { Text = "▼ 降", Font = Enum.Font.GothamBold, TextSize = 13,
+		TextColor3 = Color3.fromRGB(238, 243, 255), BackgroundColor3 = Color3.fromRGB(16, 19, 28),
+		BackgroundTransparency = 0.12, BorderSizePixel = 0, AutoButtonColor = false,
+		Position = UDim2.new(1, -72, 0, 192), Size = UDim2.new(0, 56, 0, 36), Parent = AirWin })
+	corner(AirDown, 10)
+	bindHold(AirUp, function(v) AirUpHold = v end)
+	bindHold(AirDown, function(v) AirDownHold = v end)
+	attachDrag(AirWin, AirBar, UserInputService, nil, "WinLock")  -- 标题条作把手；锁定时不可拖
+end
 function setAirWalk(on)
 	State.AirWalk = on
-	if not on then WalkY = nil; return end
+	buildAirWin()
+	if AirWin then AirWin.Visible = on end
+	if not on then AirUpHold, AirDownHold = false, false end
+	-- 主 UI 开关与窗内开关双向同步（静默，不回调避免递归）
+	if AirToggle then pcall(function() AirToggle.Set(on, true) end) end
+	if AirWalkTgl then pcall(function() AirWalkTgl.Set(on, true) end) end
+	if not on then return end
 	if HRP and HRP.Parent then WalkY = HRP.Position.Y end
 end
-RunService:BindToRenderStep("HonAirWalk", 9993, function()
+RunService:BindToRenderStep("HonAirWalk", 9993, function(dt)
 	if HON_SHUTDOWN then return end
 	if not State.AirWalk then return end
 	if not (HRP and HRP.Parent) then return end
 	if not (Humanoid and Humanoid.Parent) then return end
 	if State.Fly then return end
 	if WalkY == nil then WalkY = HRP.Position.Y end
+	-- 小窗 UP/DOWN：实时调整脚下水平面高度（约 40 格/秒）
+	local step = 40 * (dt or 0.016)
+	if AirUpHold then WalkY = WalkY + step end
+	if AirDownHold then WalkY = WalkY - step end
 	local p = HRP.Position
 	pcall(function()
 		HRP.CFrame = CFrame.new(p.X, WalkY, p.Z) * HRP.CFrame.Rotation
@@ -4297,6 +4386,11 @@ function setFly(on)
 		destroyFlyParts()
 		if Humanoid and Humanoid.Parent then
 			Humanoid.PlatformStand = false
+			-- 还原飞行期间被临时置 0 的 WalkSpeed（恢复原生行走 / 加速引擎接管）
+			if FlySavedWalk ~= nil then
+				pcall(function() Humanoid.WalkSpeed = FlySavedWalk end)
+				FlySavedWalk = nil
+			end
 		end
 		if HRP and HRP.Parent then
 			HRP.AssemblyLinearVelocity = Vector3.zero
@@ -4305,7 +4399,22 @@ function setFly(on)
 		return
 	end
 	buildFlyParts()
-	if Humanoid and Humanoid.Parent then Humanoid.PlatformStand = true end
+	if Humanoid and Humanoid.Parent then
+		if UserInputService.TouchEnabled then
+			-- 移动端：必须关掉 PlatformStand，否则 Humanoid.MoveDirection 被清零，
+			-- 罗布乐思官方触屏摇杆（左手摇杆）的输入就传不进来，飞行只能上下不能走。
+			-- 同时把 WalkSpeed 临时置 0，避免人形在没输入时自己走路、也防个别执行器抢速度；
+			-- 横向位移仍由渲染步每帧写 AssemblyLinearVelocity（在物理步之后，稳赢）。
+			if FlySavedWalk == nil then
+				pcall(function() FlySavedWalk = Humanoid.WalkSpeed end)
+			end
+			pcall(function() Humanoid.WalkSpeed = 0 end)
+			Humanoid.PlatformStand = false
+		else
+			-- PC 端保持原手感（PlatformStand 悬浮，键盘 WASD 走 KeysDown 通道）
+			Humanoid.PlatformStand = true
+		end
+	end
 	FlyHoldY = (HRP and HRP.Parent) and HRP.Position.Y or nil
 end
 function setFlyWindow(on)
@@ -5744,6 +5853,11 @@ RunService:BindToRenderStep("HonFlyJump", 9994, function(dt)
 	if HON_SHUTDOWN then return end
 	if not (HRP and HRP.Parent) then return end
 	if State.Fly then
+		-- 移动端飞行：每帧把 WalkSpeed 钉 0，确保人形不自己走路、原生摇杆方向只经我们写的
+		-- AssemblyLinearVelocity 生效（渲染步在物理步之后，稳赢）；关闭时由 setFly 还原。
+		if UserInputService.TouchEnabled and Humanoid and Humanoid.Parent then
+			pcall(function() Humanoid.WalkSpeed = 0 end)
+		end
 		-- v5.48 悬浮模式重写（用户：「把角色控制在原地，就固定在原地，只能前后移动，
 		-- 前后左右移动准确来说就是，上下只能靠屏幕右上角的那两个按钮键来进行动」）：
 		-- ① 水平走原始输入（WASD / 虚拟方向键）——PlatformStand 下 MoveDirection 是失效的，
@@ -6463,7 +6577,7 @@ function windBuild(lib)
 	if not W then return false end
 	WindWin = W
 	-- 再补一层保险（夜脚本同款）：CreateWindow 可能被库吞掉背景参数，建完强制再写一次
-	windSafe("Tag", function() W:Tag({ Title = "v5.61", Color = "ElementBackground" }) end)
+	windSafe("Tag", function() W:Tag({ Title = "v5.63", Color = "ElementBackground" }) end)
 	-- 引擎页
 	local tEng = nil
 	windSafe("Tab:引擎", function() tEng = W:Tab({ Title = "引擎", Icon = "gauge" }) end)
@@ -8019,6 +8133,6 @@ tspawn(function()
 		end)
 	end
 end)
-_pr("[HON SPEED HUB] v5.61 已加载 · 完整文件约 8025 行 · 若你的脚本远大于此行数说明粘贴重复了")
+_pr("[HON SPEED HUB] v5.63 已加载 · 完整文件约 8139 行 · 若你的脚本远大于此行数说明粘贴重复了")
 
 
