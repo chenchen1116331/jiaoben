@@ -1,5 +1,5 @@
 local _pr = (type(print) == "function") and print or (type(warn) == "function" and warn) or function() end
-_pr("[HON SPEED HUB] 载入中 · v5.63 · 若只看到这一行说明文件在中途中断")
+_pr("[HON SPEED HUB] 载入中 · v5.64 · 若只看到这一行说明文件在中途中断")
 local twait  = (type(task) == "table" and task.wait)  or wait  or function() end
 local tspawn = (type(task) == "table" and task.spawn) or spawn or function(f, ...) return f(...) end
 if type(twait) ~= "function" then twait = function() end end
@@ -290,7 +290,7 @@ label({ Text = "HON SPEED HUB", Font = Enum.Font.GothamBold, TextSize = 21,
 	TextColor3 = Color3.fromRGB(238, 243, 255),
 	Position = UDim2.new(0, 36, 0, 16), Size = UDim2.new(0, 200, 0, 24),
 	TextXAlignment = Enum.TextXAlignment.Left }, Header)
-label({ Text = "Universal Hub  ·  W / V / CF  ·  v5.63", Font = Enum.Font.Gotham, TextSize = 11,
+label({ Text = "Universal Hub  ·  W / V / CF  ·  v5.64", Font = Enum.Font.Gotham, TextSize = 11,
 	TextColor3 = Color3.fromRGB(140, 149, 172),
 	Position = UDim2.new(0, 36, 0, 42), Size = UDim2.new(0, 240, 0, 16),
 	TextXAlignment = Enum.TextXAlignment.Left }, Header)
@@ -330,6 +330,11 @@ iconBtn("×", -34, Color3.fromRGB(255, 108, 118), function()
 end)
 -- ---------- 更新公告 ----------
 CHANGELOG = {
+	{ v = "v5.64", t = {
+		"重要修复 · 分身隐身「别人能看见」：v5.62 起的「本体原地透明」方案根本骗不过别人——本地脚本改 BasePart.Transparency 只在本机生效、不会同步给其他玩家，所以别人照样看到你的真身。现按要求退回到真正能骗过别人的版本：真身瞬移万米高空(FAKE_Y=100000)、踩一块隐形平台，本地造一个可见克隆体顶在地面当替身；真身在天上 = 别人在地面既看不见也打不到，替身是本地实例 = 别人看不见、任何攻击也命中不了它。相机跟随替身，你照样在地面正常看 / 正常走（真身在天上走，位移实时镜像到替身）。右上角「隐身 STEALTH」快速键与主 UI 双向同步保持不变（UI 样式不变）",
+		"重要修复 · 隐身后仍被范围攻击打到 / 隐身失效：旧版本体就在地面（只是透明度改成本地），大范围 AoE 照样命中真身、把隐身打没。退回瞬移方案后真身在万米高空，地面范围攻击全部落空；替身是本地实例、不会被任何网络伤害命中——隐身状态下任何东西都打不到，但仍可正常行走和移动",
+		"重要修复 · 飞行开启后身体一直旋转：旧版用 AlignOrientation(OneAttachment) 每帧把身体朝向跟随镜头水平方向，身体随视角不停转（部分执行器上 RigidityEnabled 还会自旋 / 翻滚）。新版开启飞行即记录当时朝向(FlyLockCF)、把身体钉死在这个朝向并清零角速度，全程不再跟随镜头旋转；位移仍由 AssemblyLinearVelocity 驱动，移动不受影响",
+	}},
 	{ v = "v5.60", t = {
 		"重要修复 · 相机穿墙「视角被障碍物挤成第一视角」：旧版每帧把相机摆回「当前到角色的距离」，而那个距离已经被墙/地形碰撞压扁成近身，于是墙体照样把视角挤成贴脸第一人称。v5.60 改用「玩家设定的缩放距离」（优先取 Roblox 自带的 CameraZoomDistance，拿不到退回 12），每帧把相机稳定摆在角色身后该距离处、全程不做任何遮挡检测——所以任意障碍物（墙/地形/锁定视角）都只能让镜头停在墙体外侧、直接穿透看到里面/外面，绝不会被挤压成第一人称；并自己接管滚轮缩放（否则默认相机模块会吃掉滚轮），鼠标转向仍由相机模块照常处理",
 	}},
@@ -2037,28 +2042,15 @@ RunService.Stepped:Connect(function()
 		pcall(hideBodyBlocks, true)
 	end
 end)
-FakeClone, FakeBase, FakeAnchor = nil, nil, nil
-FakeOrigT = {}
--- 隐身时把本体「藏起来」：把所有 BasePart 透明度设为 1（保存原值以便还原），不改碰撞——
--- 本体原地隐身、仍能正常站立 / 行走，相机继续跟随本体，绝不会被甩到万米高空。
-function hideRealBody(on)
-	if not (HRP and HRP.Parent) then return end
-	for _, d in ipairs(HRP.Parent:GetDescendants()) do
-		if d:IsA("BasePart") then
-			if on then
-				if FakeOrigT[d] == nil then FakeOrigT[d] = d.Transparency end
-				d.Transparency = 1
-			else
-				if FakeOrigT[d] ~= nil then d.Transparency = FakeOrigT[d] end
-				FakeOrigT[d] = nil
-			end
-		end
-	end
-end
+FAKE_Y = 100000
+FakeClone, FakePlatform, FakeBase, FakeAnchor = nil, nil, nil, nil
+-- 分身隐身（退回可用版本）：真身瞬移万米高空踩平台（远处看不见也打不到），本地造一个可见克隆体
+-- 顶在地面当替身——克隆体是本地实例，别人看不见、任何攻击也命中不了它；相机跟随替身，
+-- 你照样在地面正常看、正常走。真身在天上正常走，位移实时同步到替身。
 function cleanupFake()
 	if FakeClone then pcall(function() FakeClone:Destroy() end) end
-	FakeClone, FakeBase, FakeAnchor = nil, nil, nil
-	FakeOrigT = {}
+	if FakePlatform then pcall(function() FakePlatform:Destroy() end) end
+	FakeClone, FakePlatform, FakeBase, FakeAnchor = nil, nil, nil, nil
 end
 -- 分身隐身快速键：屏幕右上角独立按钮（非可缩小小窗）。点击开 / 关，并与主 UI「分身隐身 FAKE CHAR」
 -- 双向同步（点这里关掉，主 UI 开关也同步关闭；主 UI 关掉，这里也回到「隐身 STEALTH」）。
@@ -2100,10 +2092,15 @@ function setFakeChar(on)
 	-- 与主 UI 开关双向同步（静默，不回调避免递归）
 	if FakeTgl then pcall(function() FakeTgl.Set(on, true) end) end
 	if not on then
-		-- 还原本体（取消隐藏）
-		pcall(hideRealBody, false)
+		-- 关隐身：真身从天上拉回替身所在的地面位置，销毁替身与平台，相机交还给真身
+		if FakeClone and FakeClone.Parent and HRP and HRP.Parent then
+			pcall(function() HRP.CFrame = FakeClone:GetPivot() end)
+		end
 		cleanupFake()
 		lastTransp = -1
+		if Humanoid and Humanoid.Parent then
+			pcall(function() Cam.CameraSubject = Humanoid end)
+		end
 		return
 	end
 	if not (HRP and HRP.Parent) or not Humanoid then
@@ -2112,17 +2109,26 @@ function setFakeChar(on)
 		if FakeTgl then pcall(function() FakeTgl.Set(false, true) end) end
 		return
 	end
-	-- 隐身机制：本体原地「隐身」（透明），相机仍跟随本体——不再飞到万米高空；
-	-- 另造一个可见克隆体在脚下，每帧同步本体位移，作为替身（你看到 / 别人看到的都是它）。
+	-- 隐身机制（退回可用版本）：真身瞬移万米高空踩平台，本地可见替身顶在地面，相机切到替身。
+	-- 真身在天上 → 别人在地面既看不见也打不到；替身是本地实例 → 别人看不见、任何攻击命中不了它。
 	local hip = (Humanoid.HipHeight > 0) and Humanoid.HipHeight or 2.5
-	FakeAnchor = HRP.Position
+	FakeAnchor = Vector3.new(HRP.Position.X, FAKE_Y, HRP.Position.Z)
 	FakeBase   = HRP.Position - Vector3.new(0, hip, 0)
+	-- 真身脚下的天空平台：让真身在天上能站稳、可正常行走（行走位移实时同步到替身）
+	FakePlatform = Instance.new("Part")
+	FakePlatform.Name = "HonFakePlatform"
+	FakePlatform.Size = Vector3.new(600, 10, 600)
+	FakePlatform.Anchored = true
+	FakePlatform.CanCollide = true
+	FakePlatform.Transparency = 1
+	FakePlatform.Position = FakeAnchor - Vector3.new(0, 5, 0)
+	FakePlatform.Parent = Workspace
 	FakeClone = HRP.Parent:Clone()
 	FakeClone.Name = "HonFakeClone"
 	FakeClone.Parent = Workspace
 	for _, d in ipairs(FakeClone:GetDescendants()) do
 		if d:IsA("BasePart") then
-			d.Transparency = 0
+			d.Transparency = 0.45
 			d.CanCollide = false
 			d.CastShadow = false
 		elseif d:IsA("Script") or d:IsA("LocalScript") then
@@ -2131,8 +2137,11 @@ function setFakeChar(on)
 	end
 	local fhrp = FakeClone:FindFirstChild("HumanoidRootPart")
 	if fhrp then fhrp.Anchored = true end
-	pcall(hideRealBody, true)
-	if fhrp then fhrp.CFrame = CFrame.new(FakeBase) * (HRP.CFrame - HRP.Position) end
+	local fh = FakeClone:FindFirstChildOfClass("Humanoid")
+	if fh then pcall(function() Cam.CameraSubject = fh end) end
+	-- 真身瞬移上天（Stepped 会自动把真身透明度置 1，你在天上那具看不见，只看得见地面替身）
+	pcall(function() HRP.CFrame = CFrame.new(FakeAnchor + Vector3.new(0, hip + 1, 0)) end)
+	if fhrp then pcall(function() fhrp.CFrame = CFrame.new(FakeBase) * (HRP.CFrame - HRP.Position) end) end
 	lastTransp = -1
 end
 pcall(function() RunService:UnbindFromRenderStep("HonFakeSync") end)
@@ -2142,9 +2151,13 @@ RunService:BindToRenderStep("HonFakeSync", 1999, function()
 	if not (FakeClone and FakeClone.Parent) or not (HRP and HRP.Parent) then return end
 	local fhrp = FakeClone:FindFirstChild("HumanoidRootPart")
 	if not fhrp then return end
-	-- 克隆体镜像本体的水平位移与朝向（本体已原地隐身，替身跟着走；不再有万米高空拉回）
+	-- 真身若被外力拉下天空，拉回锚点（防坠 / 防被拽回地面）
+	if HRP.Position.Y < FAKE_Y - 300 then
+		pcall(function() HRP.CFrame = CFrame.new(FakeAnchor + Vector3.new(0, 3, 0)) end)
+	end
+	-- 替身镜像真身的水平位移与朝向（真身在天上走，替身在地面同步走）
 	local rel = HRP.Position - FakeAnchor
-	fhrp.CFrame = CFrame.new(FakeBase + rel) * (HRP.CFrame - HRP.Position)
+	pcall(function() fhrp.CFrame = CFrame.new(FakeBase + rel) * (HRP.CFrame - HRP.Position) end)
 end)
 local LightBackup = nil
 function setFullbright(on)
@@ -4352,7 +4365,7 @@ RunService:BindToRenderStep("HonPadMove", 10000, function()
 		Humanoid:Move(d, false)
 	end
 end)
-FlyAtt, FlyVel, FlyOrient = nil, nil, nil
+FlyAtt, FlyVel, FlyOrient, FlyLockCF = nil, nil, nil, nil
 function buildFlyParts()
 	if not HRP or not HRP.Parent then return end
 	if FlyAtt and FlyAtt.Parent then return end
@@ -4416,6 +4429,8 @@ function setFly(on)
 		end
 	end
 	FlyHoldY = (HRP and HRP.Parent) and HRP.Position.Y or nil
+	-- 记录开启瞬间的朝向：整个飞行期间身体「钉死」在这个朝向，不再跟随镜头翻滚/自旋
+	FlyLockCF = (HRP and HRP.Parent) and (HRP.CFrame - HRP.Position) or CFrame.new()
 end
 function setFlyWindow(on)
 	resetWinDefault(FlyWin)  -- 关闭重开恢复默认位置（去掉位置记忆）
@@ -4747,6 +4762,8 @@ function bindCharacter(char)
 		cleanupFake()
 		State.FakeChar = false
 		if FakeTgl then FakeTgl.Set(false, true) end
+		-- 相机主体可能还指向被销毁的替身，重生后交还给新角色，避免视角卡死
+		if Humanoid and Humanoid.Parent then pcall(function() Cam.CameraSubject = Humanoid end) end
 	end
 	Character = char
 	Humanoid = char:FindFirstChildOfClass("Humanoid")
@@ -5879,13 +5896,15 @@ RunService:BindToRenderStep("HonFlyJump", 9994, function(dt)
 			vy = math.clamp((FlyHoldY - HRP.Position.Y) * 8, -spd, spd)
 		end
 		pcall(function() HRP.AssemblyLinearVelocity = Vector3.new(vx, vy, vz) end)
-		-- 朝向跟随镜头水平朝向（不含俯仰——不能一边飞一边抬头望天）
+		-- 朝向锁定：开启飞行即把身体「钉死」在当时的朝向，不再跟随镜头旋转（用户：开启后身体不要一直转）
 		if FlyOrient then
-			local look = horiz(Cam.CFrame.LookVector)
-			if look and look.Magnitude > 0.01 then
-				pcall(function() FlyOrient.CFrame = CFrame.lookAt(HRP.Position, HRP.Position + look) end)
-			end
+			pcall(function() FlyOrient.CFrame = CFrame.new(HRP.Position) * FlyLockCF end)
 		end
+		-- 兜底：无论执行器是否支持 AlignOrientation，每帧硬锁朝向 + 清角速度，确保身体绝不自旋 / 翻滚
+		pcall(function()
+			HRP.CFrame = CFrame.new(HRP.Position) * FlyLockCF
+			HRP.AssemblyAngularVelocity = Vector3.zero
+		end)
 	end
 	if State.AutoJump and Humanoid and Humanoid.Parent then
 		if Humanoid.FloorMaterial ~= Enum.Material.Air and not State.Fly then
@@ -6577,7 +6596,7 @@ function windBuild(lib)
 	if not W then return false end
 	WindWin = W
 	-- 再补一层保险（夜脚本同款）：CreateWindow 可能被库吞掉背景参数，建完强制再写一次
-	windSafe("Tag", function() W:Tag({ Title = "v5.63", Color = "ElementBackground" }) end)
+	windSafe("Tag", function() W:Tag({ Title = "v5.64", Color = "ElementBackground" }) end)
 	-- 引擎页
 	local tEng = nil
 	windSafe("Tab:引擎", function() tEng = W:Tab({ Title = "引擎", Icon = "gauge" }) end)
@@ -8133,6 +8152,6 @@ tspawn(function()
 		end)
 	end
 end)
-_pr("[HON SPEED HUB] v5.63 已加载 · 完整文件约 8139 行 · 若你的脚本远大于此行数说明粘贴重复了")
+_pr("[HON SPEED HUB] v5.64 已加载 · 完整文件约 8158 行 · 若你的脚本远大于此行数说明粘贴重复了")
 
 
