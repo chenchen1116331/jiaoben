@@ -1,5 +1,5 @@
 local _pr = (type(print) == "function") and print or (type(warn) == "function" and warn) or function() end
-_pr("[HON SPEED HUB] 载入中 · v5.58 · 若只看到这一行说明文件在中途中断")
+_pr("[HON SPEED HUB] 载入中 · v5.61 · 若只看到这一行说明文件在中途中断")
 local twait  = (type(task) == "table" and task.wait)  or wait  or function() end
 local tspawn = (type(task) == "table" and task.spawn) or spawn or function(f, ...) return f(...) end
 if type(twait) ~= "function" then twait = function() end end
@@ -86,7 +86,7 @@ local State = {
 	JumpPower = DEFAULT_JUMP, JumpEnabled = false, JumpLocked = false,
 	InfJump = false, Noclip = false, AntiAFK = false, HUD = false,
 	Fly = false, FlySpeed = 60,
-	TouchKeys = false, TouchLocked = false,
+	TouchKeys = false, TouchLocked = false, WinLock = false,
 	PadKeys = false, PadSize = 100,
 	EspPlayer = false, EspNPC = false, EspInteract = false,
 	InstantInteract = false, EspDepth = true, InputAnim = true, EspHpBarBg = true,
@@ -98,7 +98,7 @@ local State = {
 	TPLoop = false, TPInterval = 0, TPOffsetY = 3,
 	MoveGameUI = false, UILayoutLocked = false,
 	Stealth = false, StealthHideGame = false,
-	CamNoclip = false,
+	CamNoclip = false, AirWalk = false,
 	BlackHole = false, BlackHoleForce = 60, HeroFly = false, Car = false,
 	EngineOutline = true, Trail = false, CloneArmy = false, OrbitFx = false,
 	HeadRide = false, Shake = false, SpinCam = false, Magnet = false,
@@ -108,6 +108,73 @@ local State = {
 	CuteFxExtra = true,        -- 可爱风额外特效（爱心 + 泡泡）随樱花一起飘
 	StyleFxPanelOnly = false,  -- 屏幕特效仅面板开启时显示（false = 全程显示）
 }
+
+-- ===== 小窗：默认位置 + 统一拖拽 =====
+-- WinDefault：记录每个小窗创建时的初始位置；关闭重开时恢复到此默认位置（去掉「位置记忆」）。
+WinDefault = {}
+function saveWinDefault(win)
+	if not (win and win.Position) then return end
+	local p = win.Position
+	WinDefault[win] = UDim2.new(p.X.Scale, p.X.Offset, p.Y.Scale, p.Y.Offset)
+end
+function resetWinDefault(win)
+	if win and WinDefault[win] then win.Position = WinDefault[win] end
+end
+-- winClamp：把小窗位置钳制在屏幕内，至少留 minV 像素可见——杜绝「拖出屏幕够不到」。
+-- 用 AbsoluteSize 取真实屏幕尺寸与窗体尺寸（取不到退回 1280×720 / 224×132），
+-- 钳制后再按原 Scale 反算回 Offset，兼容 Scale 定位（如右上角 Scale=1）与纯 Offset 定位。
+function winClamp(p, win)
+	if not p then return p end
+	-- 屏幕尺寸优先取相机渲染分辨率（= 真机屏幕），其次 Gui.AbsoluteSize，再退回 1280×720
+	local scX, scY = 1280, 720
+	local vs = (Cam and Cam.ViewportSize)
+	if vs then scX, scY = vs.X, vs.Y
+	elseif Gui and Gui.AbsoluteSize then scX, scY = Gui.AbsoluteSize.X, Gui.AbsoluteSize.Y end
+	local wW, wH = 224, 132
+	if win and win.AbsoluteSize then wW, wH = win.AbsoluteSize.X, win.AbsoluteSize.Y end
+	local minV = 36
+	local ax = p.X.Scale * scX + p.X.Offset
+	local ay = p.Y.Scale * scY + p.Y.Offset
+	local axMin, axMax = minV - wW, scX - minV
+	local ayMin, ayMax = minV - wH, scY - minV
+	if axMin > axMax then ax = (scX - wW) / 2 else ax = math.max(axMin, math.min(axMax, ax)) end
+	if ayMin > ayMax then ay = (scY - wH) / 2 else ay = math.max(ayMin, math.min(ayMax, ay)) end
+	return UDim2.new(p.X.Scale, ax - p.X.Scale * scX, p.Y.Scale, ay - p.Y.Scale * scY)
+end
+-- attachDrag：统一「可拖拽」接线。
+--   target：被移动的对象；handle：接收按下事件的把手（多数情况 target==handle）
+--   src：InputChanged/InputEnded 的事件源（自身 obj 或 UserInputService）
+--   onMove(p)：移动时回调（可用于记位置，无记忆时传 nil）
+--   lockKey：锁定时禁止拖拽的 State 字段（小窗用 "WinLock"，触屏控件用 "TouchLocked"）
+-- 多指修复：只跟踪「发起拖拽的那个指针」(dragInput)，其余指针（双指滑屏 / 第二指乱按）不会把窗拽走
+function attachDrag(target, handle, src, onMove, lockKey)
+	lockKey = lockKey or "TouchLocked"
+	local dragInput, dragType, startPos, startMouse = nil, nil, nil, nil
+	handle.InputBegan:Connect(function(i)
+		if i.UserInputType ~= Enum.UserInputType.MouseButton1 and i.UserInputType ~= Enum.UserInputType.Touch then return end
+		if State[lockKey] then return end
+		if dragInput then return end  -- 同一把手已有指针在拖，忽略第二根手指（修复双指把窗滑出屏幕）
+		dragInput, dragType, startPos, startMouse = i, i.UserInputType, target.Position, i.Position
+	end)
+	src.InputChanged:Connect(function(i)
+		if not dragInput then return end
+		local ok = (dragType == Enum.UserInputType.Touch and i == dragInput)
+			or (dragType == Enum.UserInputType.MouseButton1 and i.UserInputType == Enum.UserInputType.MouseMovement)
+		if ok then
+			local d = i.Position - startMouse
+			local np = UDim2.new(startPos.X.Scale, startPos.X.Offset + d.X, startPos.Y.Scale, startPos.Y.Offset + d.Y)
+			target.Position = winClamp(np, target)  -- 钳制在屏幕内，拖不出界
+			if onMove then onMove(target.Position) end
+		end
+	end)
+	src.InputEnded:Connect(function(i)
+		if not dragInput then return end
+		local ok = (dragType == Enum.UserInputType.Touch and i == dragInput)
+			or (dragType == Enum.UserInputType.MouseButton1 and i.UserInputType == Enum.UserInputType.MouseButton1)
+		if ok then dragInput, dragType, startPos, startMouse = nil, nil, nil, nil end
+	end)
+end
+
 function bindClick(btn, tag, fn)
 	if not btn then return end
 	local last = 0
@@ -223,7 +290,7 @@ label({ Text = "HON SPEED HUB", Font = Enum.Font.GothamBold, TextSize = 21,
 	TextColor3 = Color3.fromRGB(238, 243, 255),
 	Position = UDim2.new(0, 36, 0, 16), Size = UDim2.new(0, 200, 0, 24),
 	TextXAlignment = Enum.TextXAlignment.Left }, Header)
-label({ Text = "Universal Hub  ·  W / V / CF  ·  v5.58", Font = Enum.Font.Gotham, TextSize = 11,
+label({ Text = "Universal Hub  ·  W / V / CF  ·  v5.61", Font = Enum.Font.Gotham, TextSize = 11,
 	TextColor3 = Color3.fromRGB(140, 149, 172),
 	Position = UDim2.new(0, 36, 0, 42), Size = UDim2.new(0, 240, 0, 16),
 	TextXAlignment = Enum.TextXAlignment.Left }, Header)
@@ -263,9 +330,21 @@ iconBtn("×", -34, Color3.fromRGB(255, 108, 118), function()
 end)
 -- ---------- 更新公告 ----------
 CHANGELOG = {
+	{ v = "v5.60", t = {
+		"重要修复 · 相机穿墙「视角被障碍物挤成第一视角」：旧版每帧把相机摆回「当前到角色的距离」，而那个距离已经被墙/地形碰撞压扁成近身，于是墙体照样把视角挤成贴脸第一人称。v5.60 改用「玩家设定的缩放距离」（优先取 Roblox 自带的 CameraZoomDistance，拿不到退回 12），每帧把相机稳定摆在角色身后该距离处、全程不做任何遮挡检测——所以任意障碍物（墙/地形/锁定视角）都只能让镜头停在墙体外侧、直接穿透看到里面/外面，绝不会被挤压成第一人称；并自己接管滚轮缩放（否则默认相机模块会吃掉滚轮），鼠标转向仍由相机模块照常处理",
+	}},
+	{ v = "v5.59", t = {
+		"功能新增 · 辅助页「踏空行走 AIR WALK」：开启后锁定当前高度作为「行走平面」，角色踩在看不见的玻璃平面上水平自由行走而不坠落——每帧把 HumanoidRootPart 的 Y 锁回锁定的 WalkY、竖直速度清零抵消重力，水平移动完全正常（PlatformStand 保持 false 才能走）；飞行开启时不接管避免两套位移打架；角色重生时 WalkY 自动重置到新出生高度",
+	}},
+	{ v = "v5.61", t = {
+		"修正 · 固定小窗挂错对象：v5.58 误把「右上角固定小窗」加到了隐藏脚本的「隐身录屏」（带 REC），本次纠正——隐身录屏保持原样（旧版 REC 悬浮钮，不改动），而工具页的「分身隐身 FAKE CHAR」才应开启即在右上角弹固定小窗「FAKE CHAR」（与飞行小窗同款样式、固定在右上角、不可最小化），点 × 或「开关分身」即关闭、窗随分身隐身一起收起；关闭分身隐身时小窗同步收起。内部「开关分身」开关建好后立即移出 ToggleRegistry，避免被「全部关闭」误伤",
+		"重要修复 · 小窗拖拽：① 多指 / 双指把窗拽出屏幕（左手按住窗、右手在别处滑动屏幕，窗跟着滑走直到够不到）——现只跟踪「发起拖拽的那根手指」(dragInput)，其余手指的滑动不再影响该窗；② 单指用力拖也加边界钳制 winClamp，至少留 36px 在屏幕内，拖不出界",
+		"功能新增 · 触屏页「固定小窗 LOCK WIN」：一键锁死所有小窗（加速 / 飞行 / 标点 / 倒计时 / 分身等）不可拖动；与「锁定位置」（数字键 + 方向键）互不干扰",
+		"改动 · 去掉小窗位置记忆：此前关闭再开、最小化 / 展开会恢复到关闭前的位置；现改为关闭重开一律恢复到创建时的默认位置（resetWinDefault），不再把窗记住拖到哪",
+	}},
 	{ v = "v5.58", t = {
 		"新增 · 辅助页「相机穿墙 CAMERA NOCLIP」：开启后镜头不被墙 / 地形遮挡，可看穿墙体（每帧在相机模块摆好镜头之后，把相机沿当前朝向推回当前缩放距离，但不做任何遮挡射线检测，鼠标转向照常、只是不再被拉近；关闭即解绑，不改动相机类型 / 状态）",
-		"改动 · 隐身录屏改为开启即在右上角弹出固定小窗「隐身 STEALTH」（与飞行小窗同款样式、固定在右上角、不可最小化），点 × 或「开关隐身」即关闭、窗随隐身一起收起；关闭隐身时小窗同步收起。内部「开关隐身」开关建好后立即移出 ToggleRegistry，避免被「隐身冻结 / 全部关闭」误伤",
+		"修正 · 分身隐身 FAKE CHAR（工具页）开启即在右上角弹出固定小窗「FAKE CHAR」（与飞行小窗同款样式、固定在右上角、不可最小化），点 × 或「开关分身」即关闭、窗随分身隐身一起收起；隐藏脚本的「隐身录屏」（带 REC）保持原样——它的右上角 REC 悬浮钮，不做任何改动",
 	}},
 	{ v = "v5.57", t = {
 		"重要修复 · 飞行「只能上下、不能前后左右」：根因是飞行水平移动的方向取自 keyDir()，而 keyDir 只靠 UserInputService:IsKeyDown 判断 WASD 是否按下——飞行 / PlatformStand 状态下个别执行器 IsKeyDown 不可靠地返回 false，WASD 判定全失败、水平方向恒为 0，于是只剩右上角 UP/DOWN 按钮能驱动的上下移动。v5.57 用 InputBegan / InputEnded 维护一份可靠的「按下按键集合」，与 IsKeyDown 取并集，所有依赖该判定的移动（飞行水平、普通行走方向）都一并变稳；并防卡键（松开时清状态）",
@@ -668,7 +747,7 @@ do
 end
 local PageHost = new("Frame", { Name = "Content", Size = UDim2.new(0, 464, 0, 336), Position = UDim2.new(0, 180, 0, 84),
 	BackgroundTransparency = 1, BorderSizePixel = 0, ClipsDescendants = true, Parent = Main })
-local PAGE_H = { 620, 440, 500, 680, 660, 2040, 560, 660, 1260, 1000, 1080 }
+local PAGE_H = { 620, 488, 500, 680, 660, 2040, 560, 660, 1260, 1000, 1080 }
 PageList = {}
 local function mkPage(i, visible)
 	return new("ScrollingFrame", { Name = "Page" .. tostring(i),
@@ -896,7 +975,7 @@ end)
 SpeedWinTgl = makeToggle(PageEng, 552, "加速小窗 SPEED WIN", "屏幕小窗 · 切模式 / 调速度，把手可拖动", false, function(v)
 	speedWinBuild()
 	if SpeedWin then
-		if v and WinPos.SpeedWin then SpeedWin.Position = WinPos.SpeedWin end
+		resetWinDefault(SpeedWin)  -- 关闭重开恢复默认位置（去掉位置记忆）
 		SpeedWin.Visible = v
 	end
 	if v then speedWinRefresh() end
@@ -922,6 +1001,10 @@ end)
 CamNoclipTgl = makeToggle(PageAssist, 366, "相机穿墙 CAMERA NOCLIP", "镜头不被墙/地形遮挡，可看穿墙体", false, function(v)
 	State.CamNoclip = v
 	setCamNoclip(v)
+end)
+AirWalkTgl = makeToggle(PageAssist, 414, "踏空行走 AIR WALK", "锁定水平面 · 在空中平面行走不坠落", false, function(v)
+	State.AirWalk = v
+	setAirWalk(v)
 end)
 label({ Text = "视 觉 增 强", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Color3.fromRGB(120, 129, 152), Size = UDim2.new(1, 0, 0, 18),
@@ -994,6 +1077,9 @@ end, false)
 TouchLockTgl = makeToggle(PageTouch, 174, "锁定位置", "数字键 + 方向键一起锁死", false, function(v)
 	State.TouchLocked = v
 	updateTouchLock()
+end)
+WinLockTgl = makeToggle(PageTouch, 222, "固定小窗 LOCK WIN", "所有小窗锁死不可拖动（加速/飞行/标点/倒计时/分身等）", false, function(v)
+	State.WinLock = v
 end)
 label({ Text = "方向键中心格长按 0.3 秒后可整块拖动；大小滑条实时缩放",
 	Font = Enum.Font.Gotham, TextSize = 10, TextColor3 = Color3.fromRGB(132, 141, 163),
@@ -1127,6 +1213,7 @@ function cdBuild()
 		Size = UDim2.new(0, 176, 0, 126), Position = UDim2.new(0.5, -88, 0, 96),
 		BackgroundColor3 = Color3.fromRGB(16, 19, 28), BackgroundTransparency = 0.08,
 		BorderSizePixel = 0, Visible = false, Parent = Gui })
+	saveWinDefault(CdFrame)
 	corner(CdFrame, 12)
 	new("UIStroke", { Color = Mode().Accent, Transparency = 0.5, Thickness = 1, Parent = CdFrame })
 	CdTitleL = label({ Text = "倒计时 COUNTDOWN", Font = Enum.Font.GothamBold, TextSize = 10,
@@ -1171,6 +1258,7 @@ function cdBuild()
 		Size = UDim2.new(0, 150, 0, 40), Position = UDim2.new(0.5, -75, 0, 8),
 		BackgroundColor3 = Color3.fromRGB(16, 19, 28), BackgroundTransparency = 0.08,
 		BorderSizePixel = 0, Visible = false, Parent = Gui })
+	saveWinDefault(CdMini)
 	corner(CdMini, 10)
 	new("UIStroke", { Color = Mode().Accent, Transparency = 0.5, Thickness = 1, Parent = CdMini })
 	CdMiniL = new("TextButton", { Text = "00:00", Font = Enum.Font.GothamBold, TextSize = 22,
@@ -1188,35 +1276,16 @@ function cdBuild()
 	-- 小 UI 随时可挪：窗体 / 标题条当把手，时间大字不再可拖动（固定在窗内）
 	local function cdDragHook(o, onMove)
 		if not o then return end
-		local dragging, startMouse, basePos, moved = false, nil, nil, 0
-		o.InputBegan:Connect(function(i)
-			if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then
-				dragging, startMouse, basePos, moved = true, i.Position, o.Position, 0
-			end
-		end)
-		UserInputService.InputChanged:Connect(function(i)
-			if dragging and (i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseMovement) then
-				local d = i.Position - startMouse
-				moved = math.max(moved, math.abs(d.X) + math.abs(d.Y))
-				o.Position = UDim2.new(basePos.X.Scale, basePos.X.Offset + d.X,
-					basePos.Y.Scale, basePos.Y.Offset + d.Y)
-				if onMove then onMove(o.Position) end
-			end
-		end)
-		UserInputService.InputEnded:Connect(function(i)
-			if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then
-				dragging = false
-			end
-		end)
+		attachDrag(o, o, UserInputService, onMove, "WinLock")
 	end
-	cdDragHook(CdFrame, function(p) WinPos.CdFrame = p end)
-	cdDragHook(CdTitleL, function(p) WinPos.CdFrame = p end)
-	cdDragHook(CdMini, function(p) WinPos.CdMini = p end)   -- 最小化 pill 也能随手挪
+	cdDragHook(CdFrame)
+	cdDragHook(CdTitleL)
+	cdDragHook(CdMini)   -- 最小化 pill 也能随手挪
 end
 function cdSetMini(on)
 	CdMinimized = on and true or false
-	if CdFrame then CdFrame.Visible = not on; if (not on) and WinPos.CdFrame then CdFrame.Position = WinPos.CdFrame end end
-	if CdMini then CdMini.Visible = on; if on and WinPos.CdMini then CdMini.Position = WinPos.CdMini end end
+	if CdFrame then CdFrame.Visible = not on; if (not on) then resetWinDefault(CdFrame) end end
+	if CdMini then CdMini.Visible = on; if on then resetWinDefault(CdMini) end end
 	cdPaint()
 end
 function cdPaint()
@@ -1296,6 +1365,7 @@ function speedWinBuild()
 		Size = UDim2.new(0, 176, 0, 148), Position = UDim2.new(0, 14, 0, 96),
 		BackgroundColor3 = Color3.fromRGB(16, 19, 28), BackgroundTransparency = 0.08,
 		BorderSizePixel = 0, Visible = false, Parent = Gui })
+	saveWinDefault(SpeedWin)
 	corner(SpeedWin, 12)
 	SpeedWinStroke = new("UIStroke", { Color = Mode().Accent, Transparency = 0.5, Thickness = 1, Parent = SpeedWin })
 	SpeedWinTitleL = label({ Text = "加速 SPEED", Font = Enum.Font.GothamBold, TextSize = 10,
@@ -1351,27 +1421,9 @@ function speedWinBuild()
 	-- 小窗随时可挪：只有窗体 / 标题条当把手，数字区不再可拖动（数字固定在窗内不漂移）
 	local function swDragHook(o, onMove)
 		if not o then return end
-		local dragging, startMouse, basePos = false, nil, nil
-		o.InputBegan:Connect(function(i)
-			if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then
-				dragging, startMouse, basePos = true, i.Position, o.Position
-			end
-		end)
-		UserInputService.InputChanged:Connect(function(i)
-			if dragging and (i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseMovement) then
-				local d = i.Position - startMouse
-				o.Position = UDim2.new(basePos.X.Scale, basePos.X.Offset + d.X,
-					basePos.Y.Scale, basePos.Y.Offset + d.Y)
-				if onMove then onMove(o.Position) end
-			end
-		end)
-		UserInputService.InputEnded:Connect(function(i)
-			if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then
-				dragging = false
-			end
-		end)
+		attachDrag(o, o, UserInputService, onMove, "WinLock")
 	end
-	swDragHook(SpeedWin, function(p) WinPos.SpeedWin = p end)
+	swDragHook(SpeedWin)
 	winMinSetup(SpeedWin, SpeedWinMinBtn, { SpeedWinTitleL, SpeedWinCloseBtn })
 end
 function speedWinStep(d)
@@ -1401,11 +1453,11 @@ CdTgl = makeToggle(PageTool, 152, "倒计时器 COUNTDOWN", "屏幕小 UI · 输
 	State.Countdown = v
 	cdBuild()
 	if v then
-		-- 最小化过就回顶部中间的小 pill，否则给完整小窗（都恢复到关闭前位置）
+		-- 最小化过就回顶部中间的小 pill，否则给完整小窗（关闭重开恢复默认位置，去掉记忆）
 		if CdMinimized then
-			if CdMini then CdMini.Visible = true; if WinPos.CdMini then CdMini.Position = WinPos.CdMini end end
+			if CdMini then CdMini.Visible = true; resetWinDefault(CdMini) end
 		elseif CdFrame then
-			CdFrame.Visible = true; if WinPos.CdFrame then CdFrame.Position = WinPos.CdFrame end
+			CdFrame.Visible = true; resetWinDefault(CdFrame)
 		end
 		cdPaint()
 	else
@@ -1784,25 +1836,7 @@ end)
 -- wpWinRefresh() 独立渲染进小窗列表，不碰页面 wpRefresh（两边数据同一份 Waypoints）
 function honDragHook(o, onMove)
 	if not o then return end
-	local dragging, startMouse, basePos = false, nil, nil
-	o.InputBegan:Connect(function(i)
-		if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then
-			dragging, startMouse, basePos = true, i.Position, o.Position
-		end
-	end)
-	UserInputService.InputChanged:Connect(function(i)
-		if dragging and (i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseMovement) then
-			local d = i.Position - startMouse
-			o.Position = UDim2.new(basePos.X.Scale, basePos.X.Offset + d.X,
-				basePos.Y.Scale, basePos.Y.Offset + d.Y)
-			if onMove then onMove(o.Position) end
-		end
-	end)
-	UserInputService.InputEnded:Connect(function(i)
-		if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then
-			dragging = false
-		end
-	end)
+	attachDrag(o, o, UserInputService, onMove, "WinLock")
 end
 function wpWinBuild()
 	if WPWin then return end
@@ -1810,6 +1844,7 @@ function wpWinBuild()
 		Size = UDim2.new(0, 176, 0, 228), Position = UDim2.new(0, 14, 0, 256),
 		BackgroundColor3 = Color3.fromRGB(16, 19, 28), BackgroundTransparency = 0.08,
 		BorderSizePixel = 0, Visible = false, Parent = Gui })
+	saveWinDefault(WPWin)
 	corner(WPWin, 12)
 	WPWinStroke = new("UIStroke", { Color = Color3.fromRGB(150, 220, 255), Transparency = 0.5, Thickness = 1, Parent = WPWin })
 	WPWinTitleL = label({ Text = "标点 WP", Font = Enum.Font.GothamBold, TextSize = 10,
@@ -1862,7 +1897,7 @@ function wpWinBuild()
 		wpSave(); wpRefresh()   -- wpRefresh 尾部会顺带刷小窗
 		if notify then notify("已保存标点：" .. nm .. "（共 " .. #Waypoints .. " 个）") end
 	end)
-	honDragHook(WPWin, function(p) WinPos.WPWin = p end)
+	honDragHook(WPWin)  -- 去掉位置记忆：关闭重开恢复默认，拖动不再回写 WinPos
 	winMinSetup(WPWin, WPWinMinBtn, { WPWinTitleL, WPWinCloseBtn })
 end
 function wpWinRefresh()
@@ -1907,7 +1942,7 @@ end
 WPWinTgl = makeToggle(PageTp, 1044, "标点小窗 WP WIN", "屏幕小窗 · 看坐标 / 存标点 / ★ 选中传送", false, function(v)
 	wpWinBuild()
 	if WPWin then
-		if v and WinPos.WPWin then WPWin.Position = WinPos.WPWin end
+		resetWinDefault(WPWin)  -- 关闭重开恢复默认位置（去掉位置记忆）
 		WPWin.Visible = v
 	end
 	if v then wpWinRefresh() end
@@ -1995,13 +2030,50 @@ RunService.Stepped:Connect(function()
 end)
 FAKE_Y = 100000
 FakeClone, FakePlatform, FakeBase, FakeAnchor = nil, nil, nil, nil
+FakeWin, FakeWinToggle = nil, nil
 function cleanupFake()
 	if FakeClone then pcall(function() FakeClone:Destroy() end) end
 	if FakePlatform then pcall(function() FakePlatform:Destroy() end) end
 	FakeClone, FakePlatform, FakeBase, FakeAnchor = nil, nil, nil, nil
 end
+-- 分身隐身小窗（右上角固定）——开启分身隐身即在右上角弹出，固定在右上角、不可最小化；
+-- 点 × 或「开关分身」即关闭、窗随分身隐身一起收起；关闭分身隐身时小窗同步收起。
+-- 内部「开关分身」开关建好后立即移出 ToggleRegistry，避免被「全部关闭」误伤。
+function buildFakeWin()
+	if FakeWin then return end
+	local w = new("Frame", { Name = "HonFakeWin", Size = UDim2.new(0, 224, 0, 132),
+		Position = UDim2.new(1, -244, 0, 320),
+		BackgroundColor3 = Color3.fromRGB(13, 15, 23), BackgroundTransparency = 0.06,
+		BorderSizePixel = 0, Visible = false, Active = true, Parent = Gui })
+	corner(w, 16)
+	new("UIStroke", { Color = Modes[1].Accent, Transparency = 0.5, Thickness = 1, Parent = w })
+	local bar = new("Frame", { Size = UDim2.new(1, 0, 0, 38), BackgroundTransparency = 1, Parent = w })
+	label({ Text = "FAKE CHAR", Font = Enum.Font.GothamBold, TextSize = 14, TextColor3 = Color3.fromRGB(238, 243, 255),
+		Position = UDim2.new(0, 16, 0, 9), Size = UDim2.new(0, 130, 0, 20), TextXAlignment = Enum.TextXAlignment.Left }, bar)
+	local close = new("TextButton", { Text = "×", Font = Enum.Font.GothamBold, TextSize = 16,
+		TextColor3 = Color3.fromRGB(255, 108, 118), BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+		BackgroundTransparency = 0.94, BorderSizePixel = 0, AutoButtonColor = false,
+		Position = UDim2.new(1, -36, 0, 7), Size = UDim2.new(0, 26, 0, 26), Parent = bar })
+	corner(close, 8)
+	close.MouseButton1Click:Connect(function() setFakeChar(false) end)
+	local FakeToggle = makeToggle(w, 48, "开关分身", "关闭即收起本窗", false, function(v) setFakeChar(v) end)
+	for i = #ToggleRegistry, 1, -1 do
+		if ToggleRegistry[i] == FakeToggle then table.remove(ToggleRegistry, i) break end
+	end
+	label({ Text = "分身隐身：本体隐藏，克隆体顶上\n（有网络所有权，会同步到别人）", Font = Enum.Font.Gotham, TextSize = 10,
+		TextColor3 = Color3.fromRGB(132, 141, 163), Position = UDim2.new(0, 16, 0, 92),
+		Size = UDim2.new(1, -32, 0, 36), TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top }, w)
+	FakeWin = w
+	FakeWinToggle = FakeToggle
+	saveWinDefault(FakeWin)
+	attachDrag(FakeWin, bar, UserInputService, nil, "WinLock")  -- 标题条作把手；锁定时不可拖
+end
 function setFakeChar(on)
 	State.FakeChar = on
+	buildFakeWin()
+	if FakeWin then FakeWin.Visible = on end
+	-- 静默同步主开关：点小窗 × 或内部「开关分身」时，工具页主开关状态一并更新（不回调，避免递归）
+	if FakeTgl then FakeTgl.Set(on, true) end
 	if not on then
 		if FakeClone and FakeClone.Parent and HRP and HRP.Parent then
 			HRP.CFrame = FakeClone:GetPivot()
@@ -2011,7 +2083,11 @@ function setFakeChar(on)
 		if Humanoid and Humanoid.Parent then Cam.CameraSubject = Humanoid end
 		return
 	end
-	if not (HRP and HRP.Parent) or not Humanoid then State.FakeChar = false; return end
+	if not (HRP and HRP.Parent) or not Humanoid then
+		State.FakeChar = false
+		if FakeWin then FakeWin.Visible = false end
+		return
+	end
 	local hip = (Humanoid.HipHeight > 0) and Humanoid.HipHeight or 2.5
 	FakeAnchor = Vector3.new(HRP.Position.X, FAKE_Y, HRP.Position.Z)
 	FakeBase   = HRP.Position - Vector3.new(0, hip, 0)
@@ -2847,6 +2923,7 @@ HudSub = label({ Text = "WALKSPEED", Font = Enum.Font.GothamBold, TextSize = 9, 
 FlyWin = new("Frame", { Size = UDim2.new(0, 224, 0, 214), Position = UDim2.new(1, -244, 0, 96),
 	BackgroundColor3 = Color3.fromRGB(13, 15, 23), BackgroundTransparency = 0.06,
 	BorderSizePixel = 0, Visible = false, Active = true, Parent = Gui })
+saveWinDefault(FlyWin)
 corner(FlyWin, 16)
 FlyWinStroke = new("UIStroke", { Color = Modes[1].Accent, Transparency = 0.5, Thickness = 1, Parent = FlyWin })
 FlyBar = new("Frame", { Size = UDim2.new(1, 0, 0, 38), BackgroundTransparency = 1, Parent = FlyWin })
@@ -4006,22 +4083,8 @@ do
 	UserInputService.InputEnded:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragging = false end
 	end)
-	local fDrag, fPos, fMouse = false, nil, nil
-	FlyBar.InputBegan:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-			fDrag, fPos, fMouse = true, FlyWin.Position, input.Position
-		end
-	end)
-	UserInputService.InputChanged:Connect(function(input)
-		if fDrag and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-			local d = input.Position - fMouse
-			FlyWin.Position = UDim2.new(fPos.X.Scale, fPos.X.Offset + d.X, fPos.Y.Scale, fPos.Y.Offset + d.Y)
-			WinPos.FlyWin = FlyWin.Position
-		end
-	end)
-	UserInputService.InputEnded:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then fDrag = false end
-	end)
+	-- 标题条 FlyBar 作把手拖动整个 FlyWin；锁定时不可拖；不再写位置记忆（关闭重开回默认）
+	attachDrag(FlyWin, FlyBar, UserInputService, nil, "WinLock")
 end
 KEY_FWD  = { Enum.KeyCode.W, Enum.KeyCode.Up }
 KEY_BACK = { Enum.KeyCode.S, Enum.KeyCode.Down }
@@ -4124,30 +4187,71 @@ RunService.Stepped:Connect(function()
 		end
 	end
 end)
--- v5.58：相机穿墙（CAMERA NOCLIP）——镜头不被墙/地形遮挡，可看穿墙体。
--- 做法：每帧在相机模块把镜头摆好之后（RenderPriority.Camera 之后跑），把相机沿其当前
--- 朝向推回「当前缩放距离」，但全程不做任何遮挡射线检测，于是相机停在墙体外侧、能看穿墙；
--- 鼠标转向由相机模块照常处理，本步只改「距离」不改「朝向」，所以转向照常、只是不再被拉近。
--- 关闭时解绑即可，不改动相机类型/状态，下一帧由相机模块正常接管。
+-- v5.60：相机穿墙（CAMERA NOCLIP）——视角穿透任何障碍物，永不被挤成第一视角。
+-- 关键修复：旧版取「相机当前到角色的距离」来摆相机，而那已经被墙体碰撞压扁成近身，
+-- 于是墙体照样把视角挤成贴脸第一人称。新版改用「玩家设定的缩放距离」（优先取 Roblox 自带的
+-- CameraZoomDistance，拿不到就用默认值），每帧把相机稳定摆在角色身后该距离处，完全不做
+-- 遮挡检测，所以墙体/地形只是让镜头停在墙体外侧、直接穿过去看里面/外面，绝不会被挤压近身。
+-- 缩放距离由自己接管滚轮微调（否则默认相机模块会把滚轮吃掉），鼠标转向照常由相机模块处理。
 local CamNoclipConn = nil
+local CamZoomConn = nil
+local CamDist = nil
 function setCamNoclip(on)
 	State.CamNoclip = on
-	if CamNoclipConn then pcall(function() CamNoclipConn:Disconnect() end) end
-	CamNoclipConn = nil
+	-- 解绑一律按名字（真实 Roblox 下 UnbindFromRenderStep 与 BindToRenderStep 配对；mock 也支持），
+	-- 不依赖 BindToRenderStep 的返回值，最稳。
+	pcall(function() RunService:UnbindFromRenderStep("HonCamClip") end)
+	if CamZoomConn then pcall(function() CamZoomConn:Disconnect() end) end
+	CamNoclipConn, CamZoomConn, CamDist = nil, nil, nil
 	if not on then return end
+	CamDist = (Cam and Cam.CameraZoomDistance and Cam.CameraZoomDistance > 0 and Cam.CameraZoomDistance) or 12
 	CamNoclipConn = RunService:BindToRenderStep("HonCamClip",
 		(Enum.RenderPriority.Camera.Value or 200) + 1, function()
 		if HON_SHUTDOWN or not Cam then return end
 		if not (HRP and HRP.Parent) then return end
 		if not (LP and LP.Parent) then return end
 		local head = HRP.Position
-		local cur = Cam.CFrame.Position - head
-		local dist = cur.Magnitude
-		if dist < 0.1 then return end
+		-- 用玩家设定的缩放距离，而非被碰撞压扁的实时距离 → 视角永远停在墙体外侧、穿过去看，不挤成第一人称
+		local dist = CamDist or (Cam.CameraZoomDistance and Cam.CameraZoomDistance > 0 and Cam.CameraZoomDistance) or 12
 		local look = Cam.CFrame.LookVector
+		if look.Magnitude < 1e-6 then return end
 		Cam.CFrame = CFrame.new(head - look * dist, head)
 	end)
+	-- 滚轮缩放：自己接管，保证「穿墙」时缩放手感不变（否则被默认相机模块吃掉）
+	pcall(function()
+		CamZoomConn = UserInputService.InputChanged:Connect(function(ic, gpe)
+			if gpe then return end
+			if not State.CamNoclip then return end
+			if ic.UserInputType == Enum.UserInputType.MouseWheel then
+				CamDist = math.clamp((CamDist or 12) - ic.Position.Z * 2.5, 0.5, 400)
+			end
+		end)
+	end)
 end
+-- v5.59：踏空行走（AIR WALK）——让角色踩在空中、在水平面上自由行走而不坠落。
+-- 做法：开启时记录当前高度 WalkY 作为「行走平面」高度，之后每帧把 HumanoidRootPart 的
+-- Y 锁回 WalkY、只保留 X/Z 的走动（Horizontal walk 由 Humanoid 正常处理，PlatformStand 保持 false 才能走），
+-- 同时把竖直速度清零，抵消重力下坠；水平移动完全正常，于是就像踩在一块看不见的玻璃上。
+-- 飞行优先：Fly 开启时不接管，避免两套位移打架。
+local WalkY = nil
+function setAirWalk(on)
+	State.AirWalk = on
+	if not on then WalkY = nil; return end
+	if HRP and HRP.Parent then WalkY = HRP.Position.Y end
+end
+RunService:BindToRenderStep("HonAirWalk", 9993, function()
+	if HON_SHUTDOWN then return end
+	if not State.AirWalk then return end
+	if not (HRP and HRP.Parent) then return end
+	if not (Humanoid and Humanoid.Parent) then return end
+	if State.Fly then return end
+	if WalkY == nil then WalkY = HRP.Position.Y end
+	local p = HRP.Position
+	pcall(function()
+		HRP.CFrame = CFrame.new(p.X, WalkY, p.Z) * HRP.CFrame.Rotation
+		HRP.AssemblyLinearVelocity = Vector3.new(HRP.AssemblyLinearVelocity.X, 0, HRP.AssemblyLinearVelocity.Z)
+	end)
+end)
 pcall(function() RunService:UnbindFromRenderStep("HonPadMove") end)
 RunService:BindToRenderStep("HonPadMove", 10000, function()
 	if HON_SHUTDOWN then return end
@@ -4205,7 +4309,7 @@ function setFly(on)
 	FlyHoldY = (HRP and HRP.Parent) and HRP.Position.Y or nil
 end
 function setFlyWindow(on)
-	if on and WinPos.FlyWin then FlyWin.Position = WinPos.FlyWin end
+	resetWinDefault(FlyWin)  -- 关闭重开恢复默认位置（去掉位置记忆）
 	FlyWin.Visible = on
 	UpBtn.Visible = on
 	DownBtn.Visible = on
@@ -4559,6 +4663,7 @@ function bindCharacter(char)
 		if Humanoid and Humanoid.Parent then Humanoid.PlatformStand = true end
 		FlyHoldY = (HRP and HRP.Parent) and HRP.Position.Y or nil
 	end
+	WalkY = nil   -- v5.59：踏空行走高度随角色刷新重置，避免重生后被拽回旧高度
 	-- 画质/夜视类状态重生后自动重放（Lighting 是全局的不受影响，粒子/贴图类要重扫一遍）
 	pcall(function()
 		if State.GfxShadow then setGfxShadows(true) end
@@ -5683,28 +5788,12 @@ end)
 
 -- ---------- 通用：让任意触屏控件「点哪个就能拖哪个」 ----------
 DraggableMap = {}
-function makeDraggable(obj)
+function makeDraggable(obj, lockKey)
 	if not obj or DraggableMap[obj] then return end
 	DraggableMap[obj] = true
-	local dragging, startPos, startMouse = false, nil, nil
-	obj.InputBegan:Connect(function(i)
-		if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
-			if State.TouchLocked then return end
-			dragging, startPos, startMouse = true, obj.Position, i.Position
-		end
-	end)
-	obj.InputChanged:Connect(function(i)
-		if dragging and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
-			local d = i.Position - startMouse
-			obj.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + d.X,
-				startPos.Y.Scale, startPos.Y.Offset + d.Y)
-		end
-	end)
-	obj.InputEnded:Connect(function(i)
-		if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
-			dragging = false
-		end
-	end)
+	-- 把手=自身、事件源=自身、锁字段默认 TouchLocked（触屏数字键 / 方向键用此锁）；
+	-- 小窗传 "WinLock"（见 swDragHook / honDragHook / cdDragHook）。
+	attachDrag(obj, obj, obj, nil, lockKey or "TouchLocked")
 end
 function applyTouchDrag()
 	-- 触屏数字键：每个控件单独可拖，屏幕上点哪个就能挪哪个
@@ -5874,6 +5963,7 @@ function buildClonePanel()
 	ClonePanel = new("Frame", { Name = "HonClonePanel", Size = UDim2.new(0, 226, 0, 196),
 		Position = UDim2.new(0, 16, 0.5, -98), BackgroundColor3 = Color3.fromRGB(15, 17, 26),
 		BackgroundTransparency = 0.04, BorderSizePixel = 0, Visible = false, Parent = Gui })
+	saveWinDefault(ClonePanel)
 	corner(ClonePanel, 12)
 	new("UIStroke", { Color = Mode().Accent, Transparency = 0.7, Thickness = 1, Parent = ClonePanel })
 	label({ Text = "分 身 军 团", Font = Enum.Font.GothamBold, TextSize = 12,
@@ -5884,7 +5974,7 @@ function buildClonePanel()
 		TextColor3 = Color3.fromRGB(255, 108, 118), BackgroundTransparency = 1,
 		Size = UDim2.new(0, 24, 0, 24), Position = UDim2.new(1, -30, 0, 6), Parent = ClonePanel })
 	cbtn.MouseButton1Click:Connect(function() ClonePanel.Visible = false end)
-	makeDraggable(ClonePanel)
+	makeDraggable(ClonePanel, "WinLock")  -- 分身军团面板也算小窗，受「固定小窗」锁控
 	local function mk(txt, y, col, cb)
 		local b = new("TextButton", { Text = txt, Font = Enum.Font.GothamBold, TextSize = 11,
 			TextColor3 = col, BackgroundColor3 = Color3.fromRGB(255, 255, 255),
@@ -6373,7 +6463,7 @@ function windBuild(lib)
 	if not W then return false end
 	WindWin = W
 	-- 再补一层保险（夜脚本同款）：CreateWindow 可能被库吞掉背景参数，建完强制再写一次
-	windSafe("Tag", function() W:Tag({ Title = "v5.58", Color = "ElementBackground" }) end)
+	windSafe("Tag", function() W:Tag({ Title = "v5.61", Color = "ElementBackground" }) end)
 	-- 引擎页
 	local tEng = nil
 	windSafe("Tab:引擎", function() tEng = W:Tab({ Title = "引擎", Icon = "gauge" }) end)
@@ -6402,6 +6492,7 @@ function windBuild(lib)
 		windTglByTitle(tAss, "速度 HUD", "屏幕底部实时显示速度")
 		windTglByTitle(tAss, "飞行窗口 FLY", "打开小窗 + 右上角上下键")
 		windTglByTitle(tAss, "相机穿墙 CAMERA NOCLIP", "镜头不被墙/地形遮挡，可看穿墙体")
+		windTglByTitle(tAss, "踏空行走 AIR WALK", "锁定水平面 · 在空中平面行走不坠落")
 	end
 	-- 视觉页
 	local tEsp = nil
@@ -7475,45 +7566,46 @@ end
 if SearchBox then
 	SearchBox:GetPropertyChangedSignal("Text"):Connect(function() applySearch(SearchBox.Text) end)
 end
-StealthWin, StealthRecText = nil, nil
+StealthBall, StealthBallText = nil, nil
 StealthOwn, StealthHiddenGui = {}, {}
 stealthTime, stealthAcc = 0, 0
--- v5.58：隐身小窗（右上角）——开启隐身即在右上角弹出，固定不最小化；关闭隐身即收起。
--- 命名 HonStealth：stealthHideOwn 只藏 Gui 下非 HonStealth 的子级，本窗作为「录制指示器」
--- 在隐身期间保持可见（与旧版 REC 悬浮钮同一个豁免名，行为一致）。
-function buildStealthWin()
-	if StealthWin then return end
-	local w = new("Frame", { Name = "HonStealth", Size = UDim2.new(0, 224, 0, 132),
-		Position = UDim2.new(1, -244, 0, 320),
-		BackgroundColor3 = Color3.fromRGB(13, 15, 23), BackgroundTransparency = 0.06,
-		BorderSizePixel = 0, Visible = false, Active = true, Parent = Gui })
-	corner(w, 16)
-	new("UIStroke", { Color = Color3.fromRGB(255, 86, 96), Transparency = 0.5, Thickness = 1, Parent = w })
-	local bar = new("Frame", { Size = UDim2.new(1, 0, 0, 38), BackgroundTransparency = 1, Parent = w })
-	label({ Text = "STEALTH", Font = Enum.Font.GothamBold, TextSize = 14, TextColor3 = Color3.fromRGB(238, 243, 255),
-		Position = UDim2.new(0, 16, 0, 9), Size = UDim2.new(0, 130, 0, 20), TextXAlignment = Enum.TextXAlignment.Left }, bar)
-	local dot = new("Frame", { Size = UDim2.new(0, 10, 0, 10), Position = UDim2.new(1, -66, 0.5, -5),
-		BackgroundColor3 = Color3.fromRGB(255, 86, 96), BorderSizePixel = 0, Parent = bar })
+-- 隐身录屏 REC 悬浮钮（v5.58 之前的版本，本次按要求退回）：右上角小圆点 + REC 计时，
+-- 点一下切换隐身；命名 HonStealth：stealthHideOwn 只藏 Gui 下非 HonStealth 的子级，
+-- 本钮在隐身期间保持可见（与旧版同一个豁免名，行为一致）。
+function buildStealthBall()
+	if StealthBall then return end
+	local b = new("TextButton", { Name = "HonStealth", Text = "",
+		Size = UDim2.new(0, 108, 0, 38), Position = UDim2.new(1, -124, 0, 14),
+		BackgroundColor3 = Color3.fromRGB(12, 14, 20), BackgroundTransparency = 0.22,
+		BorderSizePixel = 0, AutoButtonColor = false, Active = true, Visible = false, Parent = Gui })
+	corner(b, 19)
+	new("UIStroke", { Color = Color3.fromRGB(255, 86, 96), Transparency = 0.35, Thickness = 1, Parent = b })
+	local dot = new("Frame", { Size = UDim2.new(0, 10, 0, 10), Position = UDim2.new(0, 13, 0.5, -5),
+		BackgroundColor3 = Color3.fromRGB(255, 86, 96), BorderSizePixel = 0, Parent = b })
 	corner(dot, 5)
-	local close = new("TextButton", { Text = "×", Font = Enum.Font.GothamBold, TextSize = 16,
-		TextColor3 = Color3.fromRGB(255, 108, 118), BackgroundColor3 = Color3.fromRGB(255, 255, 255),
-		BackgroundTransparency = 0.94, BorderSizePixel = 0, AutoButtonColor = false,
-		Position = UDim2.new(1, -36, 0, 7), Size = UDim2.new(0, 26, 0, 26), Parent = bar })
-	corner(close, 8)
-	-- ×：关掉隐身，窗随隐身一起收起
-	close.MouseButton1Click:Connect(function() setStealth(false) end)
-	-- 内部「开关隐身」：注册进 ToggleRegistry 后立刻移出，避免被「隐身冻结 / 全部关闭」误伤
-	local StToggle = makeToggle(w, 48, "开关隐身", "关闭即收起本窗", false, function(v) setStealth(v) end)
-	for i = #ToggleRegistry, 1, -1 do
-		if ToggleRegistry[i] == StToggle then table.remove(ToggleRegistry, i) break end
-	end
-	StealthRecText = label({ Text = "REC 00:00", Font = Enum.Font.GothamBold, TextSize = 13,
-		TextColor3 = Color3.fromRGB(255, 120, 130), Position = UDim2.new(0, 16, 0, 90),
-		Size = UDim2.new(1, -32, 0, 22), TextXAlignment = Enum.TextXAlignment.Left }, w)
-	label({ Text = "隐藏界面 · 暂停其他功能（加速保留）", Font = Enum.Font.Gotham, TextSize = 10,
-		TextColor3 = Color3.fromRGB(132, 141, 163), Position = UDim2.new(0, 16, 0, 112),
-		Size = UDim2.new(1, -32, 0, 18), TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top }, w)
-	StealthWin = w
+	StealthBallText = label({ Text = "REC 00:00", Font = Enum.Font.GothamBold, TextSize = 11,
+		TextColor3 = Color3.fromRGB(238, 243, 255), Position = UDim2.new(0, 30, 0, 0),
+		Size = UDim2.new(1, -36, 1, 0), TextXAlignment = Enum.TextXAlignment.Left }, b)
+	StealthBall = b
+	local dragging, startMouse, basePos, moved = false, nil, nil, 0
+	b.InputBegan:Connect(function(i)
+		if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then
+			dragging, startMouse, basePos, moved = true, i.Position, b.Position, 0
+		end
+	end)
+	UserInputService.InputChanged:Connect(function(i)
+		if dragging and (i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseMovement) then
+			local d = i.Position - startMouse
+			moved = math.max(moved, math.abs(d.X) + math.abs(d.Y))
+			b.Position = UDim2.new(basePos.X.Scale, basePos.X.Offset + d.X, basePos.Y.Scale, basePos.Y.Offset + d.Y)
+		end
+	end)
+	UserInputService.InputEnded:Connect(function(i)
+		if dragging and (i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1) then
+			dragging = false
+			if moved < 6 then setStealth(not State.Stealth) end
+		end
+	end)
 end
 function stealthHideOwn()
 	StealthOwn = {}
@@ -7565,20 +7657,20 @@ end
 
 function setStealth(on)
 	State.Stealth = on
-	buildStealthWin()
+	buildStealthBall()
 	if on then
 		local n = stealthFreeze()
 		stealthHideOwn()
 		-- 开隐身自动清身上方块（v5.45，用户：「开启隐身之后自动清除」）——
 		-- 录屏的时候角色光溜的，不戴帽子不挂配件
 		pcall(hideBodyBlocks, true)
-		if StealthWin then StealthWin.Visible = true end
+		if StealthBall then StealthBall.Visible = true end
 		stealthTime, stealthAcc = 0, 0
 		if notify then notify("隐身录屏开启 · 已暂停 " .. n .. " 个功能（仅加速保持运行）") end
 	else
 		local n = stealthRestore()
 		stealthShowOwn()
-		if StealthWin then StealthWin.Visible = false end
+		if StealthBall then StealthBall.Visible = false end
 		if notify then notify("已恢复界面 · 并恢复 " .. n .. " 个功能") end
 	end
 	if StealthTgl then StealthTgl.Set(on, true) end
@@ -7590,8 +7682,8 @@ RunService.Heartbeat:Connect(function(dt)
 	stealthAcc = stealthAcc + dt
 	if stealthAcc >= 0.5 then
 		stealthAcc = 0
-		if StealthRecText then
-			StealthRecText.Text = string.format("REC %02d:%02d",
+		if StealthBallText then
+			StealthBallText.Text = string.format("REC %02d:%02d",
 				math.floor(stealthTime / 60), math.floor(stealthTime % 60))
 		end
 	end
@@ -7927,6 +8019,6 @@ tspawn(function()
 		end)
 	end
 end)
-_pr("[HON SPEED HUB] v5.58 已加载 · 完整文件约 7933 行 · 若你的脚本远大于此行数说明粘贴重复了")
+_pr("[HON SPEED HUB] v5.61 已加载 · 完整文件约 8025 行 · 若你的脚本远大于此行数说明粘贴重复了")
 
 
