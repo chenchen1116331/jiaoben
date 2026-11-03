@@ -1,5 +1,5 @@
 local _pr = (type(print) == "function") and print or (type(warn) == "function" and warn) or function() end
-_pr("[HON SPEED HUB] 载入中 · v5.67 · 若只看到这一行说明文件在中途中断")
+_pr("[HON SPEED HUB] 载入中 · v5.68 · 若只看到这一行说明文件在中途中断")
 local twait  = (type(task) == "table" and task.wait)  or wait  or function() end
 local tspawn = (type(task) == "table" and task.spawn) or spawn or function(f, ...) return f(...) end
 if type(twait) ~= "function" then twait = function() end end
@@ -290,7 +290,7 @@ label({ Text = "HON SPEED HUB", Font = Enum.Font.GothamBold, TextSize = 21,
 	TextColor3 = Color3.fromRGB(238, 243, 255),
 	Position = UDim2.new(0, 36, 0, 16), Size = UDim2.new(0, 200, 0, 24),
 	TextXAlignment = Enum.TextXAlignment.Left }, Header)
-label({ Text = "Universal Hub  ·  W / V / CF  ·  v5.67", Font = Enum.Font.Gotham, TextSize = 11,
+label({ Text = "Universal Hub  ·  W / V / CF  ·  v5.68", Font = Enum.Font.Gotham, TextSize = 11,
 	TextColor3 = Color3.fromRGB(140, 149, 172),
 	Position = UDim2.new(0, 36, 0, 42), Size = UDim2.new(0, 240, 0, 16),
 	TextXAlignment = Enum.TextXAlignment.Left }, Header)
@@ -330,6 +330,10 @@ iconBtn("×", -34, Color3.fromRGB(255, 108, 118), function()
 end)
 -- ---------- 更新公告 ----------
 CHANGELOG = {
+	{ v = "v5.68", t = {
+		"修复 · 分身隐身回退到 v5.57 机制（用户：「改成 5.57 版本的隐身」）：开启后本体瞬移万米高空踩隐形平台（别人在地面看不见也打不到），本地造一只半透明克隆体顶在地面当替身，相机切到替身；你操控的是本体（在天上正常走，WalkSpeed 等移动能力完全保留 = 能正常移动），替身每帧镜像本体的位移与朝向，看起来就是在地面正常走。关掉时本体落回替身位置、替身与平台销毁、视角交还本体。这一版修掉了上一版「开了隐身不能动、也没生成虚拟人物」的问题（上一版把本体 WalkSpeed 设 0、又依赖一个没被正确驱动的虚影）",
+		"保留 · 当前这个「分身隐身小窗」样式不变，但按用户要求再缩小一点、开关放大一点：小窗尺寸 188×116 → 176×110，并把窗内「开关分身」换成自定义大号开关（62×30，原来 46×24），更容易在触屏上点中",
+	}},
 	{ v = "v5.67", t = {
 		"重要修复 · 设置页「字体大小」只改数字、主界面字体不变（用户：「只有它那个滑动界面的数字是 86、字体不变」）：根因是字体缩放 applyFontScale 只遍历自制 UI 根 Gui，而你在 WindUI 框架下主面板是独立窗口（WindWin.ScreenGui），根本不在 Gui 下——所以拖到 86 只是数字跳到 86，主界面字体纹丝不动。现改成同时遍历 WindUI 窗口底层容器，并在切到 WindUI 框架后重新应用一次缩放，两套框架字体都跟着变",
 		"改动 · 字体默认固定 86%（此前默认拉到最大 160%）：无存档时启动即按 86% 缩放，字体大小滑条默认值与 WindUI 侧同步改为 86；有存档仍按存档恢复。滑块仍可调，只是默认落在 86",
@@ -2056,44 +2060,16 @@ RunService.Stepped:Connect(function()
 		pcall(hideBodyBlocks, true)
 	end
 end)
-FAKE_ALT = 10000
-FakeClone, FakeSaved = nil, nil
--- 分身隐身（v5.66 重做）：虚影才是「你真正在操作的那具身体」。
--- 做法：本地克隆一个角色当虚影（有碰撞、有重力、能上坡、撞墙会停住），摇杆 / 键盘驱动的是它；
--- 本体被送到虚影正上方 1 万米，每帧镜像虚影的位移与朝向——虚影走上坡，天上的本体也跟着上坡。
--- 相机死守虚影，所以看起来就是你在地面正常走；本体在万米高空 = 别人在地面既看不见你、
--- 范围攻击也够不到你。关掉时本体直接落到虚影脚下（你走到哪就落在哪），虚影消失、视角交还本体。
+FAKE_Y = 100000
+FakeClone, FakePlatform, FakeBase, FakeAnchor = nil, nil, nil, nil
+-- 分身隐身（退回 v5.57 机制）：本体瞬移万米高空踩平台，本地造半透明克隆体顶在地面当替身
+-- （别人看不见、攻击也打不到），相机切到替身；你操控的是本体（在天上正常走，WalkSpeed 等移动能力
+-- 完全保留，所以「能正常移动」），替身每帧镜像本体位移，看起来就是在地面正常走。关掉时本体落回
+-- 替身位置，替身与平台销毁、视角交还本体。
 function cleanupFake()
 	if FakeClone then pcall(function() FakeClone:Destroy() end) end
-	FakeClone = nil
-end
--- 还原本体在被隐身接管前的移动参数
-function restoreRealBody()
-	local sv = FakeSaved
-	FakeSaved = nil
-	if not (Humanoid and Humanoid.Parent) then return end
-	pcall(function()
-		Humanoid.PlatformStand = false
-		if sv then
-			if sv.ws ~= nil then Humanoid.WalkSpeed = sv.ws end
-			if sv.jp ~= nil then Humanoid.JumpPower = sv.jp end
-			if sv.jh ~= nil then Humanoid.JumpHeight = sv.jh end
-		end
-	end)
-	if HRP and HRP.Parent then pcall(function() HRP.AssemblyLinearVelocity = Vector3.zero end) end
-end
--- 虚影的移动方向：脚本虚拟方向键 → 官方自带移动输入（键盘 / 移动端左手摇杆都会写进本体
--- Humanoid.MoveDirection）→ 键盘兜底。方向以相机为准，而相机正跟着虚影，所以手感就是「你在走」。
-function phantomDir()
-	if PadActive and (PadDir.x ~= 0 or PadDir.y ~= 0) then
-		local pd = padWorld()
-		if pd then return pd end
-	end
-	if Humanoid and Humanoid.Parent then
-		local md = Humanoid.MoveDirection
-		if md and md.Magnitude > 0.05 then return horiz(md) end
-	end
-	return keyDir()
+	if FakePlatform then pcall(function() FakePlatform:Destroy() end) end
+	FakeClone, FakePlatform, FakeBase, FakeAnchor = nil, nil, nil, nil
 end
 -- 分身隐身小窗（按 v5.61 原样恢复）：右上角独立悬浮小窗，样式 / 尺寸 / 位置 / 拖动 / 固定小窗
 -- 全部照旧。窗里那个「开关分身」就是纯粹的开关——开 = 隐身，关 = 取消隐身；
@@ -2101,39 +2077,58 @@ end
 FakeWin, FakeWinToggle, FakeWinStroke = nil, nil, nil
 function buildFakeWin()
 	if FakeWin and FakeWin.Parent then return end
-	local w = new("Frame", { Name = "HonFakeWin", Size = UDim2.new(0, 224, 0, 132),
-		Position = UDim2.new(1, -244, 0, 320),
+	local w = new("Frame", { Name = "HonFakeWin", Size = UDim2.new(0, 176, 0, 110),
+		Position = UDim2.new(1, -196, 0, 320),
 		BackgroundColor3 = Color3.fromRGB(13, 15, 23), BackgroundTransparency = 0.06,
 		BorderSizePixel = 0, Visible = false, Active = true, Parent = Gui })
-	corner(w, 16)
+	corner(w, 14)
 	FakeWinStroke = new("UIStroke", { Color = Modes[1].Accent, Transparency = 0.5, Thickness = 1, Parent = w })
-	local bar = new("Frame", { Size = UDim2.new(1, 0, 0, 38), BackgroundTransparency = 1, Parent = w })
-	label({ Text = "FAKE CHAR", Font = Enum.Font.GothamBold, TextSize = 14, TextColor3 = Color3.fromRGB(238, 243, 255),
-		Position = UDim2.new(0, 16, 0, 9), Size = UDim2.new(0, 130, 0, 20), TextXAlignment = Enum.TextXAlignment.Left }, bar)
-	local close = new("TextButton", { Text = "×", Font = Enum.Font.GothamBold, TextSize = 16,
+	local bar = new("Frame", { Size = UDim2.new(1, 0, 0, 30), BackgroundTransparency = 1, Parent = w })
+	label({ Text = "FAKE CHAR", Font = Enum.Font.GothamBold, TextSize = 13, TextColor3 = Color3.fromRGB(238, 243, 255),
+		Position = UDim2.new(0, 14, 0, 7), Size = UDim2.new(0, 110, 0, 18), TextXAlignment = Enum.TextXAlignment.Left }, bar)
+	local close = new("TextButton", { Text = "×", Font = Enum.Font.GothamBold, TextSize = 15,
 		TextColor3 = Color3.fromRGB(255, 108, 118), BackgroundColor3 = Color3.fromRGB(255, 255, 255),
 		BackgroundTransparency = 0.94, BorderSizePixel = 0, AutoButtonColor = false,
-		Position = UDim2.new(1, -36, 0, 7), Size = UDim2.new(0, 26, 0, 26), Parent = bar })
-	corner(close, 8)
+		Position = UDim2.new(1, -32, 0, 4), Size = UDim2.new(0, 22, 0, 22), Parent = bar })
+	corner(close, 7)
 	close.MouseButton1Click:Connect(function()
 		pcall(function() setFakeStealth(false) end)
 		if FakeWin then FakeWin.Visible = false end
 	end)
-	local tgl = makeToggle(w, 48, "开关分身", "点一下隐身 / 再点取消", false, function(v)
+	-- 放大版开关（自定义，便于触屏点按；不进 ToggleRegistry，避免被 WindUI 框架接管）
+	local tglRow = new("Frame", { Size = UDim2.new(1, -12, 0, 46), Position = UDim2.new(0, 6, 0, 32),
+		BackgroundColor3 = Color3.fromRGB(24, 27, 38), BackgroundTransparency = 0.35, BorderSizePixel = 0, Parent = w })
+	corner(tglRow, 12)
+	label({ Text = "开关分身", Font = Enum.Font.GothamBold, TextSize = 13, TextColor3 = Color3.fromRGB(224, 231, 246),
+		Position = UDim2.new(0, 12, 0, 7), Size = UDim2.new(0, 100, 0, 18), TextXAlignment = Enum.TextXAlignment.Left }, tglRow)
+	label({ Text = "点一下隐身 / 再点取消", Font = Enum.Font.Gotham, TextSize = 10, TextColor3 = Color3.fromRGB(132, 141, 163),
+		Position = UDim2.new(0, 12, 0, 27), Size = UDim2.new(0, 100, 0, 14), TextXAlignment = Enum.TextXAlignment.Left }, tglRow)
+	local sw = new("TextButton", { Text = "", AutoButtonColor = false, Size = UDim2.new(0, 62, 0, 30),
+		Position = UDim2.new(1, -74, 0.5, -15), BackgroundColor3 = Color3.fromRGB(70, 74, 90), BorderSizePixel = 0, Parent = tglRow })
+	corner(sw, 15)
+	local kb = new("Frame", { Size = UDim2.new(0, 24, 0, 24), Position = UDim2.new(0, 3, 0.5, -12),
+		BackgroundColor3 = Color3.fromRGB(250, 252, 255), BorderSizePixel = 0, Parent = sw })
+	corner(kb, 12)
+	local tglOn = false
+	local function tglPaint(v)
+		pcall(function() TweenService:Create(sw, TWEEN_FAST, { BackgroundColor3 = v and Modes[1].Accent or Color3.fromRGB(70, 74, 90) }):Play() end)
+		pcall(function() TweenService:Create(kb, TWEEN_FAST, { Position = v and UDim2.new(1, -27, 0.5, -12) or UDim2.new(0, 3, 0.5, -12) }):Play() end)
+	end
+	local tglApi
+	local function tglCb(v)
 		if not State.FakeArm then
-			pcall(function() FakeWinToggle.Set(false, true) end)
+			pcall(function() tglApi.Set(false, true) end)
 			return
 		end
 		pcall(function() setFakeStealth(v) end)
-	end)
-	for i = #ToggleRegistry, 1, -1 do
-		if ToggleRegistry[i] == tgl then table.remove(ToggleRegistry, i) break end
 	end
-	label({ Text = "本体在万米高空 · 虚影在地面替你走\n（虚影有碰撞，能上坡、不穿墙）", Font = Enum.Font.Gotham, TextSize = 10,
-		TextColor3 = Color3.fromRGB(132, 141, 163), Position = UDim2.new(0, 16, 0, 92),
-		Size = UDim2.new(1, -32, 0, 36), TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top }, w)
+	tglApi = { Set = function(v, silent) tglOn = v; tglPaint(v); if not silent then tglCb(v) end end, _last = false }
+	sw.MouseButton1Click:Connect(function() tglApi.Set(not tglOn) end)
+	label({ Text = "本体在万米高空 · 虚影在地面替你走\n（虚影有碰撞，能上坡、不穿墙）", Font = Enum.Font.Gotham, TextSize = 9,
+		TextColor3 = Color3.fromRGB(132, 141, 163), Position = UDim2.new(0, 14, 0, 82),
+		Size = UDim2.new(1, -28, 0, 24), TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top }, w)
 	FakeWin = w
-	FakeWinToggle = tgl
+	FakeWinToggle = tglApi
 	pcall(function() saveWinDefault(FakeWin) end)
 	pcall(function() attachDrag(FakeWin, bar, UserInputService, nil, "WinLock") end)
 end
@@ -2170,19 +2165,12 @@ function setFakeStealth(on)
 	if on == State.FakeChar then pcall(paintFakeWin, on) return end
 	buildFakeWin()
 	if not on then
-		-- 关隐身：本体直接落到虚影脚下（你走到哪就落在哪），销毁虚影，视角交还本体
-		local fhrp = nil
-		if FakeClone and FakeClone.Parent then
-			fhrp = FakeClone:FindFirstChild("HumanoidRootPart")
-		end
-		if fhrp and HRP and HRP.Parent then
-			local cf = fhrp.CFrame
-			pcall(function() HRP.CFrame = cf end)
-			pcall(function() HRP.AssemblyLinearVelocity = Vector3.zero end)
+		-- 关隐身：本体落回替身所在位置，销毁替身与平台，视角交还本体
+		if FakeClone and FakeClone.Parent and HRP and HRP.Parent then
+			pcall(function() HRP.CFrame = FakeClone:GetPivot() end)
 		end
 		cleanupFake()
 		State.FakeChar = false
-		restoreRealBody()
 		lastTransp = -1
 		paintFakeWin(false)
 		if Humanoid and Humanoid.Parent then pcall(function() Cam.CameraSubject = Humanoid end) end
@@ -2193,66 +2181,39 @@ function setFakeStealth(on)
 		paintFakeWin(false)
 		return
 	end
-	-- ① 原地造虚影：本地克隆整只角色，留下碰撞（能上坡、撞墙停住），只做半透明当「虚影」
-	local startCF = HRP.CFrame
-	local clone = HRP.Parent:Clone()
-	clone.Name = "HonFakePhantom"
-	for _, d in ipairs(clone:GetDescendants()) do
+	-- v5.57 机制：本体瞬移万米高空踩平台，本地造半透明克隆体顶在地面当替身（别人看不见、攻击也打不到），
+	-- 相机切到替身；你操控的是本体（在天上正常走，WalkSpeed 等移动能力完全保留 = 能正常移动），
+	-- 替身每帧镜像本体的位移，所以看起来就是在地面正常走。
+	local hip = (Humanoid.HipHeight > 0) and Humanoid.HipHeight or 2.5
+	FakeAnchor = Vector3.new(HRP.Position.X, FAKE_Y, HRP.Position.Z)
+	FakeBase   = HRP.Position - Vector3.new(0, hip, 0)
+	FakePlatform = Instance.new("Part")
+	FakePlatform.Name = "HonFakePlatform"
+	FakePlatform.Size = Vector3.new(400, 10, 400)
+	FakePlatform.Anchored = true
+	FakePlatform.CanCollide = true
+	FakePlatform.Transparency = 1
+	FakePlatform.CFrame = CFrame.new(FakeAnchor - Vector3.new(0, 5, 0))
+	FakePlatform.Parent = Workspace
+	FakeClone = HRP.Parent:Clone()
+	FakeClone.Name = "HonFakeClone"
+	FakeClone.Parent = Workspace
+	for _, d in ipairs(FakeClone:GetDescendants()) do
 		if d:IsA("BasePart") then
 			d.Transparency = 0.45
-			d.Anchored = false
-			d.CanCollide = (d.Name ~= "HumanoidRootPart")
+			d.CanCollide = false
 			d.CastShadow = false
-		elseif d:IsA("Script") or d:IsA("LocalScript") or d:IsA("Highlight")
-			or d:IsA("ParticleEmitter") or d:IsA("BillboardGui") or d:IsA("Beam") or d:IsA("Trail") then
-			-- 脚本 / 描边 / 粒子 / 名牌都去掉：虚影别自带一圈高亮或被特效暴露
+		elseif d:IsA("Script") or d:IsA("LocalScript") then
 			d:Destroy()
 		end
 	end
-	clone.Parent = Workspace
-	local fhrp = clone:FindFirstChild("HumanoidRootPart")
-	local fh = clone:FindFirstChildOfClass("Humanoid")
-	if not (fhrp and fh) then
-		pcall(function() clone:Destroy() end)
-		State.FakeChar = false
-		paintFakeWin(false)
-		return
-	end
-	pcall(function()
-		fh.WalkSpeed = (Humanoid.WalkSpeed > 0) and Humanoid.WalkSpeed or 16
-		fh.JumpPower = (Humanoid.JumpPower > 0) and Humanoid.JumpPower or 50
-		fh.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
-		fh.HealthDisplayType = Enum.HumanoidHealthDisplayType.AlwaysOff
-		fh.BreakJointsOnDeath = false
-	end)
-	pcall(function() fhrp.CFrame = startCF end)
-	FakeClone = clone
-	-- 克隆体里的 Animate 脚本不会跑，手动挂一段默认行走动画，免得虚影「贴图滑行」
-	pcall(function()
-		local animator = fh:FindFirstChildOfClass("Animator") or Instance.new("Animator", fh)
-		local a = Instance.new("Animation")
-		a.AnimationId = (fh.RigType == Enum.HumanoidRigType.R15) and "rbxassetid://507777826" or "rbxassetid://180426354"
-		local track = animator:LoadAnimation(a)
-		if track then track:Play() end
-	end)
+	local fhrp = FakeClone:FindFirstChild("HumanoidRootPart")
+	if fhrp then fhrp.Anchored = true end
+	local fh = FakeClone:FindFirstChildOfClass("Humanoid")
+	if fh then pcall(function() Cam.CameraSubject = fh end) end
+	pcall(function() HRP.CFrame = CFrame.new(FakeAnchor + Vector3.new(0, hip + 1, 0)) end)
 	State.FakeChar = true
 	paintFakeWin(true)
-	-- ② 本体：先记住原移动参数，再送到虚影正上方 1 万米（保留碰撞与网络归属，别人看到的是一个
-	--    远在天上的点；范围攻击、近战统统够不到）
-	FakeSaved = { ws = Humanoid.WalkSpeed, jp = Humanoid.JumpPower, jh = Humanoid.JumpHeight }
-	pcall(function()
-		Humanoid.PlatformStand = false
-		Humanoid.WalkSpeed = 0
-		Humanoid.JumpPower = 0
-		Humanoid.JumpHeight = 0
-		HRP.CFrame = CFrame.new(fhrp.Position + Vector3.new(0, FAKE_ALT, 0)) * fhrp.CFrame.Rotation
-		HRP.AssemblyLinearVelocity = Vector3.zero
-	end)
-	-- ③ 视角留在虚影上
-	pcall(function()
-		Cam.CameraType = Enum.CameraType.Custom
-		Cam.CameraSubject = fh
-	end)
 	lastTransp = -1
 end
 pcall(function() RunService:UnbindFromRenderStep("HonFakeSync") end)
@@ -2261,30 +2222,14 @@ RunService:BindToRenderStep("HonFakeSync", 1999, function()
 	if not State.FakeChar then return end
 	if not (FakeClone and FakeClone.Parent) or not (HRP and HRP.Parent) then return end
 	local fhrp = FakeClone:FindFirstChild("HumanoidRootPart")
-	local fh = FakeClone:FindFirstChildOfClass("Humanoid")
-	if not (fhrp and fh) then return end
-	-- ① 用官方自带移动输入驱动虚影：虚影带碰撞，所以能上坡、撞墙会停住（不穿墙）
-	pcall(function() fh:Move(phantomDir() or Vector3.zero, false) end)
-	-- ② 本体在万米高空镜像虚影：虚影上坡它跟着上坡、虚影转身它跟着转身
-	pcall(function()
-		HRP.CFrame = CFrame.new(fhrp.Position + Vector3.new(0, FAKE_ALT, 0)) * fhrp.CFrame.Rotation
-		HRP.AssemblyLinearVelocity = Vector3.zero
-	end)
-	-- ③ 视角死守虚影（有些游戏会抢 CameraSubject，这里每帧抢回来）
-	if Cam.CameraSubject ~= fh then
-		pcall(function()
-			Cam.CameraType = Enum.CameraType.Custom
-			Cam.CameraSubject = fh
-		end)
+	if not fhrp then return end
+	-- 本体在万米高空踩平台（移动能力保留，你正常走 / 跳）；若被外力拽下天空，拉回锚点
+	if HRP.Position.Y < FAKE_Y - 300 then
+		pcall(function() HRP.CFrame = CFrame.new(FakeAnchor + Vector3.new(0, 3, 0)) end)
 	end
-end)
--- 跳跃也转给虚影：移动端跳跃键 / 空格都会触发 JumpRequest
-pcall(function()
-	UserInputService.JumpRequest:Connect(function()
-		if not State.FakeChar then return end
-		local fh = FakeClone and FakeClone:FindFirstChildOfClass("Humanoid")
-		if fh then pcall(function() fh.Jump = true end) end
-	end)
+	-- 替身（地面上那具你看到的）镜像本体的相对位移与朝向：本体走上坡，替身也走上坡
+	local rel = HRP.Position - FakeAnchor
+	pcall(function() fhrp.CFrame = CFrame.new(FakeBase + rel) * (HRP.CFrame - HRP.Position) end)
 end)
 local LightBackup = nil
 function setFullbright(on)
@@ -4888,21 +4833,10 @@ function bindCharacter(char)
 	if char == lastBound and refsValid() then return end
 	lastBound = char
 	bindToken = bindToken + 1
-	if State.FakeChar then
-		pcall(function() setFakeStealth(false) end)
-	end
-	if State.FakeArm then
-		State.FakeArm = false
-		if FakeWin then
-			pcall(paintFakeWin, false)
-			FakeWin.Visible = false
-		end
-		if FakeTgl then pcall(function() FakeTgl.Set(false, true) end) end
-	end
-	if State.FakeChar then
-		cleanupFake()
-		State.FakeChar = false
-	end
+	-- 隐身跨重生保持：先记下原状态，旧虚影随旧角色销毁，重生后按原状态自动恢复（不用重新手动开）
+	local wantArm, wantChar = State.FakeArm, State.FakeChar
+	pcall(function() if FakeClone and FakeClone.Parent then FakeClone:Destroy() end end)
+	FakeClone = nil
 	Character = char
 	Humanoid = char:FindFirstChildOfClass("Humanoid")
 	HRP = char:FindFirstChild("HumanoidRootPart")
@@ -4911,6 +4845,29 @@ function bindCharacter(char)
 		local cs = Cam.CameraSubject
 		if Humanoid and (not cs or not cs.Parent) then Cam.CameraSubject = Humanoid end
 	end)
+	-- 隐身跨重生保持：总闸原本开着就自动弹窗；若之前在隐身则自动重新隐身（不用重新手动开）
+	if wantArm then
+		State.FakeArm = true
+		pcall(buildFakeWin)
+		if FakeWin then
+			FakeWin.Visible = true
+			pcall(function() resetWinDefault(FakeWin) end)
+		end
+		if FakeTgl then pcall(function() FakeTgl.Set(true, true) end) end
+		if wantChar then
+			State.FakeChar = false  -- 置脏：否则 setFakeStealth 见 on==FakeChar 直接 return 不会重建虚影
+			pcall(function() setFakeStealth(true) end)
+		else
+			State.FakeChar = false
+			paintFakeWin(false)
+		end
+	else
+		State.FakeArm = false
+		State.FakeChar = false
+		pcall(cleanupFake)
+		if FakeWin then FakeWin.Visible = false end
+		if FakeTgl then pcall(function() FakeTgl.Set(false, true) end) end
+	end
 	NoclipCache = {}
 	lastTransp = -1
 	clearFX()
@@ -6767,7 +6724,7 @@ function windBuild(lib)
 	if not W then return false end
 	WindWin = W
 	-- 再补一层保险（夜脚本同款）：CreateWindow 可能被库吞掉背景参数，建完强制再写一次
-	windSafe("Tag", function() W:Tag({ Title = "v5.67", Color = "ElementBackground" }) end)
+	windSafe("Tag", function() W:Tag({ Title = "v5.68", Color = "ElementBackground" }) end)
 	-- 引擎页
 	local tEng = nil
 	windSafe("Tab:引擎", function() tEng = W:Tab({ Title = "引擎", Icon = "gauge" }) end)
@@ -8328,6 +8285,6 @@ tspawn(function()
 end)
 -- 右上角「隐身」快速键常驻（默认关闭，点一下开、再点一下关）——初始化即建好，随时可点
 pcall(buildFakeWin)
-_pr("[HON SPEED HUB] v5.67 已加载 · 完整文件约 8334 行 · 若你的脚本远大于此行数说明粘贴重复了")
+_pr("[HON SPEED HUB] v5.68 已加载 · 完整文件约 8291 行 · 若你的脚本远大于此行数说明粘贴重复了")
 
 
