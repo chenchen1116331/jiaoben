@@ -1,5 +1,5 @@
 local _pr = (type(print) == "function") and print or (type(warn) == "function" and warn) or function() end
-_pr("[HON SPEED HUB] 载入中 · v5.68 · 若只看到这一行说明文件在中途中断")
+_pr("[HON SPEED HUB] 载入中 · v5.70 · 若只看到这一行说明文件在中途中断")
 local twait  = (type(task) == "table" and task.wait)  or wait  or function() end
 local tspawn = (type(task) == "table" and task.spawn) or spawn or function(f, ...) return f(...) end
 if type(twait) ~= "function" then twait = function() end end
@@ -88,7 +88,7 @@ local State = {
 	Fly = false, FlySpeed = 60,
 	TouchKeys = false, TouchLocked = false, WinLock = false,
 	PadKeys = false, PadSize = 100,
-	EspPlayer = false, EspNPC = false, EspInteract = false,
+	EspPlayer = false, EspNPC = false, EspInteract = false, EspTouch = false,
 	InstantInteract = false, EspDepth = true, InputAnim = true, EspHpBarBg = true,
 	ClickTP = false, SparkTP = false, AntiVoid = false, FakeChar = false, FakeArm = false, Invis = false, BodyTransp = 0, Fullbright = false, LowGravity = false, GravityValue = 40,
 	Spin = false, Rainbow = false, Bounce = false, Orbit = false, LowFx = false,
@@ -96,6 +96,7 @@ local State = {
 	Dance = false, Follow = false, Face = false, FovValue = 0, WatchTarget = nil, Radar = false, GfxShadow = false, GfxFog = false, GfxParticle = false, GfxDecal = false, GfxNight = false, GfxSuperNight = false, GfxNoFog = false, DashRun = false, WPLoop = false, WPLoopInt = 5,
 	Freeze = false, HidePlayers = false, AutoJump = false, CoordHud = false,
 	TPLoop = false, TPInterval = 0, TPOffsetY = 3,
+	TouchWin = false, TouchLoopInt = 1.5,
 	MoveGameUI = false, UILayoutLocked = false,
 	Stealth = false, StealthHideGame = false,
 	CamNoclip = false, AirWalk = false,
@@ -290,7 +291,7 @@ label({ Text = "HON SPEED HUB", Font = Enum.Font.GothamBold, TextSize = 21,
 	TextColor3 = Color3.fromRGB(238, 243, 255),
 	Position = UDim2.new(0, 36, 0, 16), Size = UDim2.new(0, 200, 0, 24),
 	TextXAlignment = Enum.TextXAlignment.Left }, Header)
-label({ Text = "Universal Hub  ·  W / V / CF  ·  v5.68", Font = Enum.Font.Gotham, TextSize = 11,
+label({ Text = "Universal Hub  ·  W / V / CF  ·  v5.70", Font = Enum.Font.Gotham, TextSize = 11,
 	TextColor3 = Color3.fromRGB(140, 149, 172),
 	Position = UDim2.new(0, 36, 0, 42), Size = UDim2.new(0, 240, 0, 16),
 	TextXAlignment = Enum.TextXAlignment.Left }, Header)
@@ -330,6 +331,17 @@ iconBtn("×", -34, Color3.fromRGB(255, 108, 118), function()
 end)
 -- ---------- 更新公告 ----------
 CHANGELOG = {
+	{ v = "v5.70", t = {
+		"布局调整 · 工具页「一键触碰所有可触碰物体」移到辅助页；视觉页新增「透视可触碰物体」（高亮金币/宝箱等可碰/可拾取物 + 名称）；视觉页删除「身体透明度」滑条；娱乐页删除「玩具 TOYS」整组；更多页「视野 FOV」移到辅助页最底部，并新增「视野最大/视野最小」两个 FOV 预设按钮；娱乐页「强制第三人称」移到辅助页，辅助页新增「强制第一人称」",
+		"新增 · 传送页顶部新增「可触碰物体列表」可缩小悬浮小窗：定时扫描 ProximityPrompt/ClickDetector/Tool/可拾取 BasePart（带 TouchInterest 的金币等），名单字翻译（内置常见词表，命中显示中文，否则原名），每条带「传送」按钮，底部「循环传送所有」开启后依次循环传送、关闭回到开启前位置",
+		"修复 · 公告改为保存类：关掉「启动时自动弹出」后下次启动不再自动弹（本地文件 + 跨服务器双保险存档），手动点开仍可用",
+		"修复 · 相机穿墙 CAMERA NOCLIP：原仅重设机位、墙仍遮挡；现每帧从相机向角色射线，途中所有墙/地形设为透明真正实现「穿透任意墙」看穿，关闭/卸载自动还原",
+		"重构 · 分身隐身：开启时把整张地图的「建筑/地形」几何复制到万米高空（只复制几何，忽略脚本/特效/贴花/NPC/玩家），本体踩在副本上能正常上坡、上下楼（不再一直平着走）；安全兜底平台放大到 4000 防坠入虚空，修「开久了一直往下快速掉」；隐身小窗位置改为像其他小窗一样记忆（拖动即更新默认、关闭重开/重生停在拖动位置，不再每次回初始）",
+	}},
+	{ v = "v5.69", t = {
+		"布局调整 · 娱乐页删除「服装翅膀」（翅膀系统 / 每帧扇翼动画 / 卸载清理调用 / UI 预览同步移除），空位由玩具区整体上移 276px 填补",
+		"布局调整 · 「分身隐身 FAKE CHAR」从工具页移到辅助页、置于「飞行窗口 FLY」正下方（只移分身隐身，隐身录屏 STEALTH 保持不动）；主 UI 与 WindUI 双框架同步",
+	}},
 	{ v = "v5.68", t = {
 		"修复 · 分身隐身回退到 v5.57 机制（用户：「改成 5.57 版本的隐身」）：开启后本体瞬移万米高空踩隐形平台（别人在地面看不见也打不到），本地造一只半透明克隆体顶在地面当替身，相机切到替身；你操控的是本体（在天上正常走，WalkSpeed 等移动能力完全保留 = 能正常移动），替身每帧镜像本体的位移与朝向，看起来就是在地面正常走。关掉时本体落回替身位置、替身与平台销毁、视角交还本体。这一版修掉了上一版「开了隐身不能动、也没生成虚拟人物」的问题（上一版把本体 WalkSpeed 设 0、又依赖一个没被正确驱动的虚影）",
 		"保留 · 当前这个「分身隐身小窗」样式不变，但按用户要求再缩小一点、开关放大一点：小窗尺寸 188×116 → 176×110，并把窗内「开关分身」换成自定义大号开关（62×30，原来 46×24），更容易在触屏上点中",
@@ -716,7 +728,7 @@ function buildNotice()
 		BackgroundTransparency = 1, BorderSizePixel = 0, ScrollBarThickness = 4,
 		ScrollBarImageTransparency = 0.6, ScrollBarImageColor3 = Mode().Accent,
 		CanvasSize = UDim2.new(0, 0, 0, 600), Parent = NoticeFrame })
-	local autoB = new("TextButton", { Text = "启动时自动弹出：开", Font = Enum.Font.GothamBold, TextSize = 11,
+	local autoB = new("TextButton", { Text = "启动时自动弹出：" .. (NoticeAuto and "开" or "关"), Font = Enum.Font.GothamBold, TextSize = 11,
 		TextColor3 = Mode().Accent, BackgroundColor3 = Color3.fromRGB(255, 255, 255),
 		BackgroundTransparency = 0.9, BorderSizePixel = 0,
 		Size = UDim2.new(1, -16, 0, 30), Position = UDim2.new(0, 8, 0, 384), Parent = NoticeFrame })
@@ -724,6 +736,7 @@ function buildNotice()
 	autoB.MouseButton1Click:Connect(function()
 		NoticeAuto = not NoticeAuto
 		autoB.Text = "启动时自动弹出：" .. (NoticeAuto and "开" or "关")
+		pcall(prefSave)
 	end)
 	fillNotice()
 end
@@ -1030,14 +1043,60 @@ end)
 local FlyTgl     = makeToggle(PageAssist, 318, "飞行窗口 FLY", "打开小窗 + 右上角上下键", false, function(v)
 	setFlyWindow(v)
 end)
-CamNoclipTgl = makeToggle(PageAssist, 366, "相机穿墙 CAMERA NOCLIP", "镜头不被墙/地形遮挡，可看穿墙体", false, function(v)
+FakeTgl = makeToggle(PageAssist, 366, "分身隐身 FAKE CHAR", "开启后右上角弹出分身隐身小窗", false, function(v)
+	setFakeChar(v)
+end)
+CamNoclipTgl = makeToggle(PageAssist, 414, "相机穿墙 CAMERA NOCLIP", "镜头不被墙/地形遮挡，可看穿墙体", false, function(v)
 	State.CamNoclip = v
 	setCamNoclip(v)
 end)
-AirWalkTgl = makeToggle(PageAssist, 414, "踏空行走 AIR WALK", "锁定水平面行走 · 小窗 UP/DOWN 调高度", false, function(v)
+AirWalkTgl = makeToggle(PageAssist, 462, "踏空行走 AIR WALK", "锁定水平面行走 · 小窗 UP/DOWN 调高度", false, function(v)
 	State.AirWalk = v
 	setAirWalk(v)
 end)
+	-- v5.70：视角控制整组（强制第一人称 / 强制第三人称 / 视野 FOV / 视野最大 / 视野最小）移到辅助页底部
+	FP_Backup = nil
+	function setFirstPerson(on)
+		State.FirstPerson = on
+		pcall(function()
+			if on then
+				if not FP_Backup then FP_Backup = { Min = LP.CameraMinZoomDistance, Max = LP.CameraMaxZoomDistance, Mode = LP.CameraMode } end
+				LP.CameraMinZoomDistance = 0.5
+				LP.CameraMaxZoomDistance = 0.5
+				pcall(function() LP.CameraMode = Enum.CameraMode.LockFirstPerson end)
+			else
+				if FP_Backup then
+					LP.CameraMinZoomDistance = FP_Backup.Min
+					LP.CameraMaxZoomDistance = FP_Backup.Max
+					pcall(function() LP.CameraMode = FP_Backup.Mode end)
+				end
+			end
+		end)
+	end
+	FirstTgl = makeToggle(PageAssist, 510, "强制第一人称", "锁定贴脸第一人称视角", false, function(v)
+		setFirstPerson(v)
+	end)
+	ThirdTgl = makeToggle(PageAssist, 558, "强制第三人称", "锁定第三人称视角", false, function(v)
+		setThirdPerson(v)
+	end)
+	FovSlider = makeSlider(PageAssist, "视野 FOV", 606, 30, 120, 70, " °", function(v)
+		State.FovValue = v
+		pcall(function() if v > 0 then Cam.FieldOfView = v end end)
+	end, false)
+	local FovMaxBtn = new("TextButton", { Text = "视野最大", Font = Enum.Font.GothamBold, TextSize = 11,
+		TextColor3 = Mode().Accent, BackgroundColor3 = Color3.fromRGB(255, 255, 255), BackgroundTransparency = 0.9,
+		BorderSizePixel = 0, AutoButtonColor = false,
+		Size = UDim2.new(0.5, -4, 0, 34), Position = UDim2.new(0, 0, 0, 654), Parent = PageAssist })
+	corner(FovMaxBtn, 8)
+	table.insert(FunBtns, FovMaxBtn)
+	bindClick(FovMaxBtn, "视野最大", function() if FovSlider then FovSlider.Set(120) end end)
+	local FovMinBtn = new("TextButton", { Text = "视野最小", Font = Enum.Font.GothamBold, TextSize = 11,
+		TextColor3 = Mode().Accent, BackgroundColor3 = Color3.fromRGB(255, 255, 255), BackgroundTransparency = 0.9,
+		BorderSizePixel = 0, AutoButtonColor = false,
+		Size = UDim2.new(0.5, -4, 0, 34), Position = UDim2.new(0.5, 4, 0, 698), Parent = PageAssist })
+	corner(FovMinBtn, 8)
+	table.insert(FunBtns, FovMinBtn)
+	bindClick(FovMinBtn, "视野最小", function() if FovSlider then FovSlider.Set(30) end end)
 label({ Text = "视 觉 增 强", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Color3.fromRGB(120, 129, 152), Size = UDim2.new(1, 0, 0, 18),
 	Position = UDim2.new(0, 2, 0, 0), TextXAlignment = Enum.TextXAlignment.Left }, PageEsp)
@@ -1050,17 +1109,20 @@ end)
 EspItTgl     = makeToggle(PageEsp, 120, "交互物透视", "ProximityPrompt / ClickDetector", false, function(v)
 	State.EspInteract = v; if not v then clearEsp("Interact") end
 end)
-InstantTgl   = makeToggle(PageEsp, 168, "秒交互", "HoldDuration=0 · 距离 30", false, function(v)
+EspTouchTgl  = makeToggle(PageEsp, 168, "透视可触碰物体", "高亮金币/宝箱等可碰 / 可拾取物 + 名称", false, function(v)
+	State.EspTouch = v; if not v then clearEsp("Touchable") end
+end)
+InstantTgl   = makeToggle(PageEsp, 216, "秒交互", "HoldDuration=0 · 距离 30", false, function(v)
 	State.InstantInteract = v; applyInstantInteract(v)
 end)
-RadarTgl = makeToggle(PageEsp, 318, "雷达 RADAR", "右上角 · 人/NPC/互动物/墙壁折线", false, function(v)
+RadarTgl = makeToggle(PageEsp, 366, "雷达 RADAR", "右上角 · 人/NPC/互动物/墙壁折线", false, function(v)
 	State.Radar = v
 	if not v and RadarFrame then RadarFrame.Visible = false end
 end)
 local RadarModeBtn = new("TextButton", { Text = "雷达模式：全显 + 墙壁 ▾", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Mode().Accent, BackgroundColor3 = Color3.fromRGB(255, 255, 255), BackgroundTransparency = 0.9,
 	BorderSizePixel = 0, AutoButtonColor = false,
-	Size = UDim2.new(1, 0, 0, 32), Position = UDim2.new(0, 0, 0, 366), Parent = PageEsp })
+	Size = UDim2.new(1, 0, 0, 32), Position = UDim2.new(0, 0, 0, 414), Parent = PageEsp })
 corner(RadarModeBtn, 8)
 table.insert(FunBtns, RadarModeBtn)
 bindClick(RadarModeBtn, "雷达模式", function()
@@ -1068,12 +1130,9 @@ bindClick(RadarModeBtn, "雷达模式", function()
 	RadarModeBtn.Text = (RadarMode == 1) and "雷达模式：全显 + 墙壁 ▾" or "雷达模式：仅人物 / NPC ▾"
 	if notify then notify((RadarMode == 1) and "雷达：全显（人 + NPC + 互动物 + 墙壁折线）" or "雷达：仅人物 / NPC（干净模式）") end
 end)
-EspDepthTgl  = makeToggle(PageEsp, 216, "穿墙显示", "角色高亮穿墙，名字/血条/距离永远可见", true, function(v)
+EspDepthTgl  = makeToggle(PageEsp, 264, "穿墙显示", "角色高亮穿墙，名字/血条/距离永远可见", true, function(v)
 	State.EspDepth = v; refreshEspDepth()
 end)
-TranspSlider = makeSlider(PageEsp, "身体透明度", 264, 0, 100, 0, " %", function(v)
-	State.BodyTransp = v / 100
-end, false)
 -- v5.45：「隐藏身上方块」从手动开关/按钮改为脚本内置自动功能（用户：「开启脚本如果出现
 -- 方块自动清除而不是手动……把清除方块功能就可以去掉了，就在脚本内置一个自动开启的」）——
 -- 启动 / 重生 / 开隐身都会自动清，Stepped 维持循环持续压回游戏后加上来的附加物
@@ -1503,29 +1562,225 @@ end, true)
 AntiVoidTgl = makeToggle(PageTool, 200, "防坠落 ANTI-VOID", "掉出地图自动拉回安全点", false, function(v)
 	State.AntiVoid = v
 end)
-   local FakeTgl = makeToggle(PageTool, 248, "分身隐身 FAKE CHAR", "开启后右上角弹出分身隐身小窗", false, function(v)
-	setFakeChar(v)
-end)
-BrightTgl = makeToggle(PageTool, 296, "夜视 FULLBRIGHT", "去雾 + 全亮，关闭时还原", false, function(v)
+BrightTgl = makeToggle(PageTool, 248, "夜视 FULLBRIGHT", "去雾 + 全亮，关闭时还原", false, function(v)
 	setFullbright(v)
 end)
-AntiKbTgl = makeToggle(PageTool, 344, "防击退 ANTI-KB", "限制异常击飞速度", false, function(v)
+AntiKbTgl = makeToggle(PageTool, 296, "防击退 ANTI-KB", "限制异常击飞速度", false, function(v)
 	State.AntiKB = v
 end)
-AntiStunTgl = makeToggle(PageTool, 392, "防失控 ANTI-STUN", "自动解除被眩晕 / 被坐下", false, function(v)
+AntiStunTgl = makeToggle(PageTool, 344, "防失控 ANTI-STUN", "自动解除被眩晕 / 被坐下", false, function(v)
 	State.AntiStun = v
 end)
-GravitySlider = makeSlider(PageTool, "重力 GRAVITY", 450, -200, 300, math.floor(Workspace.Gravity + 0.5), " g",
+GravitySlider = makeSlider(PageTool, "重力 GRAVITY", 402, -200, 300, math.floor(Workspace.Gravity + 0.5), " g",
 	function(v) Workspace.Gravity = v end, false)
-SparkTgl = makeToggle(PageTool, 502, "闪电尖兵大招 SPARK ULT", "点击画面任意位置直接传送过去（照搬参考源码）", false, function(v)
+SparkTgl = makeToggle(PageTool, 454, "闪电尖兵大招 SPARK ULT", "点击画面任意位置直接传送过去（照搬参考源码）", false, function(v)
 	State.SparkTP = v
+end)
+-- ╔══════════════════════════════════════════════════════════════╗
+-- ║ v5.70 · 传送页「可触碰物体列表」悬浮小窗（可缩小 / 可拖拽）      ║
+-- ╚══════════════════════════════════════════════════════════════╝
+HonTouchWin, TouchListWrap, TouchLoopBtn, TouchWinTgl = nil, nil, nil, nil
+TouchWinCollapsed = false
+Touchables = {}
+TouchLoopOn = false
+TouchLoopIdx = 0
+TouchLoopBackup = nil
+TouchWinConn = nil
+touchScanT, touchLoopT = 0, 0
+-- 本地常见词翻译表：命中显示中文，否则显示原名（不依赖外部 API）
+TOUCH_NAME_CN = {
+	coin = "金币", coins = "金币", gem = "宝石", gems = "宝石", diamond = "钻石",
+	gold = "黄金", chest = "宝箱", key = "钥匙", star = "星星", orb = "宝珠",
+	reward = "奖励", prize = "奖品", cash = "现金", money = "钱", candy = "糖果",
+	heart = "爱心", crown = "皇冠", skull = "骷髅", token = "代币", ticket = "门票",
+	apple = "苹果", banana = "香蕉", mushroom = "蘑菇", flower = "花", leaf = "叶子",
+	egg = "蛋", crystal = "水晶", trophy = "奖杯", medal = "勋章", gemstone = "宝石",
+	loot = "战利品", drop = "掉落", power = "能量", bag = "背包", box = "箱子",
+}
+function touchNameCn(name)
+	if not name or name == "" then return name end
+	local s = string.lower(tostring(name))
+	for k, v in pairs(TOUCH_NAME_CN) do
+		if string.find(s, k, 1, true) then return v end
+	end
+	return name
+end
+function touchObjCF(ref)
+	if not ref or not ref.Parent then return nil end
+	if ref:IsA("BasePart") then return ref.CFrame end
+	local pp = ref.PrimaryPart or ref:FindFirstChildOfClass("BasePart")
+	if pp then return pp.CFrame end
+	local ok, gp = pcall(function() return ref:GetPivot() end)
+	if ok and gp then return gp end
+	return nil
+end
+function scanTouchables()
+	local res, seen = {}, {}
+	pcall(function()
+		for _, obj in ipairs(Workspace:GetDescendants()) do
+			local host
+			if obj:IsA("BasePart") and obj:FindFirstChild("TouchInterest") then
+				host = obj
+			elseif obj:IsA("Tool") then
+				host = obj.PrimaryPart or obj:FindFirstChildOfClass("BasePart") or obj
+			elseif obj:IsA("ProximityPrompt") or obj:IsA("ClickDetector") then
+				host = obj:FindFirstAncestorOfClass("Part") or obj:FindFirstAncestorOfClass("Model")
+			end
+			if host and host.Parent and not seen[host] then
+				seen[host] = true
+				table.insert(res, { obj = host, name = host.Name, cn = touchNameCn(host.Name) })
+			end
+		end
+	end)
+	return res
+end
+function teleToTouch(ref)
+	if not (HRP and HRP.Parent) then return end
+	local cf = touchObjCF(ref)
+	if cf then
+		HRP.CFrame = cf + Vector3.new(0, State.TPOffsetY, 0)
+		if notify then notify("已传送到 " .. (ref.Name or "目标")) end
+	elseif notify then
+		notify("目标已失效", Color3.fromRGB(255, 108, 118))
+	end
+end
+function refreshTouchList()
+	if not (HonTouchWin and HonTouchWin.Visible) then return end
+	Touchables = scanTouchables()
+	for _, c in ipairs(TouchListWrap:GetChildren()) do
+		if c:IsA("Frame") then pcall(function() c:Destroy() end) end
+	end
+	for i, t in ipairs(Touchables) do
+		local row = new("Frame", { Size = UDim2.new(1, -4, 0, 26), BackgroundTransparency = 1,
+			Parent = TouchListWrap, LayoutOrder = i })
+		new("TextLabel", { Text = (t.cn or t.name) .. "  #" .. i, Font = Enum.Font.Gotham, TextSize = 10,
+			TextColor3 = Color3.fromRGB(220, 230, 248), BackgroundTransparency = 1,
+			Size = UDim2.new(0.6, 0, 1, 0), Position = UDim2.new(0, 4, 0, 0),
+			TextXAlignment = Enum.TextXAlignment.Left, Parent = row })
+		local tb = new("TextButton", { Text = "传送", Font = Enum.Font.GothamBold, TextSize = 10,
+			TextColor3 = Mode().Accent, BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+			BackgroundTransparency = 0.9, BorderSizePixel = 0, AutoButtonColor = false,
+			Size = UDim2.new(0.34, 0, 0, 22), Position = UDim2.new(0.64, 0, 0.5, -11), Parent = row })
+		corner(tb, 6)
+		pcall(function() tb.MouseButton1Click:Connect(function() teleToTouch(t.obj) end) end)
+	end
+	TouchListWrap.CanvasSize = UDim2.new(0, 0, 0, #Touchables * 29 + 6)
+end
+function touchWinTick(dt)
+	touchScanT = touchScanT + dt
+	if touchScanT >= 2 then touchScanT = 0; refreshTouchList() end
+	if TouchLoopOn then
+		touchLoopT = touchLoopT + dt
+		local intv = (State.TouchLoopInt and State.TouchLoopInt > 0) and State.TouchLoopInt or 1.5
+		if touchLoopT >= intv then
+			touchLoopT = 0
+			if #Touchables == 0 then Touchables = scanTouchables() end
+			if #Touchables > 0 and HRP and HRP.Parent then
+				TouchLoopIdx = (TouchLoopIdx % #Touchables) + 1
+				local t = Touchables[TouchLoopIdx]
+				local cf = t and touchObjCF(t.obj)
+				if cf then HRP.CFrame = cf + Vector3.new(0, State.TPOffsetY, 0) end
+			end
+		end
+	end
+end
+function setTouchLoop(on)
+	on = on and true or false
+	if on then
+		if not (HRP and HRP.Parent) then if notify then notify("角色还没加载", Color3.fromRGB(255, 108, 118)) end return end
+		TouchLoopBackup = HRP.CFrame
+		TouchLoopOn = true
+		TouchLoopIdx = 0
+		if TouchLoopBtn then pcall(function() TouchLoopBtn.BackgroundColor3 = Color3.fromRGB(80, 200, 120) end) end
+	else
+		TouchLoopOn = false
+		if TouchLoopBtn then pcall(function() TouchLoopBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 255) end) end
+		if TouchLoopBackup and HRP and HRP.Parent then
+			HRP.CFrame = TouchLoopBackup
+			if notify then notify("已回到循环前的位置") end
+		end
+		TouchLoopBackup = nil
+	end
+end
+function setTouchWin(on)
+	on = on and true or false
+	State.TouchWin = on
+	if on then
+		buildTouchWin()
+		if HonTouchWin then
+			HonTouchWin.Visible = true
+			local p = WinDefault[HonTouchWin]
+			if p then HonTouchWin.Position = p end
+			TouchWinCollapsed = false
+		end
+		Touchables = scanTouchables()
+		refreshTouchList()
+		if not TouchWinConn then TouchWinConn = RunService.Heartbeat:Connect(touchWinTick) end
+	else
+		if TouchLoopOn then setTouchLoop(false) end
+		if TouchWinConn then pcall(function() TouchWinConn:Disconnect() end); TouchWinConn = nil end
+		if HonTouchWin then HonTouchWin.Visible = false end
+	end
+end
+function buildTouchWin()
+	if HonTouchWin and HonTouchWin.Parent then return end
+	local w = new("Frame", { Name = "HonTouchWin", Size = UDim2.new(0, 220, 0, 300),
+		Position = UDim2.new(0.5, -110, 0.12, 0),
+		BackgroundColor3 = Color3.fromRGB(13, 15, 23), BackgroundTransparency = 0.06,
+		BorderSizePixel = 0, Visible = false, Active = true, Parent = Gui })
+	corner(w, 14)
+	new("UIStroke", { Color = Modes[1].Accent, Transparency = 0.5, Thickness = 1, Parent = w })
+	local bar = new("Frame", { Size = UDim2.new(1, 0, 0, 30), BackgroundTransparency = 1, Parent = w })
+	label({ Text = "可触碰物体", Font = Enum.Font.GothamBold, TextSize = 12, TextColor3 = Color3.fromRGB(238, 243, 255),
+		Position = UDim2.new(0, 12, 0, 8), Size = UDim2.new(0, 130, 0, 18), TextXAlignment = Enum.TextXAlignment.Left }, bar)
+	local minB = new("TextButton", { Text = "—", Font = Enum.Font.GothamBold, TextSize = 13, TextColor3 = Color3.fromRGB(200, 210, 230),
+		BackgroundColor3 = Color3.fromRGB(255, 255, 255), BackgroundTransparency = 0.92, BorderSizePixel = 0, AutoButtonColor = false,
+		Position = UDim2.new(1, -54, 0, 4), Size = UDim2.new(0, 22, 0, 22), Parent = bar })
+	corner(minB, 7)
+	local closeB = new("TextButton", { Text = "×", Font = Enum.Font.GothamBold, TextSize = 15, TextColor3 = Color3.fromRGB(255, 108, 118),
+		BackgroundColor3 = Color3.fromRGB(255, 255, 255), BackgroundTransparency = 0.92, BorderSizePixel = 0, AutoButtonColor = false,
+		Position = UDim2.new(1, -30, 0, 4), Size = UDim2.new(0, 22, 0, 22), Parent = bar })
+	corner(closeB, 7)
+	local body = new("Frame", { Size = UDim2.new(1, 0, 1, -30), Position = UDim2.new(0, 0, 0, 30), BackgroundTransparency = 1, Parent = w })
+	local listWrap = new("ScrollingFrame", { Size = UDim2.new(1, -12, 1, -84), Position = UDim2.new(0, 6, 0, 6),
+		BackgroundColor3 = Color3.fromRGB(20, 23, 33), BackgroundTransparency = 0.25, BorderSizePixel = 0,
+		ScrollBarThickness = 4, ScrollBarImageTransparency = 0.5, CanvasSize = UDim2.new(0, 0, 0, 0), Parent = body })
+	corner(listWrap, 10)
+	new("UIStroke", { Color = Modes[1].Accent, Transparency = 0.75, Thickness = 1, Parent = listWrap })
+	TouchListWrap = listWrap
+	new("UIListLayout", { Padding = UDim.new(0, 3), SortOrder = Enum.SortOrder.LayoutOrder, Parent = listWrap })
+	local loopB = new("TextButton", { Text = "循环传送所有", Font = Enum.Font.GothamBold, TextSize = 11,
+		TextColor3 = Color3.fromRGB(224, 231, 246), BackgroundColor3 = Color3.fromRGB(255, 255, 255), BackgroundTransparency = 0.9,
+		BorderSizePixel = 0, AutoButtonColor = false, Size = UDim2.new(1, -12, 0, 34), Position = UDim2.new(0, 6, 1, -42), Parent = body })
+	corner(loopB, 9)
+	TouchLoopBtn = loopB
+	HonTouchWin = w
+	minB.MouseButton1Click:Connect(function()
+		TouchWinCollapsed = not TouchWinCollapsed
+		body.Visible = not TouchWinCollapsed
+		w.Size = TouchWinCollapsed and UDim2.new(0, 220, 0, 30) or UDim2.new(0, 220, 0, 300)
+	end)
+	closeB.MouseButton1Click:Connect(function()
+		if TouchWinTgl then pcall(function() TouchWinTgl.Set(false, true) end) end
+		setTouchWin(false)
+	end)
+	loopB.MouseButton1Click:Connect(function() setTouchLoop(not TouchLoopOn) end)
+	pcall(function() saveWinDefault(w) end)
+	pcall(function() attachDrag(w, bar, UserInputService, function(p) WinDefault[w] = p end, "WinLock") end)
+end
+
+label({ Text = "可 触 碰 物 体 TOUCHABLES", Font = Enum.Font.GothamBold, TextSize = 11,
+	TextColor3 = Color3.fromRGB(120, 129, 152), Size = UDim2.new(1, 0, 0, 18),
+	Position = UDim2.new(0, 2, 0, 0), TextXAlignment = Enum.TextXAlignment.Left }, PageTp)
+TouchWinTgl = makeToggle(PageTp, 26, "显示列表窗口 LIST WIN", "屏幕生成可缩小悬浮窗 · 列出可触碰 / 可拾取物", false, function(v)
+	setTouchWin(v)
 end)
 label({ Text = "传 送 TELEPORT", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Color3.fromRGB(120, 129, 152), Size = UDim2.new(1, 0, 0, 18),
-	Position = UDim2.new(0, 2, 0, 0), TextXAlignment = Enum.TextXAlignment.Left }, PageTp)
+	Position = UDim2.new(0, 2, 0, 84), TextXAlignment = Enum.TextXAlignment.Left }, PageTp)
 label({ Text = "传 送 玩 家 PLAYER TP", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Color3.fromRGB(196, 204, 224), Size = UDim2.new(1, 0, 0, 16),
-	Position = UDim2.new(0, 2, 0, 24), TextXAlignment = Enum.TextXAlignment.Left }, PageTp)
+	Position = UDim2.new(0, 2, 0, 108), TextXAlignment = Enum.TextXAlignment.Left }, PageTp)
 local ViewBtn = new("TextButton", { Text = "查看玩家 VIEW PLAYER", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Mode().Accent, BackgroundColor3 = Color3.fromRGB(255, 255, 255), BackgroundTransparency = 0.9,
 	BorderSizePixel = 0, AutoButtonColor = false,
@@ -1558,10 +1813,10 @@ local TPTarget = nil
 local TargetBtn = new("TextButton", { Text = "选择目标 ▾  （玩家 / NPC）", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Mode().Accent, BackgroundColor3 = Color3.fromRGB(255, 255, 255), BackgroundTransparency = 0.9,
 	BorderSizePixel = 0, AutoButtonColor = false,
-	Size = UDim2.new(1, 0, 0, 36), Position = UDim2.new(0, 0, 0, 44), Parent = PageTp })
+	Size = UDim2.new(1, 0, 0, 36), Position = UDim2.new(0, 0, 0, 128), Parent = PageTp })
 corner(TargetBtn, 10)
 table.insert(ToolBtns, TargetBtn)
-local TPListWrap = new("Frame", { Size = UDim2.new(1, 0, 0, 150), Position = UDim2.new(0, 0, 0, 86),
+local TPListWrap = new("Frame", { 	Size = UDim2.new(1, 0, 0, 150), Position = UDim2.new(0, 0, 0, 170),
 	BackgroundColor3 = Color3.fromRGB(20, 23, 33), BackgroundTransparency = 0.25,
 	BorderSizePixel = 0, Visible = false, ClipsDescendants = true, Parent = PageTp })
 corner(TPListWrap, 10)
@@ -2061,7 +2316,78 @@ RunService.Stepped:Connect(function()
 	end
 end)
 FAKE_Y = 100000
-FakeClone, FakePlatform, FakeBase, FakeAnchor = nil, nil, nil, nil
+FakeClone, FakePlatform, FakeBase, FakeAnchor, FakeWorld = nil, nil, nil, nil, nil
+-- 判断某部件是否属于「角色 / NPC」模型（带 Humanoid）——复制高空副本时跳过玩家与 NPC
+function inCharModel(p)
+	local a = p.Parent
+	while a do
+		if a:IsA("Model") and a:FindFirstChildOfClass("Humanoid") then return true end
+		if a == Workspace then break end
+		a = a.Parent
+	end
+	return false
+end
+-- v5.70：把整张地图的「建筑 / 地形」几何复制到万米高空（只复制几何，忽略脚本 / 特效 / 贴花 / NPC / 玩家），
+-- 本体踩在这份副本上就能正常上坡、上下楼（不再一直平着走）；副本隐形（Transparency=1）但可碰撞。
+function buildFakeWorld()
+	if FakeWorld and FakeWorld.Parent then return end
+	local folder = Instance.new("Folder")
+	folder.Name = "HonFakeWorld"
+	local FX = { "Decal", "Texture", "ParticleEmitter", "Trail", "Beam", "Fire", "Smoke",
+		"Sparkles", "PointLight", "SurfaceLight", "SpotLight", "BillboardGui", "SelectionBox", "Highlight" }
+	pcall(function()
+		for _, obj in ipairs(Workspace:GetDescendants()) do
+			if obj:IsA("BasePart") and obj.Name ~= "HonFakePlatform" and obj.Name ~= "HonFakeClone" and obj.Name ~= "HonFakeWorld" and not inCharModel(obj) then
+				local c = obj:Clone()
+				for _, d in ipairs(c:GetDescendants()) do
+					if d:IsA("LuaSourceContainer") then
+						pcall(function() d:Destroy() end)
+					elseif d:IsA("BasePart") then
+						pcall(function()
+							d.Anchored = true
+							d.CanCollide = (d.CanCollide == true)
+							d.Transparency = 1
+							d.CastShadow = false
+						end)
+					else
+						for _, fx in ipairs(FX) do
+							if d:IsA(fx) then pcall(function() d:Destroy() end) break end
+						end
+					end
+				end
+				pcall(function()
+					c.Anchored = true
+					c.Transparency = 1
+					c.CastShadow = false
+					c.CFrame = obj.CFrame + Vector3.new(0, FAKE_Y, 0)
+				end)
+				pcall(function() c.Parent = folder end)
+			end
+		end
+	end)
+	-- 体素地形：尽力复制（不支持就跳过，靠建筑副本 + 安全平台兜底）
+	pcall(function()
+		local terr = Workspace:FindFirstChildOfClass("Terrain")
+		if terr and terr:IsA("Terrain") then
+			local ok, copied = pcall(function()
+				local ext = terr:GetExtents()
+				return terr:CopyRegion(Region3.new(ext.Min, ext.Max))
+			end)
+			if ok and copied then
+				copied.Parent = folder
+				pcall(function()
+					for _, r in ipairs(copied:GetDescendants()) do
+						if r:IsA("BasePart") then
+							pcall(function() r.CFrame = r.CFrame + Vector3.new(0, FAKE_Y, 0) end)
+						end
+					end
+				end)
+			end
+		end
+	end)
+	folder.Parent = Workspace
+	FakeWorld = folder
+end
 -- 分身隐身（退回 v5.57 机制）：本体瞬移万米高空踩平台，本地造半透明克隆体顶在地面当替身
 -- （别人看不见、攻击也打不到），相机切到替身；你操控的是本体（在天上正常走，WalkSpeed 等移动能力
 -- 完全保留，所以「能正常移动」），替身每帧镜像本体位移，看起来就是在地面正常走。关掉时本体落回
@@ -2069,7 +2395,8 @@ FakeClone, FakePlatform, FakeBase, FakeAnchor = nil, nil, nil, nil
 function cleanupFake()
 	if FakeClone then pcall(function() FakeClone:Destroy() end) end
 	if FakePlatform then pcall(function() FakePlatform:Destroy() end) end
-	FakeClone, FakePlatform, FakeBase, FakeAnchor = nil, nil, nil, nil
+	if FakeWorld then pcall(function() FakeWorld:Destroy() end) end
+	FakeClone, FakePlatform, FakeBase, FakeAnchor, FakeWorld = nil, nil, nil, nil, nil
 end
 -- 分身隐身小窗（按 v5.61 原样恢复）：右上角独立悬浮小窗，样式 / 尺寸 / 位置 / 拖动 / 固定小窗
 -- 全部照旧。窗里那个「开关分身」就是纯粹的开关——开 = 隐身，关 = 取消隐身；
@@ -2124,13 +2451,13 @@ function buildFakeWin()
 	end
 	tglApi = { Set = function(v, silent) tglOn = v; tglPaint(v); if not silent then tglCb(v) end end, _last = false }
 	sw.MouseButton1Click:Connect(function() tglApi.Set(not tglOn) end)
-	label({ Text = "本体在万米高空 · 虚影在地面替你走\n（虚影有碰撞，能上坡、不穿墙）", Font = Enum.Font.Gotham, TextSize = 9,
+	label({ Text = "本体踩整张地图的高空副本（能上坡 / 上下楼）\n虚影在地面替你走", Font = Enum.Font.Gotham, TextSize = 9,
 		TextColor3 = Color3.fromRGB(132, 141, 163), Position = UDim2.new(0, 14, 0, 82),
 		Size = UDim2.new(1, -28, 0, 24), TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top }, w)
 	FakeWin = w
 	FakeWinToggle = tglApi
 	pcall(function() saveWinDefault(FakeWin) end)
-	pcall(function() attachDrag(FakeWin, bar, UserInputService, nil, "WinLock") end)
+	pcall(function() attachDrag(FakeWin, bar, UserInputService, function(p) WinDefault[FakeWin] = p end, "WinLock") end)
 end
 function paintFakeWin(on)
 	if FakeWinToggle then pcall(function() FakeWinToggle.Set(on and true or false, true) end) end
@@ -2148,7 +2475,6 @@ function setFakeChar(on)
 	if on then
 		if FakeWin then
 			FakeWin.Visible = true
-			pcall(function() resetWinDefault(FakeWin) end)  -- 关闭重开恢复默认位置（无位置记忆）
 		end
 		paintFakeWin(State.FakeChar)
 	else
@@ -2181,19 +2507,23 @@ function setFakeStealth(on)
 		paintFakeWin(false)
 		return
 	end
-	-- v5.57 机制：本体瞬移万米高空踩平台，本地造半透明克隆体顶在地面当替身（别人看不见、攻击也打不到），
-	-- 相机切到替身；你操控的是本体（在天上正常走，WalkSpeed 等移动能力完全保留 = 能正常移动），
-	-- 替身每帧镜像本体的位移，所以看起来就是在地面正常走。
+	-- v5.70：本体瞬移万米高空，脚下是「整张地图建筑 / 地形」的隐形副本（只复制几何，忽略脚本 / 特效 / 贴花 / NPC / 玩家），
+	-- 本体踩在副本上能正常上坡、上下楼；本地再造半透明克隆体顶在地面当替身（别人看不见、攻击也打不到），相机切到替身。
+	-- 你操控的是本体（在天上正常走，WalkSpeed 等移动能力完全保留 = 能正常移动），替身每帧镜像本体的位移，看起来就是在地面正常走。
+	cleanupFake()  -- 清掉上一轮的平台 / 副本 / 高空世界，避免重生叠加两份
+	buildFakeWorld()
 	local hip = (Humanoid.HipHeight > 0) and Humanoid.HipHeight or 2.5
-	FakeAnchor = Vector3.new(HRP.Position.X, FAKE_Y, HRP.Position.Z)
-	FakeBase   = HRP.Position - Vector3.new(0, hip, 0)
+	-- 锚点 = 本体当前位置 + FAKE_Y：保留原本高度，让本体落在「原地」对应高处（屋顶 / 楼梯都能站），告别一直平着走
+	FakeAnchor = HRP.Position + Vector3.new(0, FAKE_Y, 0)
+	FakeBase   = FakeAnchor - Vector3.new(0, hip, 0)
+	-- 安全兜底平台：放大到 4000，本体基本走不出去；副本地形撑不起时也能接住，不再坠入虚空（修「开久了一直往下掉」）
 	FakePlatform = Instance.new("Part")
 	FakePlatform.Name = "HonFakePlatform"
-	FakePlatform.Size = Vector3.new(400, 10, 400)
+	FakePlatform.Size = Vector3.new(4000, 10, 4000)
 	FakePlatform.Anchored = true
 	FakePlatform.CanCollide = true
 	FakePlatform.Transparency = 1
-	FakePlatform.CFrame = CFrame.new(FakeAnchor - Vector3.new(0, 5, 0))
+	FakePlatform.CFrame = CFrame.new(FakeAnchor - Vector3.new(0, hip + 5, 0))
 	FakePlatform.Parent = Workspace
 	FakeClone = HRP.Parent:Clone()
 	FakeClone.Name = "HonFakeClone"
@@ -2223,9 +2553,10 @@ RunService:BindToRenderStep("HonFakeSync", 1999, function()
 	if not (FakeClone and FakeClone.Parent) or not (HRP and HRP.Parent) then return end
 	local fhrp = FakeClone:FindFirstChild("HumanoidRootPart")
 	if not fhrp then return end
-	-- 本体在万米高空踩平台（移动能力保留，你正常走 / 跳）；若被外力拽下天空，拉回锚点
-	if HRP.Position.Y < FAKE_Y - 300 then
-		pcall(function() HRP.CFrame = CFrame.new(FakeAnchor + Vector3.new(0, 3, 0)) end)
+	-- 本体在万米高空踩副本（移动能力保留，正常走 / 跳 / 上坡）；若坠出副本范围，拉回锚点（相对高度判定，适配任意起始高度）
+	local hip = FakeAnchor.Y - FakeBase.Y
+	if HRP.Position.Y < FakeAnchor.Y - 400 then
+		pcall(function() HRP.CFrame = CFrame.new(FakeAnchor + Vector3.new(0, hip + 1, 0)) end)
 	end
 	-- 替身（地面上那具你看到的）镜像本体的相对位移与朝向：本体走上坡，替身也走上坡
 	local rel = HRP.Position - FakeAnchor
@@ -2508,6 +2839,7 @@ end
 -- 强制第三人称：锁死相机缩放距离（拉不进第一人称），关闭时还原备份
 function setThirdPerson(on)
 	State.ThirdPerson = on
+	if on and FirstTgl then pcall(function() FirstTgl.Set(false, true) end) end
 	pcall(function()
 		if on then
 			if not TP_Backup then TP_Backup = { Min = LP.CameraMinZoomDistance, Max = LP.CameraMaxZoomDistance } end
@@ -2590,9 +2922,6 @@ CarTgl = makeToggle(PageFun, 496, "FE 变车 BECOME CAR", "角色变成车（需
 	else
 		setCar(false)
 	end
-end)
-ThirdTgl = makeToggle(PageFun, 544, "强制第三人称", "锁定第三人称视角", false, function(v)
-	setThirdPerson(v)
 end)
 NoFallTgl = makeToggle(PageFun, 592, "防摔落伤害", "落地不扣血", false, function(v)
 	State.NoFall = v
@@ -2679,7 +3008,6 @@ function ejectUp()
 	EjectCd = tick() + 2.5
 	HRP.AssemblyLinearVelocity = Vector3.new(0, 190, 0)
 	-- 脚下补一圈烟花，起飞更有仪式感
-	pcall(toyFirework)
 	if notify then notify("咻——起飞！") end
 end
 -- 2) 装死倒地：PlatformStand 让角色当场躺平（再点站起来；起身走两步自动退出）
@@ -2802,11 +3130,6 @@ FeignBtn.MouseButton1Click:Connect(function()
 end)
 ClockSlider = makeSlider(PageMore, "昼夜 CLOCK", 322, 0, 24, math.floor(Lighting.ClockTime), " h", function(v)
 	Lighting.ClockTime = v
-end, false)
-FovSlider = makeSlider(PageMore, "视野 FOV", 376, 30, 120, 70, " °", function(v)
-	State.FovValue = v
-	pcall(function() if v > 0 then Cam.FieldOfView = v end end)
-	if v > 0 then Cam.FieldOfView = v end
 end, false)
 FX_LIST = { "OFF", "BLOOM", "CYBER", "NOIR" }
 fxIndex = 1
@@ -4063,9 +4386,7 @@ function unloadScript()
 	-- 隐身在跑的时候卸载：先把本体放回地面、收掉虚影，别把人留在万米高空
 	pcall(function() if State.FakeChar then setFakeStealth(false) end end)
 	pcall(function() if type(cleanupFake) == "function" then cleanupFake() end end)
-	pcall(function() if type(clearWings) == "function" then clearWings() end end)
-	pcall(function() if type(toyStopAll) == "function" then toyStopAll() end end)
-	pcall(function() if type(setCloneArmy) == "function" then setCloneArmy(false) end end)
+	pcall(function() if State.CamNoclip then setCamNoclip(false) end end)
 	pcall(function() if type(setBlackHole) == "function" then setBlackHole(false) end end)
 	pcall(function() if type(setTrail) == "function" then setTrail(false) end end)
 	pcall(function() if type(setOrbitFx) == "function" then setOrbitFx(false) end end)
@@ -4323,26 +4644,68 @@ end)
 local CamNoclipConn = nil
 local CamZoomConn = nil
 local CamDist = nil
+local CamClipHidden = {}
 function setCamNoclip(on)
 	State.CamNoclip = on
-	-- 解绑一律按名字（真实 Roblox 下 UnbindFromRenderStep 与 BindToRenderStep 配对；mock 也支持），
-	-- 不依赖 BindToRenderStep 的返回值，最稳。
+	-- 解绑 + 还原上一轮被设为透明的部件（避免关闭 / 卸载后墙仍透明）
 	pcall(function() RunService:UnbindFromRenderStep("HonCamClip") end)
 	if CamZoomConn then pcall(function() CamZoomConn:Disconnect() end) end
-	CamNoclipConn, CamZoomConn, CamDist = nil, nil, nil
-	if not on then return end
+	for _, p in ipairs(CamClipHidden) do
+		pcall(function() if p and p.Parent then p.LocalTransparencyModifier = 0 end end)
+	end
+	CamNoclipConn, CamZoomConn, CamDist, CamClipHidden = nil, nil, nil, {}
+	if not on then
+		pcall(function() if Cam then Cam.CameraType = Enum.CameraType.Custom end end)
+		return
+	end
 	CamDist = (Cam and Cam.CameraZoomDistance and Cam.CameraZoomDistance > 0 and Cam.CameraZoomDistance) or 12
 	CamNoclipConn = RunService:BindToRenderStep("HonCamClip",
 		(Enum.RenderPriority.Camera.Value or 200) + 1, function()
 		if HON_SHUTDOWN or not Cam then return end
 		if not (HRP and HRP.Parent) then return end
 		if not (LP and LP.Parent) then return end
+		-- 先把上一帧透明的部件还回原样，再重新计算（防止残留透明）
+		for _, p in ipairs(CamClipHidden) do
+			pcall(function() if p and p.Parent then p.LocalTransparencyModifier = 0 end end)
+		end
+		CamClipHidden = {}
 		local head = HRP.Position
-		-- 用玩家设定的缩放距离，而非被碰撞压扁的实时距离 → 视角永远停在墙体外侧、穿过去看，不挤成第一人称
+		-- 用玩家设定的缩放距离，而非被碰撞压扁的实时距离 → 视角停在墙体外侧、穿过去看，不挤成第一人称
 		local dist = CamDist or (Cam.CameraZoomDistance and Cam.CameraZoomDistance > 0 and Cam.CameraZoomDistance) or 12
 		local look = Cam.CFrame.LookVector
 		if look.Magnitude < 1e-6 then return end
 		Cam.CFrame = CFrame.new(head - look * dist, head)
+		-- 射线从相机指向角色：途中所有墙 / 地形设为透明 → 真正「穿透任意墙」看穿；下一帧 / 关闭自动还原
+		pcall(function()
+			local rc = RaycastParams.new()
+			rc.FilterType = Enum.RaycastFilterType.Blacklist
+			rc.FilterDescendantsInstances = { LP.Character or Workspace }
+			rc.IgnoreWater = true
+			local dir = (head - (head - look * dist))
+			local len = dir.Magnitude
+			dir = dir.Unit
+			local origin = head - look * dist
+			local remaining = len
+			local seen = {}
+			local tries = 0
+			while remaining > 0.2 and tries < 16 do
+				tries = tries + 1
+				local res = Workspace:Raycast(origin, dir * remaining, rc)
+				if not res then break end
+				local p = res.Instance
+				while p and p ~= Workspace do
+					if p:IsA("BasePart") and not seen[p] then
+						seen[p] = true
+						p.LocalTransparencyModifier = 1
+						table.insert(CamClipHidden, p)
+					end
+					p = p.Parent
+				end
+				local past = (res.Distance or 0) + 0.1
+				origin = origin + dir * past
+				remaining = remaining - past
+			end
+		end)
 	end)
 	-- 滚轮缩放：自己接管，保证「穿墙」时缩放手感不变（否则被默认相机模块吃掉）
 	pcall(function()
@@ -4520,6 +4883,7 @@ ESP_COLOR = {
 	Player   = Color3.fromRGB(255, 86, 96),
 	NPC      = Color3.fromRGB(255, 186, 74),
 	Interact = Color3.fromRGB(92, 226, 255),
+	Touchable = Color3.fromRGB(255, 196, 64),
 }
 ESP_NAME_COLOR = Color3.fromRGB(255, 70, 80)
 ESP_DIST_COLOR = Color3.fromRGB(255, 214, 74)
@@ -4694,7 +5058,7 @@ function addEsp(target, cat, adornee, name)
 	ds.Text = ""
 	ds.Parent = bb
 	-- 交互物没有血量：血条整组藏起来，距离上移到名字下方，不留空档
-	if cat == "Interact" then
+	if cat == "Interact" or cat == "Touchable" then
 		barBg.Visible = false
 		barFill.Visible = false
 		hpTxt.Visible = false
@@ -4723,7 +5087,7 @@ function updateEsp(dt)
 				end
 			end
 		end
-		if State.EspNPC or State.EspInteract then
+		if State.EspNPC or State.EspInteract or State.EspTouch then
 			for _, obj in ipairs(Workspace:GetDescendants()) do
 				if State.EspNPC and obj:IsA("Model") and obj ~= LP.Character and not isPlayerChar(obj) then
 					if obj:FindFirstChildOfClass("Humanoid") and obj:FindFirstChild("HumanoidRootPart") then
@@ -4732,6 +5096,17 @@ function updateEsp(dt)
 				elseif State.EspInteract and (obj:IsA("ProximityPrompt") or obj:IsA("ClickDetector")) then
 					local host = obj:FindFirstAncestorOfClass("Part") or obj:FindFirstAncestorOfClass("Model")
 					if host then addEsp(obj, "Interact", host, obj.Name or "INTERACT") end
+				elseif State.EspTouch then
+					-- 可碰撞 / 可拾取物：金币（被 Touched 监听会生成 TouchInterest）、掉落 Tool、ClickDetector/ProximityPrompt 宿主
+					if obj:IsA("BasePart") and obj:FindFirstChild("TouchInterest") then
+						addEsp(obj, "Touchable", obj, obj.Name)
+					elseif obj:IsA("Tool") then
+						local prim = obj.PrimaryPart or obj:FindFirstChildOfClass("BasePart") or obj
+						addEsp(obj, "Touchable", prim, obj.Name)
+					elseif obj:IsA("ProximityPrompt") or obj:IsA("ClickDetector") then
+						local host = obj:FindFirstAncestorOfClass("Part") or obj:FindFirstAncestorOfClass("Model")
+						if host then addEsp(obj, "Touchable", host, obj.Name or "TOUCH") end
+					end
 				end
 			end
 		end
@@ -4851,7 +5226,6 @@ function bindCharacter(char)
 		pcall(buildFakeWin)
 		if FakeWin then
 			FakeWin.Visible = true
-			pcall(function() resetWinDefault(FakeWin) end)
 		end
 		if FakeTgl then pcall(function() FakeTgl.Set(true, true) end) end
 		if wantChar then
@@ -5565,403 +5939,8 @@ function danceAll()
 	if notify then notify("已让 " .. n .. " 人开始跳舞") end
 end
 
--- ---------- 翅膀系统（重建）----------
-WING_STYLES = {
-	{ name = "天使之翼", c = Color3.fromRGB(245, 248, 255), layers = 3, mat = Enum.Material.SmoothPlastic },
-	{ name = "恶魔之翼", c = Color3.fromRGB(196, 48, 54), layers = 3, mat = Enum.Material.SmoothPlastic },
-	{ name = "暗影之翼", c = Color3.fromRGB(62, 44, 96), layers = 4, mat = Enum.Material.SmoothPlastic },
-	{ name = "龙翼",     c = Color3.fromRGB(54, 100, 78), layers = 2, mat = Enum.Material.Fabric },
-	{ name = "蝴蝶之翼", c = Color3.fromRGB(255, 160, 220), layers = 4, mat = Enum.Material.Neon },
-	{ name = "光翼",     c = Color3.fromRGB(140, 210, 255), layers = 5, mat = Enum.Material.Neon },
-	{ name = "火焰之翼", c = Color3.fromRGB(255, 142, 46), layers = 3, mat = Enum.Material.Neon },
-	{ name = "机械翼",   c = Color3.fromRGB(158, 168, 184), layers = 2, mat = Enum.Material.DiamondPlate },
-}
-WingIdx, WingParts, WingSizeV = 0, {}, 1
-function clearWings()
-	for _, w in ipairs(WingParts) do
-		pcall(function() if w.P then w.P:Destroy() end end)
-	end
-	WingParts = {}
-	WingIdx = 0
-end
-function setWing(i)
-	clearWings()
-	local st = WING_STYLES[i]
-	if not st then return end
-	WingIdx = i
-	for side = -1, 1, 2 do
-		for layer = 1, st.layers do
-			local f = (st.layers == 1) and 0 or (layer - 1) / (st.layers - 1)
-			local pt = Instance.new("Part")
-			pt.Name = "HonWing"
-			pt.Anchored = true
-			pt.CanCollide = false
-			pt.CastShadow = false
-			pt.Material = st.mat
-			pt.Color = st.c
-			pt.TopSurface = Enum.SurfaceType.Smooth
-			pt.BottomSurface = Enum.SurfaceType.Smooth
-			pt.Parent = Workspace
-			local len = 2.8 - f * 1.5
-			local wid = 1.15 - f * 0.55
-			table.insert(WingParts, {
-				P = pt, F = f, Layer = layer, Side = side,
-				Off = CFrame.new(side * (1.15 + f * 2.3), 0.25 + f * 0.95, 0.15 + f * 1.5)
-					* CFrame.Angles(0, side * (0.25 + f * 0.55), side * 0.3),
-				W = wid, L = len,
-			})
-		end
-	end
-	if notify then notify("已装备：" .. st.name) end
-end
 
 
--- ---------- 玩具系统（参考 GitHub 外国开源 Admin：Fate's Admin / Infinite Yield 的经典 FE 命令）----------
--- 玩具也是商城商品：cat = "玩具"，点击卡片即启停；全部本地实现，只有自己看得见
-ToyOn, ToyParts, ToyTimers = {}, {}, {}
-ToyTrack, ToyAnimId = nil, nil
-ToyOrbitCenter, ToyOrbitRot = nil, 0
-local Debris = game:GetService("Debris")
--- Infinite Yield dance 命令同款动画 ID（R15 / R6 两套，来源：EdgeIY/infiniteyield source）
-TOY_DANCE_R15 = { "3333432454", "4555808220", "4049037604", "4555782893", "10214311282",
-	"10714010337", "10713981723", "10714372526", "10714076981", "10714392151", "11444443576" }
-TOY_DANCE_R6 = { "27789359", "30196114", "248263260", "45834924", "33796059", "28488254", "52155728" }
-TOY_CARPET_ANIM = "282574440"   -- Infinite Yield carpet 命令同款坐姿动画
--- 角色身上可挂粒子实例的部件（R15 名 + R6 名都列上，找不到就跳过）
-TOY_ATTACH_PARTS = { "Head", "UpperTorso", "LowerTorso", "Torso",
-	"LeftUpperArm", "RightUpperArm", "LeftArm", "RightArm",
-	"LeftUpperLeg", "RightUpperLeg", "LeftLeg", "RightLeg" }
-
-function toyClearParts(tag)
-	for i = #ToyParts, 1, -1 do
-		if ToyParts[i].Tag == tag then
-			pcall(function() ToyParts[i].P:Destroy() end)
-			table.remove(ToyParts, i)
-		end
-	end
-end
--- 给角色部件挂原生粒子实例（Sparkles / Fire / Smoke，Roblox 原生类，真实生效）
-function toyAttach(cls, props)
-	local ch = LP and LP.Character
-	if not ch then return {} end
-	local made = {}
-	for _, n in ipairs(TOY_ATTACH_PARTS) do
-		local p = ch:FindFirstChild(n)
-		if p and p:IsA("BasePart") and not p:FindFirstChild("Hon" .. cls) then
-			local o = Instance.new(cls)
-			o.Name = "Hon" .. cls
-			for k, v in pairs(props) do o[k] = v end
-			o.Parent = p
-			table.insert(made, o)
-		end
-	end
-	return made
-end
-function toyPlayAnim(id)
-	local ch = LP and LP.Character
-	local hum = ch and ch:FindFirstChildOfClass("Humanoid")
-	if not hum then return end
-	toyStopAnim()
-	local anim = Instance.new("Animation")
-	anim.AnimationId = "rbxassetid://" .. tostring(id)
-	ToyAnimId = anim.AnimationId
-	local track = hum:LoadAnimation(anim)
-	track.Looped = true
-	track:Play()
-	ToyTrack = track
-end
-function toyStopAnim()
-	if ToyTrack then pcall(function() ToyTrack:Stop() end) end
-	ToyTrack = nil
-	ToyAnimId = nil
-end
-function toyToggle(it)
-	if not it then return end
-	local on = not ToyOn[it.name]
-	ToyOn[it.name] = on or nil
-	if it.on then pcall(it.on, on) end
-	if notify then notify((on and "已开启：" or "已关闭：") .. it.name) end
-end
-function toyStopAll()
-	for _, it in ipairs(TOY_DEFS) do
-		if it.toy and ToyOn[it.name] and it.on then pcall(it.on, false) end
-	end
-	ToyOn = {}
-	if notify then notify("玩具已全部关闭") end
-end
--- 重生后重挂（火花/火焰/烟雾挂在角色部件上，换角色要重新挂；on(true) 自带清理，可重复调用）
-function toyReapplyAll()
-	if not (ToyOn and next(ToyOn) and TOY_DEFS) then return end
-	for _, it in ipairs(TOY_DEFS) do
-		if it.toy and ToyOn[it.name] and it.on then pcall(it.on, true) end
-	end
-end
--- 烟花：脚下爆一圈霓虹球（Fate's Admin 经典 firework：Neon 球 + 随机速度 + Debris 定时清理）
-function toyFirework()
-	if not (HRP and HRP.Parent) then return end
-	local cols = { Color3.fromRGB(255, 90, 90), Color3.fromRGB(255, 200, 70), Color3.fromRGB(120, 240, 120),
-		Color3.fromRGB(90, 200, 255), Color3.fromRGB(190, 120, 255), Color3.fromRGB(255, 120, 200) }
-	local n, base = 14, HRP.Position
-	for i = 1, n do
-		local p = Instance.new("Part")
-		p.Name = "HonFirework"
-		p.Shape = Enum.PartType.Ball
-		p.Size = Vector3.new(0.45, 0.45, 0.45)
-		p.Material = Enum.Material.Neon
-		p.Color = cols[(i % #cols) + 1]
-		p.CanCollide = false
-		p.CastShadow = false
-		p.Position = base + Vector3.new(0, 0.3, 0)
-		local ang = (i / n) * math.pi * 2
-		local sp = 8 + math.random() * 5
-		p.Velocity = Vector3.new(math.cos(ang) * sp, 13 + math.random() * 8, math.sin(ang) * sp)
-		p.Parent = Workspace
-		Debris:AddItem(p, 2.2)
-	end
-end
--- 每帧驱动（烟花连发计时 / 魔毯跟随 / 气球浮动 / 环绕公转）
-function toyFrame(dt)
-	if ToyOn["烟花"] then
-		ToyTimers["烟花"] = (ToyTimers["烟花"] or 0) + dt
-		if ToyTimers["烟花"] >= 0.9 then
-			ToyTimers["烟花"] = 0
-			toyFirework()
-		end
-	end
-	if not (HRP and HRP.Parent) then return end
-	if ToyOn["魔毯"] then
-		for _, d in ipairs(ToyParts) do
-			if d.P and d.P.Parent then
-				if d.Tag == "carpet" then
-					d.P.CFrame = HRP.CFrame * CFrame.new(0, -2.42, 0)
-				elseif d.Tag == "carpetTrim" then
-					-- 金边镶在地毯前缘
-					d.P.CFrame = HRP.CFrame * CFrame.new(0, -2.28, 0) * CFrame.new(0, 0, -1.75)
-				end
-			end
-		end
-	end
-	if ToyOn["气球"] then
-		local t = tick()
-		for _, d in ipairs(ToyParts) do
-			if d.Tag == "balloon" and d.P and d.P.Parent then
-				local bob = math.sin(t * 1.6 + d.Ph) * 0.22
-				d.P.CFrame = HRP.CFrame * d.Off * CFrame.new(0, bob, 0)
-			end
-		end
-	end
-	if ToyOn["环绕"] and ToyOrbitCenter then
-		-- ToyOrbitRot 直接按弧度累加（不要再 math.rad，否则等于二次换算、转速慢 57 倍）
-		ToyOrbitRot = ToyOrbitRot + 2.4 * dt
-		local c = ToyOrbitCenter
-		local pos = (CFrame.new(c) * CFrame.Angles(0, ToyOrbitRot, 0) * CFrame.new(4, 0, 0)).Position
-		HRP.AssemblyLinearVelocity = Vector3.zero
-		HRP.CFrame = CFrame.lookAt(pos, Vector3.new(c.X, pos.Y, c.Z))
-	end
-end
-
--- 玩具商品（接入商城网格，点击即启停）
-TOY_DEFS = {
-	{ cat = "玩具", name = "烟花", icon = "🎆", price = 0, toy = true, on = function(active)
-		if active then ToyTimers["烟花"] = 0 else ToyTimers["烟花"] = nil end
-	end },
-	{ cat = "玩具", name = "火花", icon = "✨", price = 0, toy = true, on = function(active)
-		toyClearParts("sparkles")
-		if active then
-			for _, o in ipairs(toyAttach("Sparkles", { Color = Color3.fromRGB(255, 230, 120), Enabled = true })) do
-				table.insert(ToyParts, { P = o, Tag = "sparkles" })
-			end
-		end
-	end },
-	{ cat = "玩具", name = "火焰", icon = "🔥", price = 0, toy = true, on = function(active)
-		toyClearParts("fire")
-		if active then
-			for _, o in ipairs(toyAttach("Fire", { Size = 9, Heat = 12,
-				Color = Color3.fromRGB(255, 150, 40), SecondaryColor = Color3.fromRGB(255, 60, 20) })) do
-				table.insert(ToyParts, { P = o, Tag = "fire" })
-			end
-		end
-	end },
-	{ cat = "玩具", name = "烟雾", icon = "💨", price = 0, toy = true, on = function(active)
-		toyClearParts("smoke")
-		if active then
-			for _, o in ipairs(toyAttach("Smoke", { Size = 6, RiseVelocity = 2.5, Opacity = 0.45,
-				Color = Color3.fromRGB(180, 180, 190) })) do
-				table.insert(ToyParts, { P = o, Tag = "smoke" })
-			end
-		end
-	end },
-	{ cat = "玩具", name = "魔毯", icon = "🪄", price = 0, toy = true, on = function(active)
-		toyClearParts("carpet")
-		toyClearParts("carpetTrim")
-		if active then
-			-- 创建瞬间就贴到脚下（否则第一帧前停在世界原点，会闪一下）
-			local baseCF = HRP and HRP.CFrame or CFrame.new()
-			local p = Instance.new("Part")
-			p.Name = "HonCarpet"
-			p.Size = Vector3.new(4, 0.25, 4)
-			p.Color = Color3.fromRGB(150, 40, 60)
-			p.Material = Enum.Material.Fabric
-			p.Anchored = true; p.CanCollide = false; p.CastShadow = false
-			p.CFrame = baseCF * CFrame.new(0, -2.42, 0)
-			p.Parent = Workspace
-			table.insert(ToyParts, { P = p, Tag = "carpet" })
-			local trim = Instance.new("Part")
-			trim.Name = "HonCarpetTrim"
-			trim.Size = Vector3.new(4.2, 0.1, 0.5)
-			trim.Color = Color3.fromRGB(230, 200, 110)
-			trim.Material = Enum.Material.SmoothPlastic
-			trim.Anchored = true; trim.CanCollide = false; trim.CastShadow = false
-			trim.CFrame = baseCF * CFrame.new(0, -2.28, 0) * CFrame.new(0, 0, -1.75)
-			trim.Parent = Workspace
-			table.insert(ToyParts, { P = trim, Tag = "carpetTrim" })
-			toyPlayAnim(TOY_CARPET_ANIM)
-		else
-			toyStopAnim()
-		end
-	end },
-	{ cat = "玩具", name = "跳舞", icon = "💃", price = 0, toy = true, on = function(active)
-		if active then
-			local ch = LP and LP.Character
-			local ids = (ch and ch:FindFirstChild("UpperTorso")) and TOY_DANCE_R15 or TOY_DANCE_R6
-			toyPlayAnim(ids[math.random(1, #ids)])
-		else
-			toyStopAnim()
-		end
-	end },
-	{ cat = "玩具", name = "气球", icon = "🎈", price = 0, toy = true, on = function(active)
-		toyClearParts("balloon")
-		if active then
-			local cols = { Color3.fromRGB(255, 80, 90), Color3.fromRGB(90, 160, 255), Color3.fromRGB(255, 200, 70) }
-			local offs = { CFrame.new(-0.75, 2.7, 0), CFrame.new(0.75, 2.9, 0), CFrame.new(0, 3.2, 0.25) }
-			-- 创建瞬间就定位到头上（避免第一帧前停在世界原点闪一下）
-			local baseCF = HRP and HRP.CFrame or CFrame.new()
-			for i = 1, 3 do
-				local p = Instance.new("Part")
-				p.Name = "HonBalloon"
-				p.Shape = Enum.PartType.Ball
-				p.Size = Vector3.new(1.1, 1.3, 1.1)
-				p.Color = cols[i]
-				p.Material = Enum.Material.SmoothPlastic
-				p.Anchored = true; p.CanCollide = false; p.CastShadow = false
-				p.CFrame = baseCF * offs[i]
-				p.Parent = Workspace
-				table.insert(ToyParts, { P = p, Tag = "balloon", Off = offs[i], Ph = i * 1.3 })
-			end
-		end
-	end },
-	{ cat = "玩具", name = "环绕", icon = "☄️", price = 0, toy = true, on = function(active)
-		if active then
-			ToyOrbitCenter = HRP and HRP.Position
-			ToyOrbitRot = 0
-		else
-			ToyOrbitCenter = nil
-		end
-	end },
-}
-
-
-
-
--- ===== 娱乐页追加：三个新趣味功能 + 翅膀 + 玩具（原装扮页拆除后搬来）=====
-label({ Text = "新 玩 法 NEW FUN", Font = Enum.Font.GothamBold, TextSize = 11,
-	TextColor3 = Color3.fromRGB(120, 129, 152), Size = UDim2.new(1, 0, 0, 18),
-	Position = UDim2.new(0, 2, 0, 1252), TextXAlignment = Enum.TextXAlignment.Left }, PageFun)
-EjectBtn = new("TextButton", { Text = "🚀 弹射升空 EJECT", Font = Enum.Font.GothamBold, TextSize = 11,
-	TextColor3 = Mode().Accent, BackgroundColor3 = Color3.fromRGB(255, 255, 255), BackgroundTransparency = 0.9,
-	BorderSizePixel = 0, AutoButtonColor = false,
-	Size = UDim2.new(1, 0, 0, 36), Position = UDim2.new(0, 0, 0, 1276), Parent = PageFun })
-corner(EjectBtn, 10)
-table.insert(FunBtns, EjectBtn)
-bindClick(EjectBtn, "弹射升空", ejectUp)
-PlayDeadTgl = makeToggle(PageFun, 1320, "装死倒地 PLAY DEAD", "当场躺平装死，再点站起来", false, function(v)
-	setPlayDead(v)
-end, true)
-NeonGlowTgl = makeToggle(PageFun, 1368, "霓虹发光 NEON GLOW", "全身变色流光，关掉自动还原", false, function(v)
-	setNeonGlow(v)
-end, true)
-
--- 翅膀（原装扮页搬来）
-label({ Text = "翅 膀 WINGS", Font = Enum.Font.GothamBold, TextSize = 11,
-	TextColor3 = Color3.fromRGB(120, 129, 152), Size = UDim2.new(1, 0, 0, 18),
-	Position = UDim2.new(0, 2, 0, 1416), TextXAlignment = Enum.TextXAlignment.Left }, PageFun)
-for i, st in ipairs(WING_STYLES) do
-	local col = (i - 1) % 2
-	local row = math.floor((i - 1) / 2)
-	local b = new("TextButton", { Text = st.name, Font = Enum.Font.GothamBold, TextSize = 11,
-		TextColor3 = Mode().Accent, BackgroundColor3 = Color3.fromRGB(255, 255, 255),
-		BackgroundTransparency = 0.9, BorderSizePixel = 0, AutoButtonColor = false,
-		Size = UDim2.new(0.5, -4, 0, 34),
-		Position = UDim2.new(col == 0 and 0 or 0.5, col == 0 and 0 or 4, 0, 1440 + row * 40), Parent = PageFun })
-	corner(b, 8)
-	table.insert(FunBtns, b)
-	bindClick(b, st.name, function() setWing(i) end)
-end
-local NoWingBtn = new("TextButton", { Text = "收起翅膀", Font = Enum.Font.GothamBold, TextSize = 11,
-	TextColor3 = Color3.fromRGB(255, 108, 118), BackgroundColor3 = Color3.fromRGB(255, 255, 255),
-	BackgroundTransparency = 0.9, BorderSizePixel = 0, AutoButtonColor = false,
-	Size = UDim2.new(1, 0, 0, 32), Position = UDim2.new(0, 0, 0, 1600), Parent = PageFun })
-corner(NoWingBtn, 8)
-table.insert(FunBtns, NoWingBtn)
-bindClick(NoWingBtn, "收起翅膀", function() clearWings() end)
-makeSlider(PageFun, "翅膀大小", 1640, 40, 220, 100, " %", function(v) WingSizeV = v / 100 end, false)
-
--- 玩具（原装扮页「玩具」分类搬来：点卡片即开即关，纯本地特效）
-label({ Text = "玩 具 TOYS · 点卡片即开即关", Font = Enum.Font.GothamBold, TextSize = 11,
-	TextColor3 = Color3.fromRGB(120, 129, 152), Size = UDim2.new(1, 0, 0, 18),
-	Position = UDim2.new(0, 2, 0, 1692), TextXAlignment = Enum.TextXAlignment.Left }, PageFun)
-ToyBtns = {}
-local function toyRefresh()
-	for _, b in ipairs(ToyBtns) do
-		if b and b.Parent then b:Destroy() end
-	end
-	ToyBtns = {}
-	local shown = 0
-	for _, it in ipairs(TOY_DEFS) do
-		shown = shown + 1
-		local col = (shown - 1) % 2
-		local row = math.floor((shown - 1) / 2)
-		local on = ToyOn[it.name]
-		local card = new("TextButton", { Text = "", Font = Enum.Font.Gotham, TextSize = 11,
-			TextColor3 = Color3.fromRGB(226, 233, 248),
-			BackgroundColor3 = Color3.fromRGB(255, 255, 255),
-			BackgroundTransparency = on and 0.86 or 0.93, BorderSizePixel = 0, AutoButtonColor = false,
-			Size = UDim2.new(0.5, -4, 0, 54), Position = UDim2.new(col == 0 and 0 or 0.5, col == 0 and 0 or 4, 0, 1716 + row * 60), Parent = PageFun })
-		corner(card, 8)
-		if on then new("UIStroke", { Color = Mode().Accent, Transparency = 0.4, Thickness = 1.5, Parent = card }) end
-		table.insert(ToyBtns, card)
-		local ib = new("Frame", { Size = UDim2.new(0, 38, 0, 38), Position = UDim2.new(0, 8, 0, 8),
-			BackgroundColor3 = Color3.fromRGB(255, 255, 255), BackgroundTransparency = 0.88,
-			BorderSizePixel = 0, Parent = card })
-		corner(ib, 8)
-		label({ Text = it.icon or "🎁", Font = Enum.Font.GothamBold, TextSize = 18,
-			Size = UDim2.new(1, 0, 1, 0), TextColor3 = Color3.fromRGB(238, 243, 255) }, ib)
-		label({ Text = (on and "✓ " or "") .. it.name, Font = Enum.Font.GothamBold, TextSize = 11,
-			TextColor3 = on and Mode().Accent or Color3.fromRGB(226, 233, 248),
-			Size = UDim2.new(1, -56, 0, 16), Position = UDim2.new(0, 54, 0, 7),
-			TextXAlignment = Enum.TextXAlignment.Left }, card)
-		label({ Text = on and "✨ 开启中 · 点击关闭" or "玩具 · 点击开启", Font = Enum.Font.Gotham, TextSize = 9,
-			TextColor3 = on and Mode().Accent or Color3.fromRGB(140, 200, 255),
-			Size = UDim2.new(1, -56, 0, 14), Position = UDim2.new(0, 54, 0, 28),
-			TextXAlignment = Enum.TextXAlignment.Left }, card)
-		bindClick(card, it.name, function()
-			toyToggle(it)
-			toyRefresh()
-		end)
-	end
-end
-ToyAllOffBtn = new("TextButton", { Text = "全部关闭 TOYS OFF", Font = Enum.Font.GothamBold, TextSize = 11,
-	TextColor3 = Color3.fromRGB(255, 108, 118), BackgroundColor3 = Color3.fromRGB(255, 255, 255),
-	BackgroundTransparency = 0.9, BorderSizePixel = 0, AutoButtonColor = false,
-	Size = UDim2.new(1, 0, 0, 32), Position = UDim2.new(0, 0, 0, 1962), Parent = PageFun })
-corner(ToyAllOffBtn, 8)
-table.insert(FunBtns, ToyAllOffBtn)
-bindClick(ToyAllOffBtn, "玩具全部关闭", function() toyStopAll(); toyRefresh() end)
-toyRefresh()
-label({ Text = "玩具全部是本地特效，只有自己看得见；重生后自动重挂；UNLOAD 会一并清掉。", Font = Enum.Font.Gotham, TextSize = 10,
-	TextColor3 = Color3.fromRGB(120, 129, 152), Position = UDim2.new(0, 2, 0, 2002),
-	Size = UDim2.new(1, -4, 0, 26), TextWrapped = true,
-	TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top }, PageFun)
 
 -- ---------- 独立飞行 / 自动连跳 ----------
 -- 之前这两项写在引擎主循环里，一旦「启用引擎」关闭就整段不执行 → 表现为「开了没用」。
@@ -6724,7 +6703,7 @@ function windBuild(lib)
 	if not W then return false end
 	WindWin = W
 	-- 再补一层保险（夜脚本同款）：CreateWindow 可能被库吞掉背景参数，建完强制再写一次
-	windSafe("Tag", function() W:Tag({ Title = "v5.68", Color = "ElementBackground" }) end)
+	windSafe("Tag", function() W:Tag({ Title = "v5.70", Color = "ElementBackground" }) end)
 	-- 引擎页
 	local tEng = nil
 	windSafe("Tab:引擎", function() tEng = W:Tab({ Title = "引擎", Icon = "gauge" }) end)
@@ -6752,17 +6731,21 @@ function windBuild(lib)
 		windTglByTitle(tAss, "反挂机 ANTI-AFK", "防止长时间无操作掉线")
 		windTglByTitle(tAss, "速度 HUD", "屏幕底部实时显示速度")
 		windTglByTitle(tAss, "飞行窗口 FLY", "打开小窗 + 右上角上下键")
+		windTglByTitle(tAss, "分身隐身 FAKE CHAR", "开启后右上角弹出分身隐身小窗")
 		windTglByTitle(tAss, "相机穿墙 CAMERA NOCLIP", "镜头不被墙/地形遮挡，可看穿墙体")
 		windTglByTitle(tAss, "踏空行走 AIR WALK", "锁定水平面 · 在空中平面行走不坠落")
+		windTglByTitle(tAss, "强制第一人称", "锁定贴脸第一人称视角")
+		windTglByTitle(tAss, "强制第三人称", "锁定第三人称视角")
+		windSld(tAss, FovSlider, "视野 FOV", 30, 120, 70, 1)
 	end
 	-- 视觉页
 	local tEsp = nil
 	windSafe("Tab:视觉", function() tEsp = W:Tab({ Title = "视觉", Icon = "eye" }) end)
 	if tEsp then
-		windSld(tEsp, TranspSlider, "身体透明度", 0, 100, State.BodyTransp, 1)
 		windTglByTitle(tEsp, "玩家透视", "高亮 + 名称 / 距离 / 血量")
 		windTglByTitle(tEsp, "NPC 透视", "高亮所有非玩家人形")
 		windTglByTitle(tEsp, "交互物透视", "ProximityPrompt / ClickDetector")
+		windTglByTitle(tEsp, "透视可触碰物体", "高亮金币/宝箱等可碰/可拾取物 + 名称")
 		windTglByTitle(tEsp, "秒交互", "HoldDuration=0 · 距离 30")
 		windTglByTitle(tEsp, "雷达 RADAR", "右上角 · 人/NPC/互动物/墙壁折线")
 		windTglByTitle(tEsp, "穿墙显示", "角色高亮穿墙，名字/血条/距离永远可见")
@@ -6795,25 +6778,13 @@ function windBuild(lib)
 		windTglByTitle(tTp, "倒计时器 COUNTDOWN", "屏幕小 UI · 输入分钟数倒数，到点提醒")
 		windTglByTitle(tTp, "标点小窗 WP WIN", "屏幕小窗 · 看坐标 / 存标点 / ★ 选中传送")
 		windTglByTitle(tTp, "闪电尖兵大招 SPARK ULT", "点击画面任意位置直接传送过去（照搬参考源码）")
+		windTglByTitle(tTp, "显示列表窗口 LIST WIN", "屏幕生成可缩小悬浮窗 · 列出可触碰/可拾取物")
 	end
 	-- 娱乐页
 	local tFun = nil
 	windSafe("Tab:娱乐", function() tFun = W:Tab({ Title = "娱乐", Icon = "gamepad-2" }) end)
 	if tFun then
 		windBtn(tFun, "弹射升空", "一键把自己炸上天（2.5s 冷却）", function() ejectUp() end)
-		for i, st in ipairs(WING_STYLES) do
-			windBtn(tFun, "翅膀 · " .. st.name, "点击穿戴 / 再点切换", function() setWing(i) end)
-		end
-		windBtn(tFun, "收起翅膀", "卸掉全部翅膀", function() clearWings() end)
-		for _, it in ipairs(TOY_DEFS) do
-			windSafe("toy:" .. it.name, function()
-				tFun:Toggle({
-					Title = (it.icon or "") .. " " .. it.name,
-					Value = ToyOn[it.name] and true or false,
-					Callback = function() toyToggle(it) end,
-				})
-			end)
-		end
 	end
 	-- 画质页
 	local tGfx = nil
@@ -7040,7 +7011,7 @@ function prefSave()
 	-- ef = ESP 字体缩放——和背景图一样本地文件 + 跨服务器双保险，重启/换服不恢复默认
 	local d = { fs = PrefFontScale, ps = PrefPanelScale,
 		fw = UiFrameworkIdx or 1, bo = BorderOn and true or false, bm = BorderMode or 1,
-		ef = EspFontScale }
+		ef = EspFontScale, na = NoticeAuto and true or false }
 	local ok, json = pcall(function() return HttpService:JSONEncode(d) end)
 	if not ok or not json then return end
 	pcall(function() if writefile then writefile(PREF_FILE, json) end end)
@@ -7071,6 +7042,8 @@ function prefLoad()
 	if type(d.bm) == "number" then BorderMode = math.clamp(math.floor(d.bm), 1, #BORDER_STYLES) end
 	-- ef = ESP 字体缩放（v5.47）：0.6 ~ 2.0，重启/换服照原样恢复
 	if type(d.ef) == "number" then EspFontScale = math.clamp(d.ef, 0.6, 2) end
+	-- na = 公告「启动时自动弹出」开关（v5.70 改为保存类：关掉后下次启动不再弹）
+	if type(d.na) == "boolean" then NoticeAuto = d.na end
 end
 prefLoad()
 local psDef = PrefPanelScale and math.floor(PrefPanelScale * 100 + 0.5) or 100
@@ -7096,7 +7069,7 @@ EspFontSlider = makeSlider(PageEsp, "ESP 字体", 406, 60, 200, math.clamp(efDef
 	prefSave()
 end, false)
 pcall(espApplyFont)
-EspHpBarBgTgl = makeToggle(PageEsp, 454, "血条背景 HP BAR BG", "开=有背景实时血量 · 关=纯血量数字", true, function(v)
+EspHpBarBgTgl = makeToggle(PageEsp, 502, "血条背景 HP BAR BG", "开=有背景实时血量 · 关=纯血量数字", true, function(v)
 	State.EspHpBarBg = v
 	refreshEspHpStyle()
 end, true)
@@ -7123,7 +7096,7 @@ end
 local TouchAllBtn = new("TextButton", { Text = "一键触碰所有可触碰物体", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Mode().Accent, BackgroundColor3 = Color3.fromRGB(255, 255, 255), BackgroundTransparency = 0.9,
 	BorderSizePixel = 0, AutoButtonColor = false,
-	Size = UDim2.new(1, 0, 0, 36), Position = UDim2.new(0, 0, 0, 654), Parent = PageTool })
+	Size = UDim2.new(1, 0, 0, 36), Position = UDim2.new(0, 0, 0, 742), Parent = PageAssist })
 corner(TouchAllBtn, 10)
 table.insert(FunBtns, TouchAllBtn)
 bindClick(TouchAllBtn, "一键触碰", function() touchAllInteractables() end)
@@ -8013,24 +7986,6 @@ RunService:BindToRenderStep("HonFunLoop", 9995, function(dt)
 			if lg.GlobalShadows then lg.GlobalShadows = false end
 		end)
 	end
-	if WingIdx > 0 and #WingParts > 0 and HRP and HRP.Parent then
-		pcall(function()
-			local base = HRP.CFrame * CFrame.new(0, 0, 0.3)
-			local tm = tick()
-			for _, w in ipairs(WingParts) do
-				-- 波浪式扇动：内侧先动、外侧跟上，层间再错开一点相位
-				local ph = w.F * 1.15 + w.Layer * 0.22
-				local flap = math.sin(tm * 1.7 - ph) * 0.2 * (0.35 + w.F)
-				local lift = math.sin(tm * 1.7 - ph) * 0.12 * (1 - w.F * 0.5)
-				local cf = base * w.Off
-					* CFrame.Angles(0, 0, w.Side * flap)
-					* CFrame.new(0, lift, 0)
-				w.P.CFrame = cf
-				local k = WingSizeV or 1
-				w.P.Size = Vector3.new(w.W * 0.2 * k, w.L * k, w.W * k)
-			end
-		end)
-	end
 	-- 三个新趣味功能的每帧驱动
 	if State.PlayDead and Humanoid and Humanoid.Parent then
 		Humanoid.PlatformStand = true
@@ -8052,7 +8007,6 @@ RunService:BindToRenderStep("HonFunLoop", 9995, function(dt)
 			end
 		end
 	end
-	pcall(toyFrame, dt)
 	pcall(cdTick, dt)
 	pcall(updateRadar, dt)
 	TopBarTimer = (TopBarTimer or 0) + dt
@@ -8285,6 +8239,6 @@ tspawn(function()
 end)
 -- 右上角「隐身」快速键常驻（默认关闭，点一下开、再点一下关）——初始化即建好，随时可点
 pcall(buildFakeWin)
-_pr("[HON SPEED HUB] v5.68 已加载 · 完整文件约 8291 行 · 若你的脚本远大于此行数说明粘贴重复了")
+_pr("[HON SPEED HUB] v5.68 已加载 · 完整文件约 8245 行 · 若你的脚本远大于此行数说明粘贴重复了")
 
 
