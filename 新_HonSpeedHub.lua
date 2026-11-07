@@ -1,5 +1,5 @@
 local _pr = (type(print) == "function") and print or (type(warn) == "function" and warn) or function() end
-_pr("[HON SPEED HUB] 载入中 · v5.76 · 若只看到这一行说明文件在中途中断")
+_pr("[HON SPEED HUB] 载入中 · v5.80 · 若只看到这一行说明文件在中途中断")
 local twait  = (type(task) == "table" and task.wait)  or wait  or function() end
 local tspawn = (type(task) == "table" and task.spawn) or spawn or function(f, ...) return f(...) end
 if type(twait) ~= "function" then twait = function() end end
@@ -302,7 +302,7 @@ label({ Text = "HON SPEED HUB", Font = Enum.Font.GothamBold, TextSize = 21,
 	TextColor3 = Color3.fromRGB(238, 243, 255),
 	Position = UDim2.new(0, 36, 0, 16), Size = UDim2.new(0, 200, 0, 24),
 	TextXAlignment = Enum.TextXAlignment.Left }, Header)
-label({ Text = "Universal Hub  ·  W / V / CF  ·  v5.76", Font = Enum.Font.Gotham, TextSize = 11,
+label({ Text = "Universal Hub  ·  W / V / CF  ·  v5.80", Font = Enum.Font.Gotham, TextSize = 11,
 	TextColor3 = Color3.fromRGB(140, 149, 172),
 	Position = UDim2.new(0, 36, 0, 42), Size = UDim2.new(0, 240, 0, 16),
 	TextXAlignment = Enum.TextXAlignment.Left }, Header)
@@ -372,6 +372,18 @@ iconBtn("×", -34, Color3.fromRGB(255, 108, 118), function()
 end)
 -- ---------- 更新公告 ----------
 CHANGELOG = {
+	{ v = "v5.80", t = {
+	"优化 · 消除新功能在“关闭状态下仍持续消耗资源”的内置卡顿隐患：① 弹道重定向（HON_SA）原本在加载时和每 5 秒全量扫描 getgc(true)（遍历整个游戏所有闭包）+ require 所有 ReplicatedStorage 的 ModuleScript，且心跳每帧跑 pickTarget 选目标——即使开关是关的也照跑，造成周期冻结与持续卡顿。现已改为：关闭时彻底不扫描、不逐帧选目标（心跳直接 return），仅在开启时（HON_SA_setEnabled(true)）才扫描安装发射函数钩子。② 透视（HON_NESP）原本每帧心跳遍历所有玩家、且在开关检查之前就给每个玩家创建 4 个 Drawing 实例（只是隐藏），全关时也白建。现已在心跳顶部加短路：6 个开关全关时只清残留、不再遍历/建实例。Fling / 飞行 / 3D / 性能优化 的逐帧连接均为开关门控（仅开启时创建、关闭时断开），原 Hub 的 Stealth/HonFunLoop 等帧循环亦由各自开关门控，不受影响",
+	}},
+	{ v = "v5.79", t = {
+	"修复 · 透视（HON_NESP）默认自动开启导致的加载即卡崩：v5.76 起的 6 个 2D 透视开关（方框/名字/血量/距离/天线/高亮）与内部状态 HON_NESP.* 此前默认全 true，脚本一加载就对所有玩家跑 2D 绘制，在 Drawing 环境异常时逐帧刷「Vector2 expected, got Vector3」把客户端跑崩。现已把 6 个开关与 HON_NESP.* 默认值全部改为 false，加载即干净、需手动开启。已确认 PREF/GFX/ANIM/WP 存档只保存界面与画质偏好、不持久化单个开关状态，故改默认值不会被存档恢复",
+	}},
+	{ v = "v5.78", t = {
+		"修复 · 弹道重定向（HON_SA）钩子稳定性：给发射函数 hook 增加重入保护（原始 fire 内部再次回调被钩函数时直接放行，避免无限递归把客户端跑崩），并把原始调用 old(...) 用 pcall 包裹——原始函数一旦抛错（含 nil 调用）只在本帧静默失败，避免每发子弹刷屏卡崩。说明：截图中的「attempt to call a nil value」来自 HON_SA 的 fire 钩子、「Vector2 expected, got Vector3」来自透视 2D 绘制（HON_NESP），二者均与本次新增的视角缩放无关；当前 v5.78 的 HON_NESP 绘制已全程使用 Vector2 且每帧 pcall 包裹，若仍报 Vector2 错误说明跑的是旧版本，需重新粘贴最新版",
+	}},
+	{ v = "v5.77", t = {
+		"新增 · 视角缩放 / Camera Zoom：定义内部函数 HON_setZoomMax / HON_setZoomMin / HON_lockZoom / HON_resetZoom（均带 0.5~1000 钳制校验，setZoomMin 额外校验 min 不大于 max）。两个属性均为 LocalPlayer 客户端属性、仅影响本地视角不涉及服务端；挂在 LocalPlayer 上不随角色重生重置，故“重生保持缩放”天然满足。原「镜头距离 ZOOM」滑条（PageUtil）改为调用 HON_lockZoom，作为现有缩放功能原地改造，获得统一钳制校验；resetZoom 把最大恢复 128、最小恢复 0.5。功能本体不创建任何 UI、不自动执行，由主 UI 调用",
+	}},
 	{ v = "v5.76", t = {
 		"重构 · 透视/ESP（移动端）：把 v5.74 的「ESP 2D 方框」单开关升级为 v5.76 的六开关 2D 绘制透视——方框/名字/血量/距离/天线/高亮各自独立（每项开关只影响自身）。WorldToViewportPoint 投影 Head/HRP，方框高=脚底Y-头顶Y、宽=高×0.7、X=头顶X-宽/2；名字方框上 16px；血量方框下 2px 按血量四档着色（>0.75 绿/>0.5 橙/>0.3 黄/其余红）；距离血量下 16px 单位米；天线 Drawing Line 从屏幕底中心连到头部屏幕坐标；高亮走 Highlight 实例与 2D 共存；颜色优先队伍色否则默认白；Z<=0（相机背后）隐藏全部标记；离场/死亡清理不留残留。原「玩家透视」Highlight 透视保留不动，两套并存。ESP 页新增 6 个开关直接改内部状态 HON_NESP.*，自动镜像 WindUI",
 	}},
@@ -3453,8 +3465,7 @@ CoordTgl = makeToggle(PageUtil, 300, "坐标显示 COORD", "自动开启 HUD 并
 	end
 end)
 ZoomSlider = makeSlider(PageUtil, "镜头距离 ZOOM", 348, 1, 120, 20, " m", function(v)
-	LP.CameraMaxZoomDistance = v
-	LP.CameraMinZoomDistance = v
+	HON_lockZoom(v)   -- v5.77：改为走统一视角缩放函数（带 0.5~1000 钳制校验），与下方视角缩放功能同源
 end, false)
 utilBtn("全部关闭 RESET ALL", 402, function()
 	askConfirm("关闭全部功能？", "会把当前开着的所有开关全部关掉：飞行 / 穿墙 / 无限跳 / 透视 / 黑洞 / 分身 / 拖尾 / 特效 等等。\n滑条数值保留，存档点不会被删除。", "确认全部关闭", function()
@@ -6868,7 +6879,7 @@ function windBuild(lib)
 	if not W then return false end
 	WindWin = W
 	-- 再补一层保险（夜脚本同款）：CreateWindow 可能被库吞掉背景参数，建完强制再写一次
-	windSafe("Tag", function() W:Tag({ Title = "v5.76", Color = "ElementBackground" }) end)
+	windSafe("Tag", function() W:Tag({ Title = "v5.80", Color = "ElementBackground" }) end)
 	-- 引擎页
 	local tEng = nil
 	windSafe("Tab:引擎", function() tEng = W:Tab({ Title = "引擎", Icon = "gauge" }) end)
@@ -7240,12 +7251,12 @@ EspHpBarBgTgl = makeToggle(PageEsp, 502, "血条背景 HP BAR BG", "开=有背�
 end, true)
 -- ===== v5.76 · 透视 / ESP（移动端 2D 绘制）六项独立开关，直接修改内部状态 HON_NESP.* =====
 -- 保留原「玩家透视」Highlight 透视作为上一套；本套为 2D 绘制版（方框/名字/血量/距离/天线/高亮各自独立）。
-HonEspBoxTgl  = makeToggle(PageEsp, 560, "ESP 方框 BOX", "投影框（高=脚底Y-头顶Y，宽=高×0.7）", true, function(v) HON_NESP.Box = v end)
-HonEspNameTgl = makeToggle(PageEsp, 608, "ESP 名字 NAME", "方框上方 16px 显示玩家名", true, function(v) HON_NESP.Name = v end)
-HonEspHpTgl   = makeToggle(PageEsp, 656, "ESP 血量 HEALTH", "方框下方 2px，按血量四档着色", true, function(v) HON_NESP.Health = v end)
-HonEspDistTgl = makeToggle(PageEsp, 704, "ESP 距离 DISTANCE", "血量下方 16px，单位米", true, function(v) HON_NESP.Dist = v end)
-HonEspAntTgl  = makeToggle(PageEsp, 752, "ESP 天线 ANTENNA", "屏幕底中心 → 头部（需 Drawing 库）", true, function(v) HON_NESP.Ant = v end)
-HonEspHlTgl   = makeToggle(PageEsp, 800, "ESP 高亮 HIGHLIGHT", "Highlight 穿墙描边，与 2D 绘制共存", true, function(v) HON_NESP.HL = v end)
+HonEspBoxTgl  = makeToggle(PageEsp, 560, "ESP 方框 BOX", "投影框（高=脚底Y-头顶Y，宽=高×0.7）", false, function(v) HON_NESP.Box = v end)
+HonEspNameTgl = makeToggle(PageEsp, 608, "ESP 名字 NAME", "方框上方 16px 显示玩家名", false, function(v) HON_NESP.Name = v end)
+HonEspHpTgl   = makeToggle(PageEsp, 656, "ESP 血量 HEALTH", "方框下方 2px，按血量四档着色", false, function(v) HON_NESP.Health = v end)
+HonEspDistTgl = makeToggle(PageEsp, 704, "ESP 距离 DISTANCE", "血量下方 16px，单位米", false, function(v) HON_NESP.Dist = v end)
+HonEspAntTgl  = makeToggle(PageEsp, 752, "ESP 天线 ANTENNA", "屏幕底中心 → 头部（需 Drawing 库）", false, function(v) HON_NESP.Ant = v end)
+HonEspHlTgl   = makeToggle(PageEsp, 800, "ESP 高亮 HIGHLIGHT", "Highlight 穿墙描边，与 2D 绘制共存", false, function(v) HON_NESP.HL = v end)
 -- ===== 一键触碰所有可触碰物体（用户：「一键触碰所有可触碰的物体，整个服务器」）=====
 -- 遍历 Workspace:GetDescendants()：ProximityPrompt → fireproximityprompt（执行器扩展），
 -- ClickDetector → 试 fireclickdetector，Tool → Activate()；逐个 pcall，橙提示汇总成功数
@@ -8423,7 +8434,7 @@ end)
 -- 右上角「隐身」快速键常驻（默认关闭，点一下开、再点一下关）——初始化即建好，随时可点
 pcall(buildFakeWin)
 -- =====================================================================
--- ▼▼▼ 新增功能整合区块（v5.76）▼▼▼
+-- ▼▼▼ 新增功能整合区块（v5.80）▼▼▼
 -- 插入位置：本文件末尾（所有现有函数/初始化之后）。均为功能本体，
 -- 以 HON_ 前缀避免冲突；无 UI / 无热键 / 无 require·loadstring / 无对外 API。
 -- 各功能调用方式见各自注释。
@@ -8445,7 +8456,7 @@ end
 -- 六项独立开关：方框 / 名字 / 血量 / 距离 / 天线 / 高亮，各开关只影响自身（互不影响）。
 -- 开关状态存于 HON_NESP（由 ESP 页 6 个开关直接修改）。功能本体不创建任何界面 / 热键 / 对外 API。
 -- 复用相机 WorldToViewportPoint 把 3D 坐标投影成 2D 屏幕坐标；Z<=0 表示在相机背后，隐藏全部标记。
-HON_NESP = HON_NESP or { Box = true, Name = true, Health = true, Dist = true, Ant = true, HL = true }
+HON_NESP = HON_NESP or { Box = false, Name = false, Health = false, Dist = false, Ant = false, HL = false }
 local HON_NESP_Draw = {}
 local HON_NESP_Lib = nil
 pcall(function() if type(Drawing) == "table" and Drawing.new then HON_NESP_Lib = Drawing end end)
@@ -8587,7 +8598,14 @@ local function HON_NESP_Tick()
 		if not live[plr] then HON_NESP_Clear(plr) end
 	end
 end
-RunService.Heartbeat:Connect(function() pcall(HON_NESP_Tick) end)
+RunService.Heartbeat:Connect(function()
+	-- 全部关闭：只清残留标记，不再逐帧遍历玩家 / 创建 Drawing 实例，避免空闲卡顿
+	if not (HON_NESP.Box or HON_NESP.Name or HON_NESP.Health or HON_NESP.Dist or HON_NESP.Ant or HON_NESP.HL) then
+		pcall(function() for plr, _ in pairs(HON_NESP_Draw) do HON_NESP_Clear(plr) end end)
+		return
+	end
+	pcall(HON_NESP_Tick)
+end)
 
 -- ===================== B. 甩飞 / Fling（内部函数 HON_doFling） =====================
 -- 主手法：本地 HRP 设极端 Velocity + RotVelocity 并快速旋转，极短时间(0.12s)后恢复速度/旋转。
@@ -8773,6 +8791,8 @@ local function HON_SA_hook(fn)
 	if not (type(fn) == "function" and type(hookfunction) == "function") then return false end
 	if HON_SA_hooks[fn] then return true end
 	local ok, old = pcall(function() return hookfunction(fn, function(...)
+		-- 重入保护：若原始 fire 内部又回调了被钩函数，直接放行原始实现，避免无限递归把客户端跑崩
+		if HON_SA_busy then return old(HON_unpack({ ... })) end
 		local args = { ... }
 		if HON_SA_enabled then
 			local tgt = HON_SA_pickTarget()
@@ -8800,7 +8820,12 @@ local function HON_SA_hook(fn)
 				end
 			end
 		end
-		return old(HON_unpack(args))
+		-- 用 pcall 包裹原始调用：原始函数一旦抛错（含 nil 调用）只在本帧静默失败，避免每发子弹刷屏卡崩
+		HON_SA_busy = true
+		local ok2, ret = pcall(function() return old(HON_unpack(args)) end)
+		HON_SA_busy = false
+		if not ok2 then return nil end
+		return ret
 	end) end)
 	if ok then HON_SA_hooks[fn] = old; return true else return false end
 end
@@ -8817,13 +8842,17 @@ function HON_SA_rescan()
 	end
 	return hooked
 end
-function HON_SA_setEnabled(v) HON_SA_enabled = not not v end
+function HON_SA_setEnabled(v)
+	HON_SA_enabled = not not v
+	-- 仅在开启时扫描并安装发射函数钩子；关闭时不再 getgc 全量扫描 / require 模块，也不逐帧选目标
+	if HON_SA_enabled then pcall(HON_SA_rescan) end
+end
 function HON_SA_setFov(n) if type(n) == "number" then HON_SA_fov = n end end
 function HON_SA_setTargetPart(s) if type(s) == "string" then HON_SA_targetPart = s end end
 function HON_SA_getTarget() return HON_SA_target end
-pcall(HON_SA_rescan)
 local HON_SA_timer = 0
 RunService.Heartbeat:Connect(function(dt)
+	if not HON_SA_enabled then return end   -- 关闭时彻底不扫描 / 不选目标，避免空闲卡顿
 	HON_SA_timer = HON_SA_timer + (dt or 0)
 	if HON_SA_timer >= HON_SA_CFG.RESCAN_INTERVAL then
 		HON_SA_timer = 0
@@ -9067,6 +9096,58 @@ function HON_FlySetMode(m)
 	if HON_FlyOn then HON_startFly() end   -- 飞行中切模式 → 重启以套用
 end
 
-_pr("[HON SPEED HUB] v5.76 已加载 · 完整文件约 9073 行 · 若你的脚本远大于此行数说明粘贴重复了")
+-- ▼▼▼ 新增功能：视角缩放 / Camera Zoom（v5.77）▼▼▼
+-- 内部函数，不自动执行；由现有「镜头距离 ZOOM」滑条（PageUtil）及主 UI 调用。功能本体不创建任何 UI。
+-- 原理：Roblox 内置相机每帧按受上下限约束的缩放距离把相机摆在角色身后；
+-- CameraMaxZoomDistance / CameraMinZoomDistance 都是 LocalPlayer 的【客户端属性】，仅影响本地视角、不涉及服务端。
+-- 把二者设成同一数值即把相机固定在该距离、无法再缩放。
+-- 这两个属性挂在 LocalPlayer 上、不随 Character 重建，因此“角色重生保持当前缩放”天然满足，无需额外处理。
+HON_ZoomBounds = { Lo = 0.5, Hi = 1000 }   -- 允许设置区间（与 Roblox 合法范围一致）
+
+function HON_setZoomMax(value)
+	pcall(function()
+		if not (LP and LP:IsA("Player")) then return end
+		local v = tonumber(value) or 128
+		if v < HON_ZoomBounds.Lo then v = HON_ZoomBounds.Lo end   -- 越界钳制到边界
+		if v > HON_ZoomBounds.Hi then v = HON_ZoomBounds.Hi end
+		LP.CameraMaxZoomDistance = v
+	end)
+end
+
+function HON_setZoomMin(value)
+	pcall(function()
+		if not (LP and LP:IsA("Player")) then return end
+		local v = tonumber(value) or 0.5
+		if v < HON_ZoomBounds.Lo then v = HON_ZoomBounds.Lo end   -- 越界钳制到边界
+		if v > HON_ZoomBounds.Hi then v = HON_ZoomBounds.Hi end
+		-- 校验最小值不大于最大值，若大于则把最小值设为最大值
+		local mx = LP.CameraMaxZoomDistance
+		if v > mx then v = mx end
+		LP.CameraMinZoomDistance = v
+	end)
+end
+
+function HON_lockZoom(value)
+	pcall(function()
+		if not (LP and LP:IsA("Player")) then return end
+		local v = tonumber(value) or 20
+		if v < HON_ZoomBounds.Lo then v = HON_ZoomBounds.Lo end   -- 越界钳制到边界
+		if v > HON_ZoomBounds.Hi then v = HON_ZoomBounds.Hi end
+		-- 把最大值与最小值同时设为 value，相机被固定在该距离、无法再缩放
+		LP.CameraMaxZoomDistance = v
+		LP.CameraMinZoomDistance = v
+	end)
+end
+
+function HON_resetZoom()
+	pcall(function()
+		if not (LP and LP:IsA("Player")) then return end
+		LP.CameraMaxZoomDistance = 128   -- 恢复 Roblox 默认最大
+		LP.CameraMinZoomDistance = 0.5   -- 恢复 Roblox 默认最小
+	end)
+end
+-- ▲▲▲ 新增功能：视角缩放 / Camera Zoom（v5.77）▲▲▲
+
+_pr("[HON SPEED HUB] v5.80 已加载 · 完整文件约 9154 行 · 若你的脚本远大于此行数说明粘贴重复了")
 
 
