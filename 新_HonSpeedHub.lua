@@ -1,5 +1,5 @@
 local _pr = (type(print) == "function") and print or (type(warn) == "function" and warn) or function() end
-_pr("[HON SPEED HUB] 载入中 · v5.70 · 若只看到这一行说明文件在中途中断")
+_pr("[HON SPEED HUB] 载入中 · v5.76 · 若只看到这一行说明文件在中途中断")
 local twait  = (type(task) == "table" and task.wait)  or wait  or function() end
 local tspawn = (type(task) == "table" and task.spawn) or spawn or function(f, ...) return f(...) end
 if type(twait) ~= "function" then twait = function() end end
@@ -108,6 +108,17 @@ local State = {
 	SafePos = nil,
 	CuteFxExtra = true,        -- 可爱风额外特效（爱心 + 泡泡）随樱花一起飘
 	StyleFxPanelOnly = false,  -- 屏幕特效仅面板开启时显示（false = 全程显示）
+	-- ===== 新增功能状态位（v5.74 起，各功能独立界面开关）=====
+	HonEspBox = false,         -- A. 透视 2D 投影方框
+	FlingEnabled = false,      -- B. 甩飞模式
+	FlingRange = 60,           -- B. 甩飞检测半径
+	SilentAim = false,         -- D. 子追 / 弹道重定向
+	SilentAimFov = 60,         -- D. 锁定角度
+	Page3D = false,            -- E. 界面 3D 切换（默认关，开启后切页走 3D 翻转）
+	HON_FlyOn = false,         -- 新飞行：是否开启（移动端飞行 / 普通飞行）
+	HON_FlyMode = 1,           -- 1 = 移动端飞行, 2 = 普通飞行（模式2）
+	HON_FlySpeed = 60,         -- 新飞行速度
+	FpsBoost = false,          -- F. 性能优化 / FPS Boost
 }
 
 -- ===== 小窗：默认位置 + 统一拖拽 =====
@@ -291,14 +302,44 @@ label({ Text = "HON SPEED HUB", Font = Enum.Font.GothamBold, TextSize = 21,
 	TextColor3 = Color3.fromRGB(238, 243, 255),
 	Position = UDim2.new(0, 36, 0, 16), Size = UDim2.new(0, 200, 0, 24),
 	TextXAlignment = Enum.TextXAlignment.Left }, Header)
-label({ Text = "Universal Hub  ·  W / V / CF  ·  v5.70", Font = Enum.Font.Gotham, TextSize = 11,
+label({ Text = "Universal Hub  ·  W / V / CF  ·  v5.76", Font = Enum.Font.Gotham, TextSize = 11,
 	TextColor3 = Color3.fromRGB(140, 149, 172),
 	Position = UDim2.new(0, 36, 0, 42), Size = UDim2.new(0, 240, 0, 16),
 	TextXAlignment = Enum.TextXAlignment.Left }, Header)
 InfoLabel = label({ Text = "", Font = Enum.Font.Gotham, TextSize = 9,
 	TextColor3 = Color3.fromRGB(105, 113, 134), Position = UDim2.new(0, 20, 0, 54),
-	Size = UDim2.new(1, -120, 0, 14), TextXAlignment = Enum.TextXAlignment.Left,
+	Size = UDim2.new(0, 256, 0, 14), TextXAlignment = Enum.TextXAlignment.Left,
 	TextTruncate = Enum.TextTruncate.AtEnd, BackgroundTransparency = 1 }, Header)
+-- v5.72：顶部自动显示当前服务器 ID（「自动开机」= 随面板自动出现、无需开关），点击复制 JobId 方便重连同服
+ServerTag = new("TextButton", {
+	Text = "服务器 ▸ 加载中…  〔点击复制〕", Font = Enum.Font.GothamBold, TextSize = 10,
+	TextColor3 = Color3.fromRGB(120, 226, 160),
+	BackgroundColor3 = Color3.fromRGB(20, 26, 36), BackgroundTransparency = 0.25,
+	BorderSizePixel = 0, AutoButtonColor = false,
+	Position = UDim2.new(0, 286, 0, 42), Size = UDim2.new(0, 236, 0, 16),
+	TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd,
+	Parent = Header,
+})
+corner(ServerTag, 5)
+local function jobIdText()
+	local j = tostring(game.JobId or "")
+	if j == "" then j = tostring(game.PrivateServerId or "") end
+	if j == "" then j = "（私人/本地服）" end
+	return j
+end
+local function refreshServerTag()
+	pcall(function() ServerTag.Text = "服务器 ▸ " .. jobIdText() .. "  〔点击复制〕" end)
+end
+refreshServerTag()
+pcall(function() if type(task) == "table" and task.delay then task.delay(2, refreshServerTag) end end)
+ServerTag.MouseButton1Click:Connect(function()
+	local j = jobIdText()
+	pcall(function()
+		if type(setclipboard) == "function" then setclipboard(j)
+		elseif type(writeclipboard) == "function" then writeclipboard(j) end
+	end)
+	if notify then notify("已复制服务器 ID：" .. j, Color3.fromRGB(120, 226, 160)) end
+end)
 local Mini = new("TextButton", {
 	Text = "HON", Font = Enum.Font.GothamBold, TextSize = 14,
 	TextColor3 = Color3.fromRGB(230, 236, 250),
@@ -331,6 +372,25 @@ iconBtn("×", -34, Color3.fromRGB(255, 108, 118), function()
 end)
 -- ---------- 更新公告 ----------
 CHANGELOG = {
+	{ v = "v5.76", t = {
+		"重构 · 透视/ESP（移动端）：把 v5.74 的「ESP 2D 方框」单开关升级为 v5.76 的六开关 2D 绘制透视——方框/名字/血量/距离/天线/高亮各自独立（每项开关只影响自身）。WorldToViewportPoint 投影 Head/HRP，方框高=脚底Y-头顶Y、宽=高×0.7、X=头顶X-宽/2；名字方框上 16px；血量方框下 2px 按血量四档着色（>0.75 绿/>0.5 橙/>0.3 黄/其余红）；距离血量下 16px 单位米；天线 Drawing Line 从屏幕底中心连到头部屏幕坐标；高亮走 Highlight 实例与 2D 共存；颜色优先队伍色否则默认白；Z<=0（相机背后）隐藏全部标记；离场/死亡清理不留残留。原「玩家透视」Highlight 透视保留不动，两套并存。ESP 页新增 6 个开关直接改内部状态 HON_NESP.*，自动镜像 WindUI",
+	}},
+	{ v = "v5.75", t = {
+		"新增 · 移动端飞行 / Fly（独立一套，不改动原版 setFly）：严格按规格用 BodyVelocity(MaxForce=9e9 三轴)+BodyGyro(P=9e4,MaxTorque=9e9)+RenderStepped 驱动，相机相对方向转世界空间赋速度，客户端位移可复制到服务器；移动端关 PlatformStand（否则摇杆 MoveDirection 被清零，与原版同逻辑），PC 端保持悬浮；停止飞行销毁实例并恢复 PlatformStand/WalkSpeed。给飞行加模式：模式1（移动端飞行，默认）BodyGyro 每帧跟随相机 CFrame 朝哪看往哪飞；模式2「普通飞行」BodyGyro 锁定开启瞬间朝向、身体不随镜头转（像原版飞行）。辅助页新增「飞行（移动端）FLY MOBILE」总开关 +「普通飞行模式 NORMAL」模式切换 +「飞行速度」滑条，自动镜像 WindUI",
+	}},
+	{ v = "v5.74", t = {
+		"新增 · 给六类 HON_ 功能接上独立界面与开关（此前仅内部函数、无 UI）：A 透视 2D 方框——视觉页新增「ESP 2D 方框」独立开关（叠加在「玩家透视」Highlight 之外，受 HON_EspBoxEnabled 控制，Drawing 不可用自动跳过）；B 甩飞——工具页新增「甩飞 FLING」开关 +「甩飞半径」滑条，开启后心跳持续把本地角色甩向半径内最近玩家（HON_doFling）；D 子追/弹道重定向——工具页新增「子追 / 弹道重定向」开关 +「锁定角度 FOV」滑条，驱动 HON_SA_setEnabled / HON_SA_setFov；E 界面 3D 切换——设置页新增「界面 3D 切换」开关，开启后切页走 HON_SwitchPage 的 3D 翻转动画（已把 11 个页面帧与标签按钮注册进 HON_Pages/HON_Tabs，首次切页前完成注册）；F 性能优化——画质页新增「性能优化 / FPS BOOST」开关，驱动 HON_ApplyFpsBoost / HON_RestoreFpsBoost（isBoosted 防重入）。C 服务端玩家状态校验为服务端脚本、无客户端界面，仍作独立片段提供",
+	}},
+	{ v = "v5.73", t = {
+		"整合 · 一次性并入六类功能本体（均加 HON_ 前缀、无 UI / 无热键 / 无对外 API，由现有设置界面调用）：① 玩家透视投影方框——复用现有「玩家透视」开关，在 Highlight 之外叠加 Drawing 2D 方框（Head/HRP 投影算高宽 + 名字/血量/距离 + 队伍色，Drawing 不可用时静默跳过）；② 甩飞 HON_doFling(target)——本地 HRP 设极端 Velocity+RotVelocity 并快速旋转、极短后恢复，备选 BodyVelocity(MaxForce=∞) 用完即删，必做清理；③ 子追/弹道重定向——hookfunction 拦截发射函数、调用前把 direction 重算为 (target.Position-origin).Unit 并拉高速度字段，getgc+实例树递归定位、周期重扫、定位失败打印诊断；④ 设置页 3D 切换 HON_SwitchPage(pageId,direction)——Rotation/Size/Position/BackgroundTransparency 并行 Tween、过渡锁防连点；⑤ 性能优化 HON_ApplyFpsBoost/HON_RestoreFpsBoost——关阴影/后期/粒子、材质 Plastic/Reflectance0/不投影、贴图透明，分批每 250 task.wait、isBoosted 防重入、仅手动调用",
+	}},
+	{ v = "v5.72", t = {
+		"修复 · 身上方块：原 hideBodyBlocks 只清 6 类装饰（Accoutrement / BillboardGui / SelectionBox / Highlight / SurfaceGui / Sparkles），漏掉了游戏直接挂在角色（尤其 HumanoidRootPart）下的方块 BasePart，且把脚本自己的引擎描边 HonSpeedHL 也误伤隐藏、每 30 帧才压一次压不住每帧刷新的方块。现改为：排除脚本实例（前缀 Hon）、隐藏角色下所有非身体核心部件的额外 BasePart（含 HRP / Character 下的装饰方块，身体核心部件白名单兜底不误伤四肢与躯干）、维持循环由每 30 帧提速到每 6 帧——开启脚本 / 重生后身上的方块不再跟随、自动清除",
+		"新增 · 顶部自动显示服务器 ID（「自动开机」= 随面板自动出现、无需开关）：脚本最上方（标题栏副标题右侧）常驻显示当前服务器 JobId，点击即复制，方便重连同服；私人服 / 本地服自动回退到 PrivateServerId",
+	}},
+	{ v = "v5.71", t = {
+		"重构 · 分身隐身落点：按用户要求对齐外国大佬（BitingTheDust / Universal Invisible FE）的做法——不再把真身瞬移到万米『天空』，改为瞬移到地下万米（FAKE_Y 由 +100000 改为 -100000）。真身踩在地下那一份地图副本上照样能走 / 上坡 / 上下楼，相机跟随地下副本里的替身，你看到的仍是真实地图的样子；消除『一开隐身就被传送上天空』的突兀感。可移动 / 上坡 / 爬墙能力不变，仅落点方向由朝上改为朝下",
+	}},
 	{ v = "v5.70", t = {
 		"布局调整 · 工具页「一键触碰所有可触碰物体」移到辅助页；视觉页新增「透视可触碰物体」（高亮金币/宝箱等可碰/可拾取物 + 名称）；视觉页删除「身体透明度」滑条；娱乐页删除「玩具 TOYS」整组；更多页「视野 FOV」移到辅助页最底部，并新增「视野最大/视野最小」两个 FOV 预设按钮；娱乐页「强制第三人称」移到辅助页，辅助页新增「强制第一人称」",
 		"新增 · 传送页顶部新增「可触碰物体列表」可缩小悬浮小窗：定时扫描 ProximityPrompt/ClickDetector/Tool/可拾取 BasePart（带 TouchInterest 的金币等），名单字翻译（内置常见词表，命中显示中文，否则原名），每条带「传送」按钮，底部「循环传送所有」开启后依次循环传送、关闭回到开启前位置",
@@ -817,6 +877,12 @@ local PageTp = mkPage(9, false)
 local PageSet = mkPage(10, false)
 local PageGfx = mkPage(11, false)
 PageList = { PageEng, PageAssist, PageEsp, PageTouch, PageTool, PageFun, PageMore, PageUtil, PageTp, PageSet, PageGfx }
+-- ===== E. 界面 3D 切换：把 11 个页面帧与对应标签按钮注册进 HON_SwitchPage 的查找表 =====
+-- 必须在首次 SetTab(1)（约 8224 行）之前完成，否则 3D 切换找不到页面。
+HON_Pages = {}
+HON_Tabs = {}
+for i, pg in ipairs(PageList) do HON_Pages[i] = pg end
+for i, t in ipairs(TabBtns) do HON_Tabs[i] = (t and t.Btn) or nil end
 local function makeSlider(parent, title, y, min, max, default, suffix, onChange, lockable, onLockChange, editable)
 	local wrap = new("Frame", { Size = UDim2.new(1, 0, 0, 46), Position = UDim2.new(0, 0, 0, y), BackgroundTransparency = 1, Parent = parent })
 	label({ Text = title, Font = Enum.Font.GothamBold, TextSize = 12, TextColor3 = Color3.fromRGB(196, 204, 224),
@@ -1083,6 +1149,16 @@ end)
 		State.FovValue = v
 		pcall(function() if v > 0 then Cam.FieldOfView = v end end)
 	end, false)
+	-- ▼▼▼ 新增：移动端飞行 / Fly（v5.75）· 总开关 + 模式2「普通飞行」+ 速度 ▼▼▼
+	HON_FlyTgl = makeToggle(PageAssist, 654, "飞行（移动端）FLY MOBILE", "摇杆前后左右 · 镜头朝向即飞行方向", false, function(v)
+		if v then HON_startFly() else HON_stopFly() end
+	end)
+	HON_FlyNormalTgl = makeToggle(PageAssist, 702, "普通飞行模式 NORMAL", "模式2 · 身体锁定朝向（像原版飞行）", false, function(v)
+		HON_FlySetMode(v and 2 or 1)
+	end)
+	HON_FlySpeedSlider = makeSlider(PageAssist, "飞行速度", 760, 10, 250, 60, " sp", function(v)
+		HON_FlySpeed = v
+	end, false)
 	local FovMaxBtn = new("TextButton", { Text = "视野最大", Font = Enum.Font.GothamBold, TextSize = 11,
 		TextColor3 = Mode().Accent, BackgroundColor3 = Color3.fromRGB(255, 255, 255), BackgroundTransparency = 0.9,
 		BorderSizePixel = 0, AutoButtonColor = false,
@@ -1161,6 +1237,53 @@ end
 ToolRagTgl = makeToggle(PageTool, 606, "防布娃娃 ANTI RAGDOLL", "不会被打倒 / 摔倒", false, function(v)
 	syncRagTgls(v)
 end)
+-- ===== B. 甩飞 FLING（持续把你甩向最近的玩家；半径可调）=====
+local HON_FlingModeConn = nil
+local HON_FlingTimer = 0
+FlingTgl = makeToggle(PageTool, 664, "甩飞 FLING", "开启后持续把你甩向最近的玩家", false, function(v)
+	State.FlingEnabled = v
+	if v then
+		if not HON_FlingModeConn then
+			HON_FlingModeConn = RunService.Heartbeat:Connect(function(dt)
+				HON_FlingTimer = HON_FlingTimer + (dt or 0)
+				if HON_FlingTimer >= 1.4 then
+					HON_FlingTimer = 0
+					pcall(function()
+						local me = (LP and LP.Character) or Character
+						if me then
+							local hrp = me:FindFirstChild("HumanoidRootPart")
+							if hrp then
+								local best, bd = nil, (State.FlingRange or 60)
+								for _, pl in ipairs(Players:GetPlayers()) do
+									if pl ~= LP and pl.Character then
+										local ph = pl.Character:FindFirstChild("HumanoidRootPart")
+										if ph then
+											local d = (ph.Position - hrp.Position).Magnitude
+											if d <= bd then bd = d; best = pl end
+										end
+									end
+								end
+								if best then HON_doFling(best) end
+							end
+						end
+					end)
+				end
+			end)
+		end
+	else
+		if HON_FlingModeConn then pcall(function() HON_FlingModeConn:Disconnect() end); HON_FlingModeConn = nil end
+	end
+end)
+FlingRangeSlider = makeSlider(PageTool, "甩飞半径", 712, 5, 200, 60, " st", function(v) State.FlingRange = v end, false)
+-- ===== D. 子追 / 弹道重定向（Silent Aim：hook 发射函数，命中方向重定向到锁定目标）=====
+SilentAimTgl = makeToggle(PageTool, 764, "子追 / 弹道重定向", "命中方向重定向到锁定目标", false, function(v)
+	State.SilentAim = v
+	pcall(HON_SA_setEnabled, v)
+end)
+SilentAimFovSlider = makeSlider(PageTool, "锁定角度 FOV", 812, 10, 120, 60, " °", function(v)
+	State.SilentAimFov = v
+	pcall(HON_SA_setFov, v)
+end, false)
 PadSizeSlider = makeSlider(PageTouch, "方向键大小", 120, 50, 200, 100, " %", function(v)
 	State.PadSize = v
 	if PadScale then PadScale.Scale = v / 100 end
@@ -2310,14 +2433,14 @@ RunService.Stepped:Connect(function()
 	-- 等于每 30 帧把藏起来的方块全部放出来，「隐藏身上方块没有用」的根因就在这一行；
 	-- 现在改成无开关常驻：持续把游戏后加上来的附加物压回去，UNLOAD 时才统一还原
 	BlockTimer = BlockTimer + 1
-	if BlockTimer >= 30 then
+	if BlockTimer >= 6 then
 		BlockTimer = 0
 		pcall(hideBodyBlocks, true)
 	end
 end)
-FAKE_Y = 100000
+FAKE_Y = -100000
 FakeClone, FakePlatform, FakeBase, FakeAnchor, FakeWorld = nil, nil, nil, nil, nil
--- 判断某部件是否属于「角色 / NPC」模型（带 Humanoid）——复制高空副本时跳过玩家与 NPC
+-- 判断某部件是否属于「角色 / NPC」模型（带 Humanoid）——复制地下副本时跳过玩家与 NPC
 function inCharModel(p)
 	local a = p.Parent
 	while a do
@@ -2327,7 +2450,7 @@ function inCharModel(p)
 	end
 	return false
 end
--- v5.70：把整张地图的「建筑 / 地形」几何复制到万米高空（只复制几何，忽略脚本 / 特效 / 贴花 / NPC / 玩家），
+-- v5.71：把整张地图的「建筑 / 地形」几何复制到地下万米（只复制几何，忽略脚本 / 特效 / 贴花 / NPC / 玩家）；
 -- 本体踩在这份副本上就能正常上坡、上下楼（不再一直平着走）；副本隐形（Transparency=1）但可碰撞。
 function buildFakeWorld()
 	if FakeWorld and FakeWorld.Parent then return end
@@ -2388,8 +2511,8 @@ function buildFakeWorld()
 	folder.Parent = Workspace
 	FakeWorld = folder
 end
--- 分身隐身（退回 v5.57 机制）：本体瞬移万米高空踩平台，本地造半透明克隆体顶在地面当替身
--- （别人看不见、攻击也打不到），相机切到替身；你操控的是本体（在天上正常走，WalkSpeed 等移动能力
+-- 分身隐身（退回 v5.57 机制）：本体瞬移地下万米踩平台，本地造半透明克隆体顶在地下副本当替身
+-- （别人看不见、攻击也打不到），相机切到替身；你操控的是本体（在地下正常走，WalkSpeed 等移动能力
 -- 完全保留，所以「能正常移动」），替身每帧镜像本体位移，看起来就是在地面正常走。关掉时本体落回
 -- 替身位置，替身与平台销毁、视角交还本体。
 function cleanupFake()
@@ -2451,7 +2574,7 @@ function buildFakeWin()
 	end
 	tglApi = { Set = function(v, silent) tglOn = v; tglPaint(v); if not silent then tglCb(v) end end, _last = false }
 	sw.MouseButton1Click:Connect(function() tglApi.Set(not tglOn) end)
-	label({ Text = "本体踩整张地图的高空副本（能上坡 / 上下楼）\n虚影在地面替你走", Font = Enum.Font.Gotham, TextSize = 9,
+	label({ Text = "本体踩整张地图的地下副本（能上坡 / 上下楼）\n虚影在地下替你走 · 你看到的仍是真实地图", Font = Enum.Font.Gotham, TextSize = 9,
 		TextColor3 = Color3.fromRGB(132, 141, 163), Position = UDim2.new(0, 14, 0, 82),
 		Size = UDim2.new(1, -28, 0, 24), TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top }, w)
 	FakeWin = w
@@ -2507,13 +2630,13 @@ function setFakeStealth(on)
 		paintFakeWin(false)
 		return
 	end
-	-- v5.70：本体瞬移万米高空，脚下是「整张地图建筑 / 地形」的隐形副本（只复制几何，忽略脚本 / 特效 / 贴花 / NPC / 玩家），
-	-- 本体踩在副本上能正常上坡、上下楼；本地再造半透明克隆体顶在地面当替身（别人看不见、攻击也打不到），相机切到替身。
-	-- 你操控的是本体（在天上正常走，WalkSpeed 等移动能力完全保留 = 能正常移动），替身每帧镜像本体的位移，看起来就是在地面正常走。
+	-- v5.71：本体瞬移地下万米，脚下是「整张地图建筑 / 地形」的隐形副本（只复制几何，忽略脚本 / 特效 / 贴花 / NPC / 玩家），
+	-- 本体踩在副本上能正常上坡、上下楼；本地再造半透明克隆体顶在地下副本当替身（别人看不见、攻击也打不到），相机切到替身。
+	-- 你操控的是本体（在地下正常走，WalkSpeed 等移动能力完全保留 = 能正常移动），替身每帧镜像本体的位移，看起来就是在地面正常走。
 	cleanupFake()  -- 清掉上一轮的平台 / 副本 / 高空世界，避免重生叠加两份
 	buildFakeWorld()
 	local hip = (Humanoid.HipHeight > 0) and Humanoid.HipHeight or 2.5
-	-- 锚点 = 本体当前位置 + FAKE_Y：保留原本高度，让本体落在「原地」对应高处（屋顶 / 楼梯都能站），告别一直平着走
+	-- 锚点 = 本体当前位置 + FAKE_Y（现为负，即原地下方万米）：保留原本高度，让本体落在「原地」对应的地下位置（屋顶 / 楼梯都能站），告别一直平着走
 	FakeAnchor = HRP.Position + Vector3.new(0, FAKE_Y, 0)
 	FakeBase   = FakeAnchor - Vector3.new(0, hip, 0)
 	-- 安全兜底平台：放大到 4000，本体基本走不出去；副本地形撑不起时也能接住，不再坠入虚空（修「开久了一直往下掉」）
@@ -2553,7 +2676,7 @@ RunService:BindToRenderStep("HonFakeSync", 1999, function()
 	if not (FakeClone and FakeClone.Parent) or not (HRP and HRP.Parent) then return end
 	local fhrp = FakeClone:FindFirstChild("HumanoidRootPart")
 	if not fhrp then return end
-	-- 本体在万米高空踩副本（移动能力保留，正常走 / 跳 / 上坡）；若坠出副本范围，拉回锚点（相对高度判定，适配任意起始高度）
+	-- 本体在地下万米踩副本（移动能力保留，正常走 / 跳 / 上坡）；若坠出副本范围，拉回锚点（相对高度判定，适配任意起始高度）
 	local hip = FakeAnchor.Y - FakeBase.Y
 	if HRP.Position.Y < FakeAnchor.Y - 400 then
 		pcall(function() HRP.CFrame = CFrame.new(FakeAnchor + Vector3.new(0, hip + 1, 0)) end)
@@ -2868,9 +2991,36 @@ function hideBodyBlocks(on)
 		BlockHidden = {}
 		return 0
 	end
-	if not Character then return 0 end
+	if not Character or not Character.Parent then return 0 end
+	-- 脚本自己创建的实例（描边 HonSpeedHL 等）绝不误伤——否则会把引擎描边也一并藏掉看不到
+	local function isOwn(n)
+		return type(n) == "string" and n:sub(1, 3) == "Hon"
+	end
+	-- 身体核心部件白名单：只排除这些，其余挂在角色下的 BasePart 一律视为「额外方块」隐藏
+	local bodyCore = {
+		Head = true, Torso = true, HumanoidRootPart = true,
+		["Left Arm"] = true, ["Right Arm"] = true,
+		["Left Leg"] = true, ["Right Leg"] = true,
+		UpperTorso = true, LowerTorso = true,
+		LeftUpperArm = true, LeftLowerArm = true, LeftHand = true,
+		RightUpperArm = true, RightLowerArm = true, RightHand = true,
+		LeftUpperLeg = true, LeftLowerLeg = true, LeftFoot = true,
+		RightUpperLeg = true, RightLowerLeg = true, RightFoot = true,
+	}
 	for _, v in ipairs(Character:GetDescendants()) do
-		if v:IsA("Accoutrement") or v:IsA("BillboardGui") or v:IsA("SelectionBox")
+		if isOwn(v.Name) then
+			-- 脚本实例：跳过
+		elseif v:IsA("Humanoid") then
+			-- 身体核心：跳过
+		elseif v:IsA("BasePart") then
+			-- 角色下额外的方块 / 装饰 Part（游戏常把标记方块挂在 HumanoidRootPart 或 Character 下，
+			-- 随角色移动且重生后重现）：排除身体核心部件与配件内部的 Part，其余一律隐藏
+			local par = v.Parent
+			if not bodyCore[v.Name] and not (par and par:IsA("Accessory")) then
+				pcall(function() v.Visible = false end)
+				table.insert(BlockHidden, v)
+			end
+		elseif v:IsA("Accoutrement") or v:IsA("BillboardGui") or v:IsA("SelectionBox")
 			or v:IsA("Highlight") or v:IsA("SurfaceGui") or v:IsA("Sparkles") then
 			if v.Visible then
 				pcall(function() v.Visible = false end)
@@ -3966,8 +4116,16 @@ function SetTab(i)
 	if notify then pcall(function() notify("第 " .. tostring(i) .. " 页") end) end
 	if Status then pcall(function() Status.Text = "当前第 " .. tostring(i) .. " 页 · 点左侧栏切页" end) end
 	-- 先切页面（这一步绝不能失败，否则所有页面会同时显示、叠在一起）
-	for j, pg in ipairs(PageList) do
-		if pg then pg.Visible = (j == i) end
+	if State.Page3D and type(HON_SwitchPage) == "function" then
+		-- E. 界面 3D 切换：旧页旋转退出、新页旋转进入（HON_SwitchPage 管理显隐与过渡锁）
+		local dir = (i > (HON_CurPage or CurTab)) and "next" or "prev"
+		pcall(HON_SwitchPage, i, dir)
+	else
+		for j, pg in ipairs(PageList) do
+			if pg then pg.Visible = (j == i) end
+		end
+		HON_CurPage = i
+		HON_PageLock = false
 	end
 	pcall(function()
 		local pg = PageList[i]
@@ -4383,7 +4541,7 @@ function unloadScript()
 	if HON_SHUTDOWN then return end
 	HON_SHUTDOWN = true
 	pcall(closeAllFeatures)
-	-- 隐身在跑的时候卸载：先把本体放回地面、收掉虚影，别把人留在万米高空
+	-- 隐身在跑的时候卸载：先把本体放回地面、收掉虚影，别把人留在地下万米
 	pcall(function() if State.FakeChar then setFakeStealth(false) end end)
 	pcall(function() if type(cleanupFake) == "function" then cleanupFake() end end)
 	pcall(function() if State.CamNoclip then setCamNoclip(false) end end)
@@ -5263,6 +5421,12 @@ function bindCharacter(char)
 		if Humanoid and Humanoid.Parent then Humanoid.PlatformStand = true end
 		FlyHoldY = (HRP and HRP.Parent) and HRP.Position.Y or nil
 	end
+	-- v5.75：新飞行（HON_Fly）重生接管——旧 HRP 上的 BodyVelocity/BodyGyro 随旧角色一起销毁，
+	-- 这里在「新角色」上重启飞行，避免旧 RenderStepped 循环挂死在新角色上、输入不响应。
+	if HON_FlyOn and type(HON_stopFly) == "function" then
+		pcall(HON_stopFly)
+		pcall(HON_startFly)
+	end
 	WalkY = nil   -- v5.59：踏空行走高度随角色刷新重置，避免重生后被拽回旧高度
 	-- 画质/夜视类状态重生后自动重放（Lighting 是全局的不受影响，粒子/贴图类要重扫一遍）
 	pcall(function()
@@ -5281,6 +5445,7 @@ function bindCharacter(char)
 			cur, CFAccum = 0, 0
 			clearFX()
 			destroyFlyParts()
+			pcall(function() if HON_FlyOn and type(HON_stopFly) == "function" then HON_stopFly() end end)
 			Character, Humanoid, HRP = nil, nil, nil
 		end)
 	end
@@ -6703,7 +6868,7 @@ function windBuild(lib)
 	if not W then return false end
 	WindWin = W
 	-- 再补一层保险（夜脚本同款）：CreateWindow 可能被库吞掉背景参数，建完强制再写一次
-	windSafe("Tag", function() W:Tag({ Title = "v5.70", Color = "ElementBackground" }) end)
+	windSafe("Tag", function() W:Tag({ Title = "v5.76", Color = "ElementBackground" }) end)
 	-- 引擎页
 	local tEng = nil
 	windSafe("Tab:引擎", function() tEng = W:Tab({ Title = "引擎", Icon = "gauge" }) end)
@@ -7073,6 +7238,14 @@ EspHpBarBgTgl = makeToggle(PageEsp, 502, "血条背景 HP BAR BG", "开=有背�
 	State.EspHpBarBg = v
 	refreshEspHpStyle()
 end, true)
+-- ===== v5.76 · 透视 / ESP（移动端 2D 绘制）六项独立开关，直接修改内部状态 HON_NESP.* =====
+-- 保留原「玩家透视」Highlight 透视作为上一套；本套为 2D 绘制版（方框/名字/血量/距离/天线/高亮各自独立）。
+HonEspBoxTgl  = makeToggle(PageEsp, 560, "ESP 方框 BOX", "投影框（高=脚底Y-头顶Y，宽=高×0.7）", true, function(v) HON_NESP.Box = v end)
+HonEspNameTgl = makeToggle(PageEsp, 608, "ESP 名字 NAME", "方框上方 16px 显示玩家名", true, function(v) HON_NESP.Name = v end)
+HonEspHpTgl   = makeToggle(PageEsp, 656, "ESP 血量 HEALTH", "方框下方 2px，按血量四档着色", true, function(v) HON_NESP.Health = v end)
+HonEspDistTgl = makeToggle(PageEsp, 704, "ESP 距离 DISTANCE", "血量下方 16px，单位米", true, function(v) HON_NESP.Dist = v end)
+HonEspAntTgl  = makeToggle(PageEsp, 752, "ESP 天线 ANTENNA", "屏幕底中心 → 头部（需 Drawing 库）", true, function(v) HON_NESP.Ant = v end)
+HonEspHlTgl   = makeToggle(PageEsp, 800, "ESP 高亮 HIGHLIGHT", "Highlight 穿墙描边，与 2D 绘制共存", true, function(v) HON_NESP.HL = v end)
 -- ===== 一键触碰所有可触碰物体（用户：「一键触碰所有可触碰的物体，整个服务器」）=====
 -- 遍历 Workspace:GetDescendants()：ProximityPrompt → fireproximityprompt（执行器扩展），
 -- ClickDetector → 试 fireclickdetector，Tool → Activate()；逐个 pcall，橙提示汇总成功数
@@ -7123,6 +7296,11 @@ end)
 RagTgl = makeToggle(PageSet, 848, "防布娃娃 ANTI RAGDOLL", "不会被打倒/摔倒（夜脚本同款）", false, function(v)
 	syncRagTgls(v)
 end, true)
+-- ===== E. 界面 3D 切换（切页 3D 翻转动画，见 HON_SwitchPage）=====
+Page3DTgl = makeToggle(PageSet, 712, "界面 3D 切换", "切页时 3D 翻转进入 / 退出动画", false, function(v)
+	State.Page3D = v
+	if not v then HON_PageLock = false; HON_CurPage = CurTab end
+end)
 
 local KillBtn = new("TextButton", { Text = "彻底关闭脚本 UNLOAD", Font = Enum.Font.GothamBold, TextSize = 12,
 	TextColor3 = Color3.fromRGB(255, 108, 118), BackgroundColor3 = Color3.fromRGB(255, 80, 90),
@@ -7520,6 +7698,11 @@ local GfxResetBtn = new("TextButton", { Text = "恢复默认画质", Font = Enum
 	Size = UDim2.new(1, 0, 0, 34), Position = UDim2.new(0, 0, 0, 546), Parent = PageGfx })
 corner(GfxResetBtn, 8)
 table.insert(FunBtns, GfxResetBtn)
+-- ===== F. 性能优化 / FPS Boost（手动开关：HON_ApplyFpsBoost / HON_RestoreFpsBoost）=====
+FpsBoostTgl = makeToggle(PageGfx, 584, "性能优化 / FPS BOOST", "关阴影 / 特效 / 粒子提帧（可一键还原）", false, function(v)
+	State.FpsBoost = v
+	if v then task.spawn(HON_ApplyFpsBoost) else task.spawn(HON_RestoreFpsBoost) end
+end)
 -- 恢复默认画质：自制 UI 按钮与 WindUI 按钮共用（含一键提升帧率动过的地形装饰 / 渲染质量）
 function gfxReset()
 	-- State 必须显式归 false：setGfxX 只动游戏画面，不碰 State——
@@ -8239,6 +8422,651 @@ tspawn(function()
 end)
 -- 右上角「隐身」快速键常驻（默认关闭，点一下开、再点一下关）——初始化即建好，随时可点
 pcall(buildFakeWin)
-_pr("[HON SPEED HUB] v5.68 已加载 · 完整文件约 8245 行 · 若你的脚本远大于此行数说明粘贴重复了")
+-- =====================================================================
+-- ▼▼▼ 新增功能整合区块（v5.76）▼▼▼
+-- 插入位置：本文件末尾（所有现有函数/初始化之后）。均为功能本体，
+-- 以 HON_ 前缀避免冲突；无 UI / 无热键 / 无 require·loadstring / 无对外 API。
+-- 各功能调用方式见各自注释。
+-- =====================================================================
+local HON_unpack = (type(unpack) == "function" and unpack) or table.unpack
+
+local function HON_GetLocalChar()
+	if Character and Character.Parent then return Character end
+	if LP then return LP.Character end
+	return nil
+end
+local function HON_NowSec()
+	local ok, c = pcall(function() return (type(os) == "table" and os.clock) and os.clock() or tick() end)
+	return ok and c or 0
+end
+
+-- ===================== A. 玩家透视 · 投影方框（增强现有「玩家透视」） =====================
+-- ▼▼▼ 新增功能：透视 / ESP（移动端 2D 绘制，v5.76）▼▼▼
+-- 六项独立开关：方框 / 名字 / 血量 / 距离 / 天线 / 高亮，各开关只影响自身（互不影响）。
+-- 开关状态存于 HON_NESP（由 ESP 页 6 个开关直接修改）。功能本体不创建任何界面 / 热键 / 对外 API。
+-- 复用相机 WorldToViewportPoint 把 3D 坐标投影成 2D 屏幕坐标；Z<=0 表示在相机背后，隐藏全部标记。
+HON_NESP = HON_NESP or { Box = true, Name = true, Health = true, Dist = true, Ant = true, HL = true }
+local HON_NESP_Draw = {}
+local HON_NESP_Lib = nil
+pcall(function() if type(Drawing) == "table" and Drawing.new then HON_NESP_Lib = Drawing end end)
+-- 颜色：优先队伍色，否则默认白
+local function HON_NESP_Col(plr)
+	local c = Color3.new(1, 1, 1)
+	pcall(function() if plr and plr.Team and plr.Team.TeamColor then c = plr.Team.TeamColor.Color end end)
+	return c
+end
+-- 血量四档着色：>0.75 绿 / >0.5 橙 / >0.3 黄 / 其余红
+local function HON_NESP_HPCol(ratio)
+	if ratio > 0.75 then return Color3.fromRGB(60, 220, 90) end
+	if ratio > 0.5 then return Color3.fromRGB(255, 150, 40) end
+	if ratio > 0.3 then return Color3.fromRGB(255, 220, 40) end
+	return Color3.fromRGB(255, 60, 60)
+end
+-- 清除某玩家全部标记（不残留实例）
+local function HON_NESP_Clear(plr)
+	local d = HON_NESP_Draw[plr]
+	if not d then return end
+	pcall(function()
+		if d.box and d.box.Remove then d.box:Remove() elseif d.box then d.box.Visible = false end
+		if d.name and d.name.Remove then d.name:Remove() elseif d.name then d.name.Visible = false end
+		if d.health and d.health.Remove then d.health:Remove() elseif d.health then d.health.Visible = false end
+		if d.dist and d.dist.Remove then d.dist:Remove() elseif d.dist then d.dist.Visible = false end
+		if d.ant and d.ant.Remove then d.ant:Remove() elseif d.ant then d.ant.Visible = false end
+		if d.hl and d.hl.Parent then d.hl:Destroy() end
+	end)
+	HON_NESP_Draw[plr] = nil
+end
+-- 取 / 建某玩家绘制对象（Drawing 不可用时只建高亮）
+local function HON_NESP_Obj(plr)
+	local d = HON_NESP_Draw[plr]
+	if d then return d end
+	d = {}
+	pcall(function()
+		if HON_NESP_Lib then
+			d.box = HON_NESP_Lib.new("Square")
+			d.box.Thickness = 1.5; d.box.Filled = false; d.box.Visible = false
+			d.name = HON_NESP_Lib.new("Text")
+			d.name.Size = 13; d.name.Center = true; d.name.Outline = true; d.name.Visible = false
+			d.health = HON_NESP_Lib.new("Text")
+			d.health.Size = 13; d.health.Center = true; d.health.Outline = true; d.health.Visible = false
+			d.dist = HON_NESP_Lib.new("Text")
+			d.dist.Size = 13; d.dist.Center = true; d.dist.Outline = true; d.dist.Visible = false
+			d.ant = HON_NESP_Lib.new("Line")
+			d.ant.Thickness = 1.5; d.ant.Visible = false
+		end
+	end)
+	HON_NESP_Draw[plr] = d
+	return d
+end
+-- 单玩家刷新
+local function HON_NESP_One(plr)
+	if not (plr and plr.Parent) or plr == LP then HON_NESP_Clear(plr); return end
+	if not Cam then HON_NESP_Clear(plr); return end
+	local char = plr.Character
+	if not char then HON_NESP_Clear(plr); return end
+	local hum = char:FindFirstChildOfClass("Humanoid")
+	if not hum or hum.Health <= 0 then HON_NESP_Clear(plr); return end
+	local head = char:FindFirstChild("Head")
+	local hrp = char:FindFirstChild("HumanoidRootPart")
+	if not head or not hrp then HON_NESP_Clear(plr); return end
+	local headPos = Cam:WorldToViewportPoint(head.Position)
+	local footPos = Cam:WorldToViewportPoint(hrp.Position - Vector3.new(0, hrp.Size.Y / 2, 0))
+	if headPos.Z <= 0 or footPos.Z <= 0 then
+		local d = HON_NESP_Draw[plr]
+		if d then pcall(function()
+			if d.box then d.box.Visible = false end
+			if d.name then d.name.Visible = false end
+			if d.health then d.health.Visible = false end
+			if d.dist then d.dist.Visible = false end
+			if d.ant then d.ant.Visible = false end
+		end) end
+		return
+	end
+	local h = math.abs(footPos.Y - headPos.Y)
+	if h < 6 then h = 6 end
+	local w = h * 0.7
+	local bx = headPos.X - w / 2
+	local by = headPos.Y
+	local col = HON_NESP_Col(plr)
+	local maxHp = hum.MaxHealth > 0 and hum.MaxHealth or 100
+	local ratio = math.clamp(hum.Health / maxHp, 0, 1)
+	local sw, sh = 0, 0
+	pcall(function() sw = Cam.ViewportSize.X; sh = Cam.ViewportSize.Y end)
+	local d = HON_NESP_Obj(plr)
+	-- 方框：高度=脚底Y-头顶Y，宽度=高度*0.7，X=头顶X-宽/2
+	if HON_NESP.Box and d.box then
+		d.box.Visible = true; d.box.Position = Vector2.new(bx, by); d.box.Size = Vector2.new(w, h); d.box.Color = col
+	elseif d.box then d.box.Visible = false end
+	-- 名字：方框上方 16px
+	if HON_NESP.Name and d.name then
+		d.name.Visible = true; d.name.Position = Vector2.new(headPos.X, by - 16); d.name.Text = plr.Name; d.name.Color = col
+	elseif d.name then d.name.Visible = false end
+	-- 血量：方框下方 2px，四档着色
+	if HON_NESP.Health and d.health then
+		d.health.Visible = true; d.health.Position = Vector2.new(headPos.X, by + h + 2); d.health.Text = math.floor(hum.Health) .. "/" .. math.floor(maxHp); d.health.Color = HON_NESP_HPCol(ratio)
+	elseif d.health then d.health.Visible = false end
+	-- 距离：血量下方 16px（米）
+	if HON_NESP.Dist and d.dist then
+		local dist = math.floor((hrp.Position - Cam.CFrame.Position).Magnitude + 0.5)
+		d.dist.Visible = true; d.dist.Position = Vector2.new(headPos.X, by + h + 2 + 16); d.dist.Text = dist .. "m"; d.dist.Color = col
+	elseif d.dist then d.dist.Visible = false end
+	-- 天线：屏幕底部中心 → 头部屏幕坐标
+	if HON_NESP.Ant and d.ant then
+		pcall(function()
+			d.ant.Visible = true; d.ant.From = Vector2.new(sw / 2, sh); d.ant.To = Vector2.new(headPos.X, by); d.ant.Color = col
+		end)
+	elseif d.ant then d.ant.Visible = false end
+	-- 高亮：Highlight 实例（穿墙描边），与 Drawing 绘制共存
+	if HON_NESP.HL then
+		if not d.hl or not d.hl.Parent then
+			pcall(function()
+				local hl = Instance.new("Highlight")
+				hl.Name = "HON_NESP_HL"; hl.FillTransparency = 0.75; hl.OutlineTransparency = 0
+				hl.FillColor = col; hl.OutlineColor = col
+				hl.DepthMode = (State and State.EspDepth) and Enum.HighlightDepthMode.AlwaysOnTop or Enum.HighlightDepthMode.Occluded
+				hl.Adornee = char; hl.Parent = EspFolder
+				d.hl = hl
+			end)
+		else
+			pcall(function() d.hl.FillColor = col; d.hl.OutlineColor = col end)
+		end
+	elseif d.hl and d.hl.Parent then
+		d.hl:Destroy(); d.hl = nil
+	end
+end
+-- 全量刷新 + 清理离场 / 死亡玩家（不残留）
+local function HON_NESP_Tick()
+	local live = {}
+	pcall(function()
+		for _, plr in ipairs(Players:GetPlayers()) do
+			live[plr] = true
+			pcall(HON_NESP_One, plr)
+		end
+	end)
+	for plr, _ in pairs(HON_NESP_Draw) do
+		if not live[plr] then HON_NESP_Clear(plr) end
+	end
+end
+RunService.Heartbeat:Connect(function() pcall(HON_NESP_Tick) end)
+
+-- ===================== B. 甩飞 / Fling（内部函数 HON_doFling） =====================
+-- 主手法：本地 HRP 设极端 Velocity + RotVelocity 并快速旋转，极短时间(0.12s)后恢复速度/旋转。
+-- 备选：若 HRP 被锚定或速度不生效，临时挂 BodyVelocity(MaxForce=∞) 用完即删。
+-- 默认影响附近所有存活玩家（物理本地模拟自然弹飞）；传 target 则朝其方向甩。
+-- 调用：HON_doFling() 或 HON_doFling(targetPlayer或BasePart)。由现有逻辑/按键在需要时调用。
+local HON_FlingConn = nil
+function HON_doFling(target)
+	local char = HON_GetLocalChar()
+	if not char then return end
+	local hrp = char:FindFirstChild("HumanoidRootPart") or char:WaitForChild("HumanoidRootPart", 1)
+	if not hrp then return end
+	if HON_FlingConn then pcall(function() HON_FlingConn:Disconnect() end); HON_FlingConn = nil end
+	pcall(function()
+		local wasAnchored = hrp.Anchored
+		if wasAnchored then hrp.Anchored = false end
+		local oldVel = hrp.Velocity
+		local oldRV = hrp.RotVelocity
+		local dir = Vector3.new(9e9, 9e9, 9e9)
+		if target then
+			pcall(function()
+				local tpos
+				if target:IsA("Model") then local th = target:FindFirstChild("HumanoidRootPart"); if th then tpos = th.Position end
+				elseif target:IsA("BasePart") then tpos = target.Position end
+				if tpos then dir = (tpos - hrp.Position).Unit * 9e9 end
+			end)
+		end
+		hrp.Velocity = dir
+		hrp.RotVelocity = Vector3.new(0, 1e6, 0)
+		local bv = nil
+		pcall(function()
+			bv = Instance.new("BodyVelocity")
+			bv.Velocity = dir; bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+			bv.Parent = hrp
+		end)
+		local t0 = HON_NowSec()
+		HON_FlingConn = RunService.Heartbeat:Connect(function()
+			if HON_NowSec() - t0 > 0.12 then
+				pcall(function()
+					if HON_FlingConn then HON_FlingConn:Disconnect() end
+					hrp.Velocity = oldVel; hrp.RotVelocity = oldRV
+					if bv and bv.Parent then bv:Destroy() end
+					if wasAnchored then hrp.Anchored = true end
+				end)
+				HON_FlingConn = nil
+				return
+			end
+			pcall(function() hrp.CFrame = hrp.CFrame * CFrame.Angles(0, math.rad(90), 0) end)
+		end)
+	end)
+end
+
+-- ===================== D. 子追 / 弹道重定向（Silent Aim，内部函数） =====================
+-- 在武器发射函数被调用瞬间，把 direction 参数重算为 (target.Position - origin).Unit，
+-- 并把 stats/速度字段设极高值确保直线命中。不依赖鼠标/相机中间层，是对弹道模块的 hook。
+-- 定位失败打印诊断；getgc + 实例树递归双路扫描、周期重扫适配延迟加载；方向参数启发式取首个非零 Vector3。
+-- 调用：HON_SA_setEnabled(true) / HON_SA_setFov(60) / HON_SA_setTargetPart("Head") /
+--       HON_SA_rescan() / HON_SA_getTarget()（返回当前锁定 Player 或 nil）。
+local HON_SA_enabled = false
+local HON_SA_fov = 60
+local HON_SA_targetPart = "Head"
+local HON_SA_target = nil
+local HON_SA_hooks = {}
+local HON_SA_CFG = {
+	FUNC_NAMES = { "BallisticsHandler", "Ballistic", "Projectile", "Bullet", "Fire", "Shoot", "Launch", "CastProjectile" },
+	DIR_HEURISTIC = "unit",
+	SPEED_OVERRIDE = 99999,
+	TEAM_CHECK = false,
+	RESCAN_INTERVAL = 5,
+	MAX_DISTANCE = 5000,
+}
+local function HON_SA_isVec3(a)
+	if type(a) ~= "userdata" and type(a) ~= "table" then return false end
+	local ok = pcall(function() local _ = a.X; local _ = a.Y; local _ = a.Z; return true end)
+	return ok
+end
+local function HON_SA_pickTarget()
+	if not (HON_GetLocalChar() and Cam) then return nil end
+	local camPos = Cam.CFrame.Position
+	local camLook = Cam.CFrame.LookVector
+	local fov = HON_SA_fov
+	local best, bestScore = nil, math.huge
+	local tp = HON_SA_targetPart
+	local function consider(plr)
+		if plr == LP then return end
+		if HON_SA_CFG.TEAM_CHECK and plr.Team and LP.Team and plr.Team == LP.Team then return end
+		local char = plr.Character
+		if not char then return end
+		local hum = char:FindFirstChildOfClass("Humanoid")
+		if not hum or hum.Health <= 0 then return end
+		local part = char:FindFirstChild(tp) or char:FindFirstChild("HumanoidRootPart")
+		if not part then return end
+		local pos = part.Position
+		local _, onScreen = Cam:WorldToViewportPoint(pos)
+		if not onScreen then return end
+		local dirTo = (pos - camPos).Unit
+		local dot = camLook:Dot(dirTo)
+		dot = (dot < -1 and -1) or (dot > 1 and 1 or dot)
+		local ang = math.deg(math.acos(dot))
+		if ang > fov then return end
+		local dist = (pos - camPos).Magnitude
+		if dist > HON_SA_CFG.MAX_DISTANCE then return end
+		if dist < bestScore then bestScore, best = dist, plr end
+	end
+	for _, plr in ipairs(Players:GetPlayers()) do consider(plr) end
+	return best
+end
+local function HON_SA_findDirIdx(args)
+	local vecIdx = {}
+	for i = 1, #args do
+		local a = args[i]
+		if HON_SA_isVec3(a) then
+			local ok, mag = pcall(function() return a.Magnitude end)
+			if ok and mag and mag > 0 then table.insert(vecIdx, i) end
+		end
+	end
+	if #vecIdx == 0 then return nil end
+	if HON_SA_CFG.DIR_HEURISTIC == "second" then return vecIdx[2] or vecIdx[1] end
+	return vecIdx[1]
+end
+local function HON_SA_scanInstances(container, depth, out)
+	depth = depth or 0
+	if depth > 6 or not container then return end
+	pcall(function()
+		for _, ch in ipairs(container:GetChildren()) do
+			if ch:IsA("ModuleScript") then table.insert(out, ch) end
+			HON_SA_scanInstances(ch, depth + 1, out)
+		end
+	end)
+end
+local function HON_SA_collect()
+	local fns = {}
+	pcall(function()
+		if type(getgc) == "function" then
+			local gc = getgc(true)
+			for _, v in pairs(gc) do
+				if type(v) == "function" then
+					local ok, info = pcall(debug.getinfo, v, "nS")
+					if ok and info and info.name then
+						for _, kw in ipairs(HON_SA_CFG.FUNC_NAMES) do
+							if string.find(string.lower(info.name), string.lower(kw)) then table.insert(fns, v); break end
+						end
+					end
+				elseif type(v) == "table" then
+					for k, val in pairs(v) do
+						if type(k) == "string" and type(val) == "function" then
+							for _, kw in ipairs(HON_SA_CFG.FUNC_NAMES) do
+								if string.find(string.lower(k), string.lower(kw)) then table.insert(fns, val); break end
+							end
+						end
+					end
+				end
+			end
+		end
+	end)
+	pcall(function()
+		local out = {}
+		local RS = game:GetService("ReplicatedStorage")
+		HON_SA_scanInstances(RS, 0, out)
+		if LP then
+			local ps = LP:FindFirstChildOfClass("PlayerScripts")
+			if ps then HON_SA_scanInstances(ps, 0, out) end
+			for _, tool in ipairs(LP:GetChildren()) do
+				if tool:IsA("BackpackItem") or tool:IsA("Tool") or tool:IsA("Model") then HON_SA_scanInstances(tool, 0, out) end
+			end
+		end
+		for _, m in ipairs(out) do
+			local ok, src = pcall(require, m)
+			if ok and type(src) == "table" then
+				for k, val in pairs(src) do
+					if type(k) == "string" and type(val) == "function" then
+						for _, kw in ipairs(HON_SA_CFG.FUNC_NAMES) do
+							if string.find(string.lower(k), string.lower(kw)) then table.insert(fns, val); break end
+						end
+					end
+				end
+			end
+		end
+	end)
+	return fns
+end
+local function HON_SA_hook(fn)
+	if not (type(fn) == "function" and type(hookfunction) == "function") then return false end
+	if HON_SA_hooks[fn] then return true end
+	local ok, old = pcall(function() return hookfunction(fn, function(...)
+		local args = { ... }
+		if HON_SA_enabled then
+			local tgt = HON_SA_pickTarget()
+			if tgt and tgt.Character then
+				local char = tgt.Character
+				local part = char:FindFirstChild(HON_SA_targetPart) or char:FindFirstChild("HumanoidRootPart")
+				local origin = nil
+				pcall(function() if HON_SA_isVec3(args[1]) then origin = args[1] end end)
+				if not origin then
+					local me = HON_GetLocalChar()
+					if me then local h = me:FindFirstChild("HumanoidRootPart"); if h then origin = h.Position end end
+				end
+				if not origin and Cam then origin = Cam.CFrame.Position end
+				if part and origin then
+					local dir = (part.Position - origin).Unit
+					local idx = HON_SA_findDirIdx(args)
+					if idx then args[idx] = dir end
+					for i = 1, #args do
+						local a = args[i]
+						if type(a) == "table" then
+							pcall(function() if a.Speed ~= nil then a.Speed = HON_SA_CFG.SPEED_OVERRIDE end end)
+							pcall(function() if a.speed ~= nil then a.speed = HON_SA_CFG.SPEED_OVERRIDE end end)
+						end
+					end
+				end
+			end
+		end
+		return old(HON_unpack(args))
+	end) end)
+	if ok then HON_SA_hooks[fn] = old; return true else return false end
+end
+function HON_SA_rescan()
+	local fns = HON_SA_collect()
+	local hooked = 0
+	for _, fn in ipairs(fns) do if HON_SA_hook(fn) then hooked = hooked + 1 end end
+	if hooked == 0 then
+		pcall(function()
+			local names = {}
+			for _, kw in ipairs(HON_SA_CFG.FUNC_NAMES) do table.insert(names, kw) end
+			warn("[HON SA] 未命中发射函数（候选关键字：", table.concat(names, " / "), "）。请按具体游戏在 HON_SA_CFG.FUNC_NAMES 增补模块/函数名")
+		end)
+	end
+	return hooked
+end
+function HON_SA_setEnabled(v) HON_SA_enabled = not not v end
+function HON_SA_setFov(n) if type(n) == "number" then HON_SA_fov = n end end
+function HON_SA_setTargetPart(s) if type(s) == "string" then HON_SA_targetPart = s end end
+function HON_SA_getTarget() return HON_SA_target end
+pcall(HON_SA_rescan)
+local HON_SA_timer = 0
+RunService.Heartbeat:Connect(function(dt)
+	HON_SA_timer = HON_SA_timer + (dt or 0)
+	if HON_SA_timer >= HON_SA_CFG.RESCAN_INTERVAL then
+		HON_SA_timer = 0
+		pcall(HON_SA_rescan)
+	end
+	HON_SA_target = HON_SA_pickTarget()
+end)
+
+-- ===================== E. 设置界面 3D 切换（HON_SwitchPage 框架） =====================
+-- 维护 pages = {[pageId]=frame}、tabs = {[pageId]=button}（由你的现有设置界面注册）。
+-- HON_SwitchPage(pageId, direction)：旧页退出 Tween（旋转 ±90°、Size 缩、透明渐变），
+-- 新页进入 Tween（从 ±90° 归零、Size 恢复、透明归 1），并行 ~0.3s Quad Out；过渡锁防连点。
+-- 只操作通用属性（Rotation/Size/Position/BackgroundTransparency/Visible），不写任何视觉样式。
+-- 接入：现有标签点击处改为调用 HON_SwitchPage(id, "next"/"prev") 即可，无需改过渡代码。
+HON_Pages = HON_Pages or {}
+HON_Tabs = HON_Tabs or {}
+HON_CurPage = HON_CurPage or nil
+HON_PageLock = HON_PageLock or false
+function HON_SwitchPage(pageId, direction)
+	if HON_PageLock then return end
+	local newFrame = HON_Pages[pageId]
+	if not newFrame then return end
+	local oldFrame = (HON_CurPage and HON_CurPage ~= pageId) and HON_Pages[HON_CurPage]
+	local dir = (direction == "prev") and -1 or 1
+	HON_PageLock = true
+	local tinfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	pcall(function()
+		local oldBase = oldFrame and oldFrame.Size
+		if oldFrame then
+			oldFrame.Visible = true
+			TweenService:Create(oldFrame, tinfo, {
+				Rotation = -90 * dir,
+				Size = oldBase - UDim2.new(0.15, 0, 0.15, 0),
+				BackgroundTransparency = 1,
+			}):Play()
+		end
+		local base = newFrame.Size
+		local baseBg = newFrame.BackgroundTransparency
+		newFrame.Visible = true
+		newFrame.BackgroundTransparency = 1
+		newFrame.Size = base + UDim2.new(0.15, 0, 0.15, 0)
+		newFrame.Rotation = 90 * dir
+		local tw = TweenService:Create(newFrame, tinfo, {
+			Rotation = 0,
+			Size = base,
+			BackgroundTransparency = baseBg,
+		})
+		tw.Completed:Connect(function()
+			HON_PageLock = false
+			if oldFrame and oldFrame ~= newFrame then oldFrame.Visible = false end
+			HON_CurPage = pageId
+		end)
+		tw:Play()
+		if HON_Tabs[pageId] then
+			for _, t in pairs(HON_Tabs) do pcall(function() t.BackgroundTransparency = 0.9 end) end
+			pcall(function() HON_Tabs[pageId].BackgroundTransparency = 0.6 end)
+		end
+	end)
+end
+
+-- ===================== F. 性能优化 / FPS Boost（手动开启，仅内部函数） =====================
+-- 不自动执行任何优化。HON_ApplyFpsBoost() 执行全部优化并记录原始状态；
+-- HON_RestoreFpsBoost() 按备份还原。分批每 250 个对象 task.wait() 一次；全部 pcall；
+-- isBoosted 防重复。接入：现有设置开关的 onChange 调 HON_ApplyFpsBoost()/HON_RestoreFpsBoost()。
+local HON_FpsBoosted = false
+local HON_FpsBackup = { Lighting = nil, Post = nil, Instances = {} }
+local function HON_FpsProcess(list, fn)
+	local n = 0
+	for _, obj in ipairs(list) do
+		pcall(fn, obj)
+		n = n + 1
+		if n >= 250 then n = 0; pcall(twait, 0) end
+	end
+end
+function HON_ApplyFpsBoost()
+	if HON_FpsBoosted then return end
+	HON_FpsBoosted = true
+	pcall(function()
+		HON_FpsBackup.Lighting = { GlobalShadows = Lighting.GlobalShadows }
+		Lighting.GlobalShadows = false
+		HON_FpsBackup.Post = {}
+		for _, pe in ipairs(Lighting:GetChildren()) do
+			if pe:IsA("PostEffect") then
+				table.insert(HON_FpsBackup.Post, { obj = pe, Enabled = pe.Enabled })
+				pe.Enabled = false
+			end
+		end
+		local fx, parts, dec = {}, {}, {}
+		for _, o in ipairs(Workspace:GetDescendants()) do
+			if o:IsA("ParticleEmitter") or o:IsA("Trail") or o:IsA("Fire") or o:IsA("Smoke") or o:IsA("Sparkles") then
+				table.insert(fx, o)
+			elseif o:IsA("BasePart") then
+				table.insert(parts, o)
+			elseif o:IsA("Decal") or o:IsA("Texture") then
+				table.insert(dec, o)
+			end
+		end
+		HON_FpsProcess(fx, function(o) o.Enabled = false end)
+		HON_FpsProcess(parts, function(o)
+			if HON_FpsBackup.Instances[o] == nil then
+				HON_FpsBackup.Instances[o] = { Material = o.Material, Reflectance = o.Reflectance, CastShadow = o.CastShadow }
+			end
+			o.Material = Enum.Material.Plastic; o.Reflectance = 0; o.CastShadow = false
+		end)
+		HON_FpsProcess(dec, function(o)
+			if HON_FpsBackup.Instances[o] == nil then HON_FpsBackup.Instances[o] = { Transparency = o.Transparency } end
+			o.Transparency = 1
+		end)
+	end)
+end
+function HON_RestoreFpsBoost()
+	if not HON_FpsBoosted then return end
+	pcall(function()
+		if HON_FpsBackup.Lighting then Lighting.GlobalShadows = HON_FpsBackup.Lighting.GlobalShadows end
+		if HON_FpsBackup.Post then
+			for _, e in ipairs(HON_FpsBackup.Post) do pcall(function() e.obj.Enabled = e.Enabled end) end
+		end
+		for obj, b in pairs(HON_FpsBackup.Instances) do
+			pcall(function()
+				if b.Material then obj.Material = b.Material end
+				if b.Reflectance ~= nil then obj.Reflectance = b.Reflectance end
+				if b.CastShadow ~= nil then obj.CastShadow = b.CastShadow end
+				if b.Transparency ~= nil then obj.Transparency = b.Transparency end
+			end)
+		end
+	end)
+	HON_FpsBackup = { Lighting = nil, Post = nil, Instances = {} }
+	HON_FpsBoosted = false
+end
+
+-- ▼▼▼ 新增功能：移动端飞行 / Fly（v5.75）▼▼▼
+-- 独立于原版 setFly（原版走 AssemblyLinearVelocity + 朝向锁定 = 「普通飞行」手感）。
+-- 本套严格按规格用 BodyVelocity + BodyGyro + RenderStepped 驱动，相机相对方向，客户端位移可复制到服务器。
+-- 模式 1（移动端飞行，默认）：BodyGyro 每帧跟随相机 CFrame → 朝哪看往哪飞。
+-- 模式 2（普通飞行）：BodyGyro 锁定「开启瞬间朝向」，身体不随镜头转，像原版飞行。
+HON_FlyOn = false
+HON_FlyMode = 1            -- 1 = 移动端飞行, 2 = 普通飞行（模式2）
+HON_FlySpeed = 60
+HON_FlyBV, HON_FlyBG = nil, nil
+HON_FlyConn = nil
+HON_FlySavedWalk = nil
+HON_FlyLockCF = nil
+
+local function HON_FlyCleanup()
+	if HON_FlyConn then pcall(function() HON_FlyConn:Disconnect() end) end
+	HON_FlyConn = nil
+	if HON_FlyBV then pcall(function() HON_FlyBV:Destroy() end) end
+	if HON_FlyBG then pcall(function() HON_FlyBG:Destroy() end) end
+	HON_FlyBV, HON_FlyBG = nil, nil
+end
+
+function HON_stopFly()
+	local wasOn = HON_FlyOn
+	HON_FlyOn = false
+	HON_FlyCleanup()
+	if not wasOn then return end
+	pcall(function()
+		if Humanoid and Humanoid.Parent then
+			Humanoid.PlatformStand = false
+			if HON_FlySavedWalk ~= nil then
+				Humanoid.WalkSpeed = HON_FlySavedWalk
+				HON_FlySavedWalk = nil
+			end
+		end
+		if HRP and HRP.Parent then HRP.AssemblyLinearVelocity = Vector3.zero end
+	end)
+end
+
+function HON_startFly()
+	if HON_FlyOn then HON_stopFly() end   -- 已在飞则先清，避免重复挂连接 / 重复建实例
+	-- a) 获取本地角色
+	local hrp, hum
+	pcall(function()
+		local ch = LP and LP.Character
+		if ch then hrp = ch:FindFirstChild("HumanoidRootPart"); hum = ch:FindFirstChildOfClass("Humanoid") end
+	end)
+	if not (hrp and hrp.Parent and hum and hum.Parent) then return end
+	-- b) 平台站立态：移动端必须关掉 PlatformStand 才能读到摇杆 MoveDirection（与原版 setFly 同逻辑，
+	--    否则 Humanoid.MoveDirection 在触屏下被清零、飞不起来）；PC 端保持 PlatformStand=true 悬浮。
+	--    ※ 此处与规格 b) 的「PlatformStand=true」在移动端做了必要偏离，详见上方说明。
+	if UserInputService.TouchEnabled then
+		if HON_FlySavedWalk == nil then pcall(function() HON_FlySavedWalk = hum.WalkSpeed end) end
+		pcall(function() hum.WalkSpeed = 0 end)
+		hum.PlatformStand = false
+	else
+		hum.PlatformStand = true
+	end
+	hrp.Anchored = false
+	-- c) BodyVelocity（MaxForce 三轴 9e9）
+	local bv = Instance.new("BodyVelocity")
+	bv.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+	bv.Velocity = Vector3.zero
+	bv.Parent = hrp
+	-- d) BodyGyro（P=9e4，MaxTorque 三轴 9e9）
+	local bg = Instance.new("BodyGyro")
+	bg.P = 9e4
+	bg.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+	bg.CFrame = hrp.CFrame
+	bg.Parent = hrp
+	HON_FlyBV, HON_FlyBG = bv, bg
+	HON_FlyLockCF = (hrp.CFrame - hrp.Position)
+	HON_FlyOn = true
+	-- e)~h) RenderStepped 每帧读取 MoveDirection，相机相对 → 世界空间速度；BodyGyro 朝向每帧更新
+	HON_FlyConn = RunService.RenderStepped:Connect(function()
+		pcall(function()
+			if not (HON_FlyOn and HRP and HRP.Parent and Humanoid and Humanoid.Parent and HON_FlyBV and HON_FlyBG) then return end
+			local md = Humanoid.MoveDirection
+			local spd = HON_FlySpeed or 60
+			if md and md.Magnitude > 0.05 then
+				-- f) 相机相对：先把世界空间的 MoveDirection 转成相机本地（VectorToObjectSpace），
+				--    再用相机基向量重建带俯仰的世界方向 → 抬头推前即上升（3D 飞行）；
+				--    等价于「相机空间 → 世界空间」流程，结果就是相对镜头的前后左右。
+				local camCF = Cam.CFrame
+				local localDir = camCF:VectorToObjectSpace(md)   -- 规格要求的相机本地转换
+				local fwd = camCF.LookVector
+				local right = camCF.RightVector
+				local worldDir = right * localDir.X + fwd * (-localDir.Z)
+				if worldDir.Magnitude > 0.001 then
+					HON_FlyBV.Velocity = worldDir.Unit * spd
+				else
+					HON_FlyBV.Velocity = Vector3.zero
+				end
+			else
+				-- g) 无输入 → 速度归零（BodyVelocity 抵消重力，角色悬停不坠）
+				HON_FlyBV.Velocity = Vector3.zero
+			end
+			-- h) BodyGyro 朝向
+			if HON_FlyMode == 2 then
+				-- 模式2 普通飞行：锁定开启瞬间朝向（身体不随镜头转），像原版飞行
+				HON_FlyBG.CFrame = CFrame.new(HRP.Position) * HON_FlyLockCF
+			else
+				-- 模式1 移动端飞行：每帧跟随相机 CFrame（朝哪看往哪飞）
+				HON_FlyBG.CFrame = Cam.CFrame
+			end
+		end)
+	end)
+end
+
+function HON_FlySetMode(m)
+	HON_FlyMode = (m == 2) and 2 or 1
+	if HON_FlyOn then HON_startFly() end   -- 飞行中切模式 → 重启以套用
+end
+
+_pr("[HON SPEED HUB] v5.76 已加载 · 完整文件约 9073 行 · 若你的脚本远大于此行数说明粘贴重复了")
 
 
