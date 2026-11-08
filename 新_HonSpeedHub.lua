@@ -1,5 +1,5 @@
 local _pr = (type(print) == "function") and print or (type(warn) == "function" and warn) or function() end
-_pr("[HON SPEED HUB] 载入中 · v5.80 · 若只看到这一行说明文件在中途中断")
+_pr("[HON SPEED HUB] 载入中 · v5.83 · 若只看到这一行说明文件在中途中断")
 local twait  = (type(task) == "table" and task.wait)  or wait  or function() end
 local tspawn = (type(task) == "table" and task.spawn) or spawn or function(f, ...) return f(...) end
 if type(twait) ~= "function" then twait = function() end end
@@ -302,7 +302,7 @@ label({ Text = "HON SPEED HUB", Font = Enum.Font.GothamBold, TextSize = 21,
 	TextColor3 = Color3.fromRGB(238, 243, 255),
 	Position = UDim2.new(0, 36, 0, 16), Size = UDim2.new(0, 200, 0, 24),
 	TextXAlignment = Enum.TextXAlignment.Left }, Header)
-label({ Text = "Universal Hub  ·  W / V / CF  ·  v5.80", Font = Enum.Font.Gotham, TextSize = 11,
+label({ Text = "Universal Hub  ·  W / V / CF  ·  v5.83", Font = Enum.Font.Gotham, TextSize = 11,
 	TextColor3 = Color3.fromRGB(140, 149, 172),
 	Position = UDim2.new(0, 36, 0, 42), Size = UDim2.new(0, 240, 0, 16),
 	TextXAlignment = Enum.TextXAlignment.Left }, Header)
@@ -372,6 +372,15 @@ iconBtn("×", -34, Color3.fromRGB(255, 108, 118), function()
 end)
 -- ---------- 更新公告 ----------
 CHANGELOG = {
+	{ v = "v5.83", t = {
+"新增 · 技能碰撞箱记录 / Hitbox Recorder（独立小窗）：客户端拿不到服务端真实碰撞箱（按键只是触发信号），故在按键瞬间记录本地玩家附近 ≤40 格内存活目标的位置与距离作为碰撞箱近似参考。维护按键→技能名映射（数字 1~5 + 字母 Q E R F），监听 UserInputService.InputBegan（忽略已处理输入与文本框聚焦），取最近目标为记录对象，以技能名为键写入记录表、同名技能覆盖旧记录不新增第二条；每次写入/覆盖后刷新列表（显示技能名/目标名/距离）。小窗含标题栏（按住可拖动）、滚动列表（宽减20/高200/UIListLayout 间距3）、状态栏、清空按钮、删除按钮；点列表项给对应目标角色挂 Highlight 并清除上一个，目标离开/死亡自动置灰不可点；本地角色重生清空全部记录+清高亮+刷新；删除按钮停止记录并销毁面板；卸载脚本（HON_SHUTDOWN）时自清。屏幕坐标/挂载/销毁全部 pcall 包裹，单目标报错不中断整体。ScreenGui 用 ResetOnSpawn=false / IgnoreGuiInset=true / DisplayOrder=2147483647。复用 new/corner/label/bindClick/attachDrag，状态集中在全局表 HON_HB（不加 local）以规避单函数 200 局部变量上限；脚本加载即弹出并开始记录，点「删除」可关闭",
+	}},
+	{ v = "v5.82", t = {
+	"重构 · UI 全面重组（相似功能归拢 + 新增「战斗」页）：① 新增第 12 页「战斗」，把原本散在工具页的 子追/弹道重定向（即自瞄）+ 锁定角度FOV、甩飞FLING + 甩飞半径 迁入，瞄准/攻击类功能集中一处；② 夜视类归拢——工具页「夜视 FULLBRIGHT」迁入画质页，与普通夜视/超级夜视/彻底去雾同页；③ 飞行类归拢——娱乐页「无敌少侠飞行」迁入辅助页飞行组（飞行窗口/移动端飞行/普通飞行模式/飞行速度 同页）；④ 防布娃娃去重——删除工具页与设置页重复的开关，仅保留设置页 RagTgl（WindUI 镜像面板依赖它）；⑤ 修复辅助页三处界面重叠：视野最大/最小 按钮（原 Y654/698）原本压在移动端飞行（Y654）/普通飞行模式（Y702）上、一键触碰按钮（原 Y742）压在飞行速度滑条（Y760）上，现已重排到飞行组下方；顺手修复键盘 Comma/Period 翻页用 %8 硬编码（原 11 页时只能翻 1-8 页）改为 %#PageList",
+	}},
+	{ v = "v5.81", t = {
+	"修复 · 角色身上白色方块关不掉 / 关脚本后残留：根因是 buildFX 创建的 Highlight（名 HonSpeedHL，踏步描边特效）用 Highlight.Parent = char 直接挂到角色模型上（跟随角色移动、白色主题下即白色方块）。该实例挂在 Workspace 的 character 下而非 Gui 树，导致 ① 各特效开关回调都不调 clearFX、关开关清不掉；② 关闭脚本（unloadScript 只销毁 Gui）也清不掉，残留在角色身上。修复方式（在原清理逻辑上补全、不重复新增）：新增通用 HON_clearVisualResidue(character) 遍历角色后代、销毁带脚本前缀的 Highlight / 任意 SelectionBox / 任意 BoxHandleAdornment / 带前缀且非默认身体部件的 BasePart，绝不碰 Roblox 默认身体部件；并将它并入现有 clearFX（closeAllFeatures / bindCharacter / Died / selfHeal 调用 clearFX 处自动生效），另在 bindCharacter 重生前清扫旧角色、在 unloadScript 与 closeAllFeatures 显式清扫当前角色",
+	}},
 	{ v = "v5.80", t = {
 	"优化 · 消除新功能在“关闭状态下仍持续消耗资源”的内置卡顿隐患：① 弹道重定向（HON_SA）原本在加载时和每 5 秒全量扫描 getgc(true)（遍历整个游戏所有闭包）+ require 所有 ReplicatedStorage 的 ModuleScript，且心跳每帧跑 pickTarget 选目标——即使开关是关的也照跑，造成周期冻结与持续卡顿。现已改为：关闭时彻底不扫描、不逐帧选目标（心跳直接 return），仅在开启时（HON_SA_setEnabled(true)）才扫描安装发射函数钩子。② 透视（HON_NESP）原本每帧心跳遍历所有玩家、且在开关检查之前就给每个玩家创建 4 个 Drawing 实例（只是隐藏），全关时也白建。现已在心跳顶部加短路：6 个开关全关时只清残留、不再遍历/建实例。Fling / 飞行 / 3D / 性能优化 的逐帧连接均为开关门控（仅开启时创建、关闭时断开），原 Hub 的 Stealth/HonFunLoop 等帧循环亦由各自开关门控，不受影响",
 	}},
@@ -836,7 +845,7 @@ local TabBtns = {}
 local FunBtns = {}
 local CurTab = 1
 do
-	local names = { "引擎", "辅助", "视觉", "触屏", "工具", "娱乐", "更多", "实用", "传送", "设置", "画质" }
+	local names = { "引擎", "辅助", "视觉", "触屏", "工具", "娱乐", "更多", "实用", "传送", "设置", "画质", "战斗" }
 	for i, n in ipairs(names) do
 		local b = new("TextButton", { Text = n, Font = Enum.Font.GothamBold, TextSize = 13,
 			TextColor3 = Color3.fromRGB(140, 149, 172), BackgroundTransparency = 1,
@@ -864,7 +873,7 @@ do
 end
 local PageHost = new("Frame", { Name = "Content", Size = UDim2.new(0, 464, 0, 336), Position = UDim2.new(0, 180, 0, 84),
 	BackgroundTransparency = 1, BorderSizePixel = 0, ClipsDescendants = true, Parent = Main })
-local PAGE_H = { 620, 488, 500, 680, 660, 2040, 560, 660, 1260, 1000, 1080 }
+local PAGE_H = { 620, 940, 500, 680, 560, 1280, 560, 660, 1260, 1000, 600, 280 }
 PageList = {}
 local function mkPage(i, visible)
 	return new("ScrollingFrame", { Name = "Page" .. tostring(i),
@@ -888,7 +897,8 @@ local PageUtil = mkPage(8, false)
 local PageTp = mkPage(9, false)
 local PageSet = mkPage(10, false)
 local PageGfx = mkPage(11, false)
-PageList = { PageEng, PageAssist, PageEsp, PageTouch, PageTool, PageFun, PageMore, PageUtil, PageTp, PageSet, PageGfx }
+local PageCombat = mkPage(12, false)
+PageList = { PageEng, PageAssist, PageEsp, PageTouch, PageTool, PageFun, PageMore, PageUtil, PageTp, PageSet, PageGfx, PageCombat }
 -- ===== E. 界面 3D 切换：把 11 个页面帧与对应标签按钮注册进 HON_SwitchPage 的查找表 =====
 -- 必须在首次 SetTab(1)（约 8224 行）之前完成，否则 3D 切换找不到页面。
 HON_Pages = {}
@@ -1174,14 +1184,14 @@ end)
 	local FovMaxBtn = new("TextButton", { Text = "视野最大", Font = Enum.Font.GothamBold, TextSize = 11,
 		TextColor3 = Mode().Accent, BackgroundColor3 = Color3.fromRGB(255, 255, 255), BackgroundTransparency = 0.9,
 		BorderSizePixel = 0, AutoButtonColor = false,
-		Size = UDim2.new(0.5, -4, 0, 34), Position = UDim2.new(0, 0, 0, 654), Parent = PageAssist })
+		Size = UDim2.new(0.5, -4, 0, 34), Position = UDim2.new(0, 0, 0, 848), Parent = PageAssist })
 	corner(FovMaxBtn, 8)
 	table.insert(FunBtns, FovMaxBtn)
 	bindClick(FovMaxBtn, "视野最大", function() if FovSlider then FovSlider.Set(120) end end)
 	local FovMinBtn = new("TextButton", { Text = "视野最小", Font = Enum.Font.GothamBold, TextSize = 11,
 		TextColor3 = Mode().Accent, BackgroundColor3 = Color3.fromRGB(255, 255, 255), BackgroundTransparency = 0.9,
 		BorderSizePixel = 0, AutoButtonColor = false,
-		Size = UDim2.new(0.5, -4, 0, 34), Position = UDim2.new(0.5, 4, 0, 698), Parent = PageAssist })
+		Size = UDim2.new(0.5, -4, 0, 34), Position = UDim2.new(0.5, 4, 0, 848), Parent = PageAssist })
 	corner(FovMinBtn, 8)
 	table.insert(FunBtns, FovMinBtn)
 	bindClick(FovMinBtn, "视野最小", function() if FovSlider then FovSlider.Set(30) end end)
@@ -1235,7 +1245,7 @@ PadTgl = makeToggle(PageTouch, 72, "虚拟方向键", "8 向 WASD · 长按中�
 	State.PadKeys = v
 	updateTouchVisibility()
 end)
-ToolGravTgl = makeToggle(PageTool, 554, "反重力 LOW GRAVITY", "和辅助页那个是同一个开关", false, function(v)
+ToolGravTgl = makeToggle(PageTool, 506, "反重力 LOW GRAVITY", "和辅助页那个是同一个开关", false, function(v)
 	State.LowGravity = v
 	pcall(function() Workspace.Gravity = v and (State.GravityValue or 40) or 196.2 end)
 	if notify then notify(v and "重力已降低" or "重力已恢复") end
@@ -1246,13 +1256,11 @@ function syncRagTgls(v)
 		if t._title == "防布娃娃 ANTI RAGDOLL" and t.Set then t.Set(v, true) end
 	end
 end
-ToolRagTgl = makeToggle(PageTool, 606, "防布娃娃 ANTI RAGDOLL", "不会被打倒 / 摔倒", false, function(v)
-	syncRagTgls(v)
-end)
+-- [v5.82] 防布娃娃去重：删除工具页重复开关，仅保留设置页 RagTgl（WindUI 镜像面板依赖它）
 -- ===== B. 甩飞 FLING（持续把你甩向最近的玩家；半径可调）=====
 local HON_FlingModeConn = nil
 local HON_FlingTimer = 0
-FlingTgl = makeToggle(PageTool, 664, "甩飞 FLING", "开启后持续把你甩向最近的玩家", false, function(v)
+FlingTgl = makeToggle(PageCombat, 24, "甩飞 FLING", "开启后持续把你甩向最近的玩家", false, function(v)
 	State.FlingEnabled = v
 	if v then
 		if not HON_FlingModeConn then
@@ -1286,13 +1294,13 @@ FlingTgl = makeToggle(PageTool, 664, "甩飞 FLING", "开启后持续把你甩�
 		if HON_FlingModeConn then pcall(function() HON_FlingModeConn:Disconnect() end); HON_FlingModeConn = nil end
 	end
 end)
-FlingRangeSlider = makeSlider(PageTool, "甩飞半径", 712, 5, 200, 60, " st", function(v) State.FlingRange = v end, false)
+FlingRangeSlider = makeSlider(PageCombat, "甩飞半径", 120, 5, 200, 60, " st", function(v) State.FlingRange = v end, false)
 -- ===== D. 子追 / 弹道重定向（Silent Aim：hook 发射函数，命中方向重定向到锁定目标）=====
-SilentAimTgl = makeToggle(PageTool, 764, "子追 / 弹道重定向", "命中方向重定向到锁定目标", false, function(v)
+SilentAimTgl = makeToggle(PageCombat, 72, "子追 / 弹道重定向", "命中方向重定向到锁定目标", false, function(v)
 	State.SilentAim = v
 	pcall(HON_SA_setEnabled, v)
 end)
-SilentAimFovSlider = makeSlider(PageTool, "锁定角度 FOV", 812, 10, 120, 60, " °", function(v)
+SilentAimFovSlider = makeSlider(PageCombat, "锁定角度 FOV", 168, 10, 120, 60, " °", function(v)
 	State.SilentAimFov = v
 	pcall(HON_SA_setFov, v)
 end, false)
@@ -1697,18 +1705,18 @@ end, true)
 AntiVoidTgl = makeToggle(PageTool, 200, "防坠落 ANTI-VOID", "掉出地图自动拉回安全点", false, function(v)
 	State.AntiVoid = v
 end)
-BrightTgl = makeToggle(PageTool, 248, "夜视 FULLBRIGHT", "去雾 + 全亮，关闭时还原", false, function(v)
+BrightTgl = makeToggle(PageGfx, 450, "夜视 FULLBRIGHT", "去雾 + 全亮，关闭时还原", false, function(v)
 	setFullbright(v)
 end)
-AntiKbTgl = makeToggle(PageTool, 296, "防击退 ANTI-KB", "限制异常击飞速度", false, function(v)
+AntiKbTgl = makeToggle(PageTool, 248, "防击退 ANTI-KB", "限制异常击飞速度", false, function(v)
 	State.AntiKB = v
 end)
-AntiStunTgl = makeToggle(PageTool, 344, "防失控 ANTI-STUN", "自动解除被眩晕 / 被坐下", false, function(v)
+AntiStunTgl = makeToggle(PageTool, 296, "防失控 ANTI-STUN", "自动解除被眩晕 / 被坐下", false, function(v)
 	State.AntiStun = v
 end)
-GravitySlider = makeSlider(PageTool, "重力 GRAVITY", 402, -200, 300, math.floor(Workspace.Gravity + 0.5), " g",
+GravitySlider = makeSlider(PageTool, "重力 GRAVITY", 344, -200, 300, math.floor(Workspace.Gravity + 0.5), " g",
 	function(v) Workspace.Gravity = v end, false)
-SparkTgl = makeToggle(PageTool, 454, "闪电尖兵大招 SPARK ULT", "点击画面任意位置直接传送过去（照搬参考源码）", false, function(v)
+SparkTgl = makeToggle(PageTool, 402, "闪电尖兵大招 SPARK ULT", "点击画面任意位置直接传送过去（照搬参考源码）", false, function(v)
 	State.SparkTP = v
 end)
 -- ╔══════════════════════════════════════════════════════════════╗
@@ -3063,7 +3071,7 @@ DashBtn = new("TextButton", { Text = "闪电冲刺 LIGHTNING", Font = Enum.Font.
 corner(DashBtn, 10)
 table.insert(FunBtns, DashBtn)
 bindClick(DashBtn, "闪电冲刺", function() lightningDash() end)
-HeroFlyTgl = makeToggle(PageFun, 448, "无敌少侠飞行 HERO FLY", "超人姿势 · 高速（需确认）", false, function(v)
+HeroFlyTgl = makeToggle(PageAssist, 800, "无敌少侠飞行 HERO FLY", "超人姿势 · 高速（需确认）", false, function(v)
 	if v then
 		pcall(function() HeroFlyTgl.Set(false, true) end)
 		askConfirm("开启无敌少侠飞行？", "会以超人姿势高速飞行，角色进入悬浮状态。\n点「确认开启」后才会真正生效。", "确认开启", function()
@@ -4544,6 +4552,8 @@ function closeAllFeatures()
 	for _, t in ipairs(ToggleRegistry) do
 		if t._last and not t._keep then pcall(function() t.Set(false, false) end) end
 	end
+	pcall(function() if type(clearFX) == "function" then clearFX() end end)  -- v5.81：关全部时也清角色视觉残留
+	pcall(HON_clearVisualResidue, LP.Character)
 	if notify then notify("已关闭全部功能") end
 end
 
@@ -4573,6 +4583,10 @@ function unloadScript()
 	end)
 	-- 身上方块还原：脚本内置自动清过角色附加物，卸载时原样还回去不留残
 	pcall(function() if type(hideBodyBlocks) == "function" then hideBodyBlocks(false) end end)
+	-- v5.81：关闭脚本时角色上的视觉实例（HonSpeedHL 白色方块等）不会被 Gui 销毁带掉
+	-- （它们挂在 Workspace 的 character 下，不在 Gui 树内）——这里显式清一遍
+	pcall(function() if type(clearFX) == "function" then clearFX() end end)
+	pcall(HON_clearVisualResidue, LP.Character)
 	for _, nm in ipairs({ "HonFunLoop", "HonFlyJump", "HonFov", "HonKamui",
 		"HonUILayout", "HonPadMove", "HonFakeSync", "HonDance", "HonBorder", "HonStyleFx" }) do
 		pcall(function() RunService:UnbindFromRenderStep(nm) end)
@@ -5342,9 +5356,11 @@ function applyInstantInteract(on)
 end
 statTimer, statTarget, statNote = 0, 0, "地面"
 function clearFX()
-	if Highlight and Highlight.Parent then Highlight:Destroy() end
-	if Emitter and Emitter.Parent then Emitter:Destroy() end
+	if Highlight and Highlight.Parent then pcall(function() Highlight:Destroy() end) end
+	if Emitter and Emitter.Parent then pcall(function() Emitter:Destroy() end) end
 	Highlight, Emitter = nil, nil
+	-- v5.81：清掉当前角色身上任何脚本残留的视觉实例（白色方块等），并到 HON_clearVisualResidue 合并处理
+	pcall(HON_clearVisualResidue, Character)
 end
 function buildFX(char, hrp)
 	if not char or not hrp then return end
@@ -5369,6 +5385,34 @@ function buildFX(char, hrp)
 	Emitter.Rotation = NumberRange.new(0, 360)
 	Emitter.Parent = hrp
 end
+-- v5.81：通用视觉残留清理（修复「白色方块关不掉 / 关脚本后残留」）
+-- 遍历角色后代，销毁脚本创建但开关 / 卸载时没清掉的视觉实例；绝不碰 Roblox 默认身体部件。
+-- 配套：clearFX / bindCharacter(重生) / unloadScript(卸载) 都会调用本函数做兜底清扫。
+local HON_VR_DEFAULT = {
+	Head = true, Torso = true, UpperTorso = true, LowerTorso = true,
+	HumanoidRootPart = true, LeftFoot = true, RightFoot = true,
+	LeftLowerLeg = true, LeftUpperLeg = true, RightLowerLeg = true, RightUpperLeg = true,
+	LeftHand = true, RightHand = true, LeftLowerArm = true, LeftUpperArm = true,
+	RightLowerArm = true, RightUpperArm = true, Humanoid = true,
+}
+function HON_clearVisualResidue(character)
+	if not character then return end
+	pcall(function()
+		for _, inst in ipairs(character:GetDescendants()) do
+			local cls = inst.ClassName
+			local nm = inst.Name or ""
+			-- 脚本前缀：Hon*（HonSpeedHL / HonEspHL…）与 HON_*（HON_NESP_HL…）
+			local prefix = (nm:sub(1, 3) == "Hon") or (nm:sub(1, 4) == "HON_")
+			local hit = false
+			if cls == "Highlight" and prefix then hit = true                       -- a) 高亮且带脚本前缀
+			elseif cls == "SelectionBox" then hit = true                           -- b) 选框
+			elseif cls == "BoxHandleAdornment" then hit = true                     -- c) 盒装饰
+			elseif cls == "BasePart" and prefix and not HON_VR_DEFAULT[nm] then hit = true  -- d) 带前缀且非默认身体部件
+			end
+			if hit then pcall(function() inst:Destroy() end) end
+		end
+	end)
+end
 bindToken, lastBound = 0, nil
 function bindCharacter(char)
 	if not char or not char.Parent then return end
@@ -5376,6 +5420,7 @@ function bindCharacter(char)
 	if pre and pre.Health <= 0 then return end
 	if char == lastBound and refsValid() then return end
 	lastBound = char
+	local HON_oldChar = Character  -- v5.81：重生前记录旧角色，下方统一清理残留
 	bindToken = bindToken + 1
 	-- 隐身跨重生保持：先记下原状态，旧虚影随旧角色销毁，重生后按原状态自动恢复（不用重新手动开）
 	local wantArm, wantChar = State.FakeArm, State.FakeChar
@@ -5413,7 +5458,8 @@ function bindCharacter(char)
 	end
 	NoclipCache = {}
 	lastTransp = -1
-	clearFX()
+	if HON_oldChar and HON_oldChar ~= char then pcall(HON_clearVisualResidue, HON_oldChar) end  -- v5.81：重生清旧角色残留
+	clearFX()  -- 内含当前角色残留清扫（HON_clearVisualResidue）
 	buildFX(char, HRP)
 	-- 身上方块内置自动清除（v5.45）：启动 / 重生绑定角色就清一遍；
 	-- 配件是异步加载的，CharacterAppearanceLoaded 也会再走 bindCharacter，
@@ -5894,9 +5940,9 @@ UserInputService.InputBegan:Connect(function(input, processed)
 	elseif k == Enum.KeyCode.L then
 		applyPanelLock(not State.PanelLocked)
 	elseif k == Enum.KeyCode.Comma then
-		SetTab((CurTab - 2) % 8 + 1)
+		SetTab((CurTab - 2) % #PageList + 1)
 	elseif k == Enum.KeyCode.Period then
-		SetTab((CurTab % 8) + 1)
+		SetTab((CurTab % #PageList) + 1)
 	elseif k == Enum.KeyCode.M then
 		SetMode((State.ModeIndex % #Modes) + 1)
 	end
@@ -6879,7 +6925,7 @@ function windBuild(lib)
 	if not W then return false end
 	WindWin = W
 	-- 再补一层保险（夜脚本同款）：CreateWindow 可能被库吞掉背景参数，建完强制再写一次
-	windSafe("Tag", function() W:Tag({ Title = "v5.80", Color = "ElementBackground" }) end)
+	windSafe("Tag", function() W:Tag({ Title = "v5.83", Color = "ElementBackground" }) end)
 	-- 引擎页
 	local tEng = nil
 	windSafe("Tab:引擎", function() tEng = W:Tab({ Title = "引擎", Icon = "gauge" }) end)
@@ -7280,7 +7326,7 @@ end
 local TouchAllBtn = new("TextButton", { Text = "一键触碰所有可触碰物体", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Mode().Accent, BackgroundColor3 = Color3.fromRGB(255, 255, 255), BackgroundTransparency = 0.9,
 	BorderSizePixel = 0, AutoButtonColor = false,
-	Size = UDim2.new(1, 0, 0, 36), Position = UDim2.new(0, 0, 0, 742), Parent = PageAssist })
+	Size = UDim2.new(1, 0, 0, 36), Position = UDim2.new(0, 0, 0, 892), Parent = PageAssist })
 corner(TouchAllBtn, 10)
 table.insert(FunBtns, TouchAllBtn)
 bindClick(TouchAllBtn, "一键触碰", function() touchAllInteractables() end)
@@ -7692,7 +7738,7 @@ label({ Text = "夜 视 与 环 境 NIGHT VISION", Font = Enum.Font.GothamBold, 
 	Position = UDim2.new(0, 2, 0, 330), TextXAlignment = Enum.TextXAlignment.Left }, PageGfx)
 makeToggle(PageGfx, 354, "普通夜视", "夜里全亮 · 阴影全关", false, function(v) State.GfxNight = v; setGfxNight(v); gfxSave() end)
 makeToggle(PageGfx, 402, "超级夜视", "超高亮度 · 正午光感", false, function(v) State.GfxSuperNight = v; setGfxSuperNight(v); gfxSave() end)
-makeToggle(PageGfx, 450, "彻底去雾", "连 Atmosphere 雾霾一起清", false, function(v) State.GfxNoFog = v; setGfxNoFog(v); gfxSave() end)
+makeToggle(PageGfx, 498, "彻底去雾", "连 Atmosphere 雾霾一起清", false, function(v) State.GfxNoFog = v; setGfxNoFog(v); gfxSave() end)
 local GfxNightOffBtn = new("TextButton", { Text = "关闭所有夜视/去雾", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Color3.fromRGB(255, 190, 120), BackgroundColor3 = Color3.fromRGB(255, 255, 255),
 	BackgroundTransparency = 0.9, BorderSizePixel = 0, AutoButtonColor = false,
@@ -7710,7 +7756,7 @@ local GfxResetBtn = new("TextButton", { Text = "恢复默认画质", Font = Enum
 corner(GfxResetBtn, 8)
 table.insert(FunBtns, GfxResetBtn)
 -- ===== F. 性能优化 / FPS Boost（手动开关：HON_ApplyFpsBoost / HON_RestoreFpsBoost）=====
-FpsBoostTgl = makeToggle(PageGfx, 584, "性能优化 / FPS BOOST", "关阴影 / 特效 / 粒子提帧（可一键还原）", false, function(v)
+FpsBoostTgl = makeToggle(PageGfx, 546, "性能优化 / FPS BOOST", "关阴影 / 特效 / 粒子提帧（可一键还原）", false, function(v)
 	State.FpsBoost = v
 	if v then task.spawn(HON_ApplyFpsBoost) else task.spawn(HON_RestoreFpsBoost) end
 end)
@@ -8434,7 +8480,7 @@ end)
 -- 右上角「隐身」快速键常驻（默认关闭，点一下开、再点一下关）——初始化即建好，随时可点
 pcall(buildFakeWin)
 -- =====================================================================
--- ▼▼▼ 新增功能整合区块（v5.80）▼▼▼
+-- ▼▼▼ 新增功能整合区块（v5.81）▼▼▼
 -- 插入位置：本文件末尾（所有现有函数/初始化之后）。均为功能本体，
 -- 以 HON_ 前缀避免冲突；无 UI / 无热键 / 无 require·loadstring / 无对外 API。
 -- 各功能调用方式见各自注释。
@@ -9148,6 +9194,250 @@ function HON_resetZoom()
 end
 -- ▲▲▲ 新增功能：视角缩放 / Camera Zoom（v5.77）▲▲▲
 
-_pr("[HON SPEED HUB] v5.80 已加载 · 完整文件约 9154 行 · 若你的脚本远大于此行数说明粘贴重复了")
+-- ▲▲▲ 新增功能：技能碰撞箱记录 / Hitbox Recorder（v5.83）▲▲▲
+-- 客户端拿不到服务端真实碰撞箱（按键只是触发信号）。本功能在按键瞬间记录附近
+-- 存活目标的位置/距离，作为碰撞箱近似参考。同名技能只保留最新一条；窗口即界面，
+-- 出现即记录中，点「删除」停止记录并销毁面板。所有销毁/挂载均包 pcall。
+-- 说明：HON_HB 用全局表（不加 local），因为本脚本单函数已逼近 Lua 的 200 局部变量上限，
+-- 复用现有 HON_ 功能「全局函数」的写法，避免再占一个 main 函数 local 名额。
+HON_HB = {}
+HON_HB.Gui, HON_HB.Frame, HON_HB.Scroll, HON_HB.Status = nil, nil, nil, nil
+HON_HB.InputConn, HON_HB.CharConn = nil, nil
+HON_HB.Records, HON_HB.Items, HON_HB.HL, HON_HB.Active = {}, {}, nil, false
+
+-- 按键 -> 技能名（数字 1~5 + 字母 Q E R F）
+HON_HB.Keys = {
+	[Enum.KeyCode.One]   = "技能1", [Enum.KeyCode.Two]   = "技能2",
+	[Enum.KeyCode.Three] = "技能3", [Enum.KeyCode.Four]  = "技能4",
+	[Enum.KeyCode.Five]  = "技能5",
+	[Enum.KeyCode.Q] = "技能Q", [Enum.KeyCode.E] = "技能E",
+	[Enum.KeyCode.R] = "技能R", [Enum.KeyCode.F] = "技能F",
+}
+
+function HON_HB.Alive(p)
+	if not p or not p:IsA("Player") then return false end
+	local c = p.Character
+	if not c then return false end
+	local h = c:FindFirstChildOfClass("Humanoid")
+	return h and h.Health > 0
+end
+
+function HON_HB.HRP(pl)
+	local c = pl and pl.Character
+	if not c then return nil end
+	return c:FindFirstChild("HumanoidRootPart")
+end
+
+function HON_HB.ClearHL()
+	if HON_HB.HL then pcall(function() HON_HB.HL:Destroy() end) end
+	HON_HB.HL = nil
+end
+
+-- 重建列表（记录集合变化时调用：新增/覆盖/清空）
+function HON_HB.Refresh()
+	if not HON_HB.Scroll then return end
+	pcall(function()
+		for _, e in pairs(HON_HB.Items) do
+			if e and e.Frame and e.Frame.Parent then e.Frame:Destroy() end
+		end
+	end)
+	HON_HB.Items = {}
+	local n = 0
+	for skill, rec in pairs(HON_HB.Records) do
+		n = n + 1
+		local valid = rec and rec.Char and rec.Char.Parent and HON_HB.Alive(rec.Player)
+		local item = new("Frame", {
+			Size = UDim2.new(1, 0, 0, 30), BackgroundColor3 = Color3.fromRGB(30, 34, 46),
+			BorderSizePixel = 0, Parent = HON_HB.Scroll, LayoutOrder = n,
+		})
+		corner(item, 4)
+		local txt = label({
+			Size = UDim2.new(1, -8, 1, 0), Position = UDim2.new(0, 4, 0, 0),
+			Font = Enum.Font.Gotham, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left,
+			TextColor3 = Color3.fromRGB(220, 224, 235),
+			Text = skill .. " → " .. (rec and rec.Name or "?") .. "  (" .. math.floor((rec and rec.Dist or 0) * 10) / 10 .. "m)",
+			Parent = item,
+		})
+		if valid then
+			bindClick(item, "HON_HBItem", function()
+				pcall(function()
+					HON_HB.ClearHL()
+					local hl = new("Highlight", {
+						Name = "HON_HB_HL", FillColor = Color3.fromRGB(255, 80, 90),
+						FillTransparency = 0.6, OutlineColor = Color3.fromRGB(255, 80, 90),
+						OutlineTransparency = 0.1, DepthMode = Enum.HighlightDepthMode.AlwaysOnTop,
+						Parent = rec.Char,
+					})
+					HON_HB.HL = hl
+				end)
+			end)
+		else
+			item.Active = false
+			item.Selectable = false
+			item.BackgroundColor3 = Color3.fromRGB(20, 20, 24)
+			txt.TextColor3 = Color3.fromRGB(110, 112, 120)
+		end
+		HON_HB.Items[skill] = { Frame = item, Label = txt, _valid = valid }
+	end
+	if HON_HB.Status then HON_HB.Status.Text = "记录数：" .. tostring(n) end
+end
+
+-- 周期校验：目标离开/死亡 -> 置灰不可点（不重建列表，避免抖动）
+function HON_HB.Validate()
+	for skill, e in pairs(HON_HB.Items) do
+		if e and e.Frame and e.Frame.Parent then
+			local rec = HON_HB.Records[skill]
+			local valid = rec and rec.Char and rec.Char.Parent and HON_HB.Alive(rec.Player)
+			if e._valid ~= valid then
+				e._valid = valid
+				pcall(function()
+					e.Frame.BackgroundColor3 = valid and Color3.fromRGB(30, 34, 46) or Color3.fromRGB(20, 20, 24)
+					e.Frame.Active = valid
+					e.Frame.Selectable = valid
+					if e.Label then
+						e.Label.TextColor3 = valid and Color3.fromRGB(220, 224, 235) or Color3.fromRGB(110, 112, 120)
+					end
+				end)
+			end
+		end
+	end
+end
+
+-- 按键瞬间：就近记录（≤40 格，取最近存活目标）
+function HON_HB.Record(kc)
+	local skill = HON_HB.Keys[kc]
+	if not skill then return end
+	local my = HON_HB.HRP(LP)
+	if not my then return end
+	local best, bd, bn, bc = nil, 40.0001, nil, nil
+	local Ps = game:GetService("Players")
+	for _, p in ipairs(Ps:GetPlayers()) do
+		if p ~= LP and HON_HB.Alive(p) then
+			local hrp = HON_HB.HRP(p)
+			if hrp then
+				local d = (hrp.Position - my.Position).Magnitude
+				if d <= 40 and d < bd then
+					bd, bn, bc, best = d, p.Name, p.Character, p
+				end
+			end
+		end
+	end
+	if not best then return end   -- 范围内无目标则不写（保留旧记录）
+	HON_HB.Records[skill] = { Skill = skill, Name = bn, Player = best, Char = bc, Dist = bd, Time = tick() }
+	HON_HB.Refresh()              -- 同名技能覆盖旧记录，不新增第二条
+end
+
+function HON_HB.OnInput(input, processed)
+	if processed then return end
+	if not HON_HB.Active then return end
+	if input.UserInputType ~= Enum.UserInputType.Keyboard then return end
+	pcall(function()
+		if UserInputService:GetFocusedTextBox() then return end
+	end)
+	pcall(HON_HB.Record, input.KeyCode)
+end
+
+-- 本地角色重生：清空全部记录、清高亮、刷新
+function HON_HB.OnRespawn()
+	HON_HB.Records = {}
+	HON_HB.ClearHL()
+	HON_HB.Refresh()
+end
+
+-- 销毁：停止记录、断开监听、清高亮、销毁面板
+function HON_HB.Destroy()
+	HON_HB.Active = false
+	pcall(function() if HON_HB.InputConn then HON_HB.InputConn:Disconnect() end end)
+	pcall(function() if HON_HB.CharConn then HON_HB.CharConn:Disconnect() end end)
+	HON_HB.ClearHL()
+	HON_HB.Records = {}
+	HON_HB.Items = {}
+	pcall(function() if HON_HB.Gui then HON_HB.Gui:Destroy() end end)
+	HON_HB.Gui, HON_HB.Frame, HON_HB.Scroll, HON_HB.Status = nil, nil, nil, nil
+	HON_HB.InputConn, HON_HB.CharConn = nil, nil
+end
+
+-- 构建面板（窗口即界面，出现即记录中）
+function HON_HB.Build()
+	if HON_HB.Gui then return end
+	HON_HB.Gui = new("ScreenGui", {
+		Name = "HON_HB_Gui", ResetOnSpawn = false, IgnoreGuiInset = true,
+		DisplayOrder = 2147483647, Parent = PG,
+	})
+	HON_HB.Frame = new("Frame", {
+		Size = UDim2.new(0, 230, 0, 300), Position = UDim2.new(0, 30, 0, 120),
+		BackgroundColor3 = Color3.fromRGB(15, 17, 24), BorderSizePixel = 0,
+		Active = true, Parent = HON_HB.Gui,
+	})
+	corner(HON_HB.Frame, 8)
+	-- 标题栏（按住拖动）
+	local bar = new("TextLabel", {
+		Size = UDim2.new(1, 0, 0, 30), BackgroundColor3 = Color3.fromRGB(28, 31, 42),
+		BorderSizePixel = 0, Font = Enum.Font.GothamBold, TextSize = 13,
+		TextColor3 = Color3.fromRGB(235, 238, 245), Text = "技能碰撞箱记录",
+		TextXAlignment = Enum.TextXAlignment.Center, Parent = HON_HB.Frame,
+	})
+	corner(bar, 8)
+	-- 滚动列表（宽减 20、高 200、UIListLayout 间距 3）
+	HON_HB.Scroll = new("ScrollingFrame", {
+		Size = UDim2.new(1, -20, 0, 200), Position = UDim2.new(0, 10, 0, 34),
+		BackgroundColor3 = Color3.fromRGB(10, 12, 18), BorderSizePixel = 0,
+		ScrollBarThickness = 5, CanvasSize = UDim2.new(0, 0, 0, 0),
+		AutomaticCanvasSize = Enum.AutomaticSize.Y, Parent = HON_HB.Frame,
+	})
+	corner(HON_HB.Scroll, 6)
+	new("UIListLayout", { Padding = UDim.new(0, 3), SortOrder = Enum.SortOrder.LayoutOrder, Parent = HON_HB.Scroll })
+	-- 底部：状态 + 清空 + 删除
+	HON_HB.Status = new("TextLabel", {
+		Size = UDim2.new(1, -20, 0, 18), Position = UDim2.new(0, 10, 0, 240),
+		BackgroundColor3 = Color3.fromRGB(20, 22, 30), BorderSizePixel = 0,
+		Font = Enum.Font.Gotham, TextSize = 11, TextColor3 = Color3.fromRGB(150, 154, 165),
+		Text = "记录数：0", TextXAlignment = Enum.TextXAlignment.Center, Parent = HON_HB.Frame,
+	})
+	corner(HON_HB.Status, 4)
+	local clearBtn = new("TextButton", {
+		Size = UDim2.new(0, 100, 0, 26), Position = UDim2.new(0, 10, 0, 262),
+		BackgroundColor3 = Color3.fromRGB(40, 44, 58), BorderSizePixel = 0,
+		Font = Enum.Font.Gotham, TextSize = 12, TextColor3 = Color3.fromRGB(220, 224, 235),
+		Text = "清空", Parent = HON_HB.Frame,
+	})
+	corner(clearBtn, 4)
+	local delBtn = new("TextButton", {
+		Size = UDim2.new(0, 100, 0, 26), Position = UDim2.new(0, 120, 0, 262),
+		BackgroundColor3 = Color3.fromRGB(70, 30, 34), BorderSizePixel = 0,
+		Font = Enum.Font.Gotham, TextSize = 12, TextColor3 = Color3.fromRGB(255, 180, 185),
+		Text = "删除", Parent = HON_HB.Frame,
+	})
+	corner(delBtn, 4)
+	bindClick(clearBtn, "HON_HBClear", function()
+		HON_HB.Records = {}; HON_HB.ClearHL(); HON_HB.Refresh()
+	end)
+	bindClick(delBtn, "HON_HBDel", function() HON_HB.Destroy() end)
+	pcall(attachDrag, HON_HB.Frame, bar, UserInputService, nil, "WinLock")
+	-- 开启记录 + 监听
+	HON_HB.Active = true
+	if not HON_HB.InputConn then
+		HON_HB.InputConn = UserInputService.InputBegan:Connect(HON_HB.OnInput)
+	end
+	if not HON_HB.CharConn then
+		HON_HB.CharConn = LP.CharacterAdded:Connect(HON_HB.OnRespawn)
+	end
+	-- 周期校验失效 + 脚本卸载时自清（不依赖改动 unloadScript）
+	task.spawn(function()
+		while HON_HB.Active do
+			task.wait(0.4)
+			pcall(HON_HB.Validate)
+			if type(HON_SHUTDOWN) == "boolean" and HON_SHUTDOWN then
+				HON_HB.Destroy(); break
+			end
+		end
+	end)
+	HON_HB.Refresh()
+end
+
+HON_HB.Build()   -- 脚本加载即弹出小窗并开始记录（点「删除」可关闭）
+-- ▼▼▼ 技能碰撞箱记录 / Hitbox Recorder（v5.83）▼▼▼
+
+_pr("[HON SPEED HUB] v5.83 已加载 · 完整文件约 9444 行 · 若你的脚本远大于此行数说明粘贴重复了")
 
 
