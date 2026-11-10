@@ -10,161 +10,16 @@
 --恭喜你找到了我的源码
 -- by 夜
 local Players = game:GetService("Players")
---[[ =================== Anti-Deobfuscation Core v2 ===================
 
-local _w = 0
-local _t0 = os.clock()
-local _seed = math.random(1000, 9999)
-local _threshold = math.floor(_seed / _seed) + math.floor(2 * 1) -- == 3，不明显
-
--- =================== 内部flag（混淆化） ===================
-local function _f(x)
-    _w = _w + (x == x and 1 or 0)
-end
-
--- =================== 检测1：玩家链 ===================
-local function _c1()
-    local ok, r = pcall(function()
-        local p = game:GetService("Players").LocalPlayer
-        return p and p.Character and p.Character:FindFirstChildOfClass("Humanoid") ~= nil
-    end)
-    if not (ok and r) then _f(1) end
-end
-
--- =================== 检测2：Instance真实性 ===================
-local function _c2()
-    local ok, r = pcall(function()
-        local g = game
-        return typeof(g) == "Instance"
-            and g:IsA("DataModel")
-            and g.ClassName == "DataModel"
-    end)
-    if not (ok and r) then _f(2) end
-end
-
--- =================== 检测3：服务一致性 ===================
-local function _c3()
-    local ok, r = pcall(function()
-        local ws1 = game:GetService("Workspace")
-        local ws2 = workspace
-        return ws1 == ws2 and ws1 ~= nil
-    end)
-    if not (ok and r) then _f(3) end
-end
-
--- =================== 检测4：身份 ===================
-local function _c4()
-    local ok, r = pcall(function()
-        local lp = game:GetService("Players").LocalPlayer
-        return lp ~= nil
-            and typeof(lp.UserId) == "number"
-            and lp.UserId > 0
-            and game.JobId ~= ""
-    end)
-    if not (ok and r) then _f(4) end
-end
-
--- =================== 检测5：执行环境API ===================
-local function _c5()
-    -- executor应该有这些，但反混淆bot环境里不一定有
-    local ok, r = pcall(function()
-        return type(getfenv) == "function"
-            and type(setfenv) == "function"
-    end)
-    if not (ok and r) then _f(5) end
-end
-
--- =================== 检测6：时序异常（bot通常极快） ===================
-local function _c6()
-    local t1 = os.clock()
-    -- 正常Roblox客户端初始化需要一定时间
-    -- bot脚本通常在ms级别内跑完所有检测
-    local elapsed = t1 - _t0
-    if elapsed < 0.001 then
-        _f(6) -- 极不可能在真实客户端里这么快
-    end
-end
-
--- =================== 检测7：DataModel深度验证 ===================
-local function _c7()
-    local ok, r = pcall(function()
-        local rs = game:GetService("RunService")
-        -- 真实客户端：IsClient或IsStudio必有一个为true
-        return rs:IsClient() or rs:IsStudio()
-    end)
-    if not (ok and r) then _f(7) end
-end
-
--- =================== 检测8：随机延迟噪声（对抗静态分析） ===================
-local _noise = (function()
-    local s = 0
-    for i = 1, 10 do s = s + math.sin(i) end
-    return s > 0 and 0 or 1 -- 始终为0，但计算过程让静态分析困难
-end)()
-
--- =================== 运行检测 ===================
-_c1(); _c2(); _c3(); _c4(); _c5(); _c6(); _c7()
-
--- =================== 卡死核心 ===================
-local function _melt()
-    -- 先申请大量内存
-    task.spawn(function()
-        local bomb = {}
-        while true do
-            for i = 1, 500 do
-                bomb[#bomb+1] = string.rep("x", 1024)
-            end
-            task.wait(0) -- 让它继续占用帧
-        end
-    end)
-
-    -- 多线程CPU压力
-    for _ = 1, 16 do
-        task.spawn(function()
-            local x = 0
-            while true do
-                x = math.sqrt(x + math.random())
-            end
-        end)
-    end
-
-    -- 主线程锁
-    local _lock = true
-    while _lock do
-        local _x = _noise
-        for i = 1, 1e6 do _x = _x + i * 0.000001 end
-        _lock = _x >= 0 or _x < 0 -- 永远true
-    end
-end
-
--- =================== 延迟判定（迷惑分析者） ===================
--- 不立即触发，等一帧后判定，让bot以为通过了
-task.defer(function()
-    if _w + _noise >= _threshold then
-        -- 再等一小段随机时间，增加不确定性
-        task.wait(math.random() * 0.5)
-        _melt()
+-- 高性能模式初始状态（尽早读取，供通用页开关默认显示正确）
+_G.HighPerf = false
+pcall(function()
+    if isfile and isfile("XF_HighPerf.txt") then
+        if readfile("XF_HighPerf.txt") == "true" then _G.HighPerf = true end
     end
 end)
 
--- =================== 分布式守卫（插入你的关键逻辑前） ===================
-local function guard()
-    if _w + _noise >= _threshold then
-        task.spawn(_melt)
-        error("") -- 中断当前线程
-    end
-end
-
--- =================== 使用方法 ===================
--- 在你的主要功能代码的关键节点前调用：
--- guard()
--- 例如：
--- guard()
--- local aimbot = loadAimbot()
--- guard()
--- local ui = buildUI()
-]]
-loadstring(game:HttpGet("https://raw.githubusercontent.com/ylt410/roblox-Script/refs/heads/main/公告"))()
+-- 公告已本地化（见下方「公告」标签页），不再加载远程公告
 local StarterGui = game:GetService("StarterGui")
 
 local function FallbackNotify(title, content, duration)
@@ -256,6 +111,15 @@ local BgPresets = {
     ["你懂的3"] = "https://raw.githubusercontent.com/ylt410/Liquid-glass-script/refs/heads/main/IMG_3706.jpeg",
     ["罪恶王冠楪祈"] = "https://raw.githubusercontent.com/ylt410/Liquid-glass-script/refs/heads/main/IMG_3710.jpeg",
     ["罪恶王冠楪祈2"] = "https://raw.githubusercontent.com/ylt410/Liquid-glass-script/refs/heads/main/IMG_3711.jpeg",
+    ["蔚蓝档案普通"] = "https://raw.githubusercontent.com/chenchen1116331/jiaoben/refs/heads/main/IMG_20261110_210846.jpg",
+    ["萝莉（黄色）"] = "https://raw.githubusercontent.com/chenchen1116331/jiaoben/refs/heads/main/IMG_20261110_210813.jpg",
+    ["萝莉（兽娘）"] = "https://raw.githubusercontent.com/chenchen1116331/jiaoben/refs/heads/main/IMG_20261110_210755.jpg",
+    ["少司缘（三星堆）"] = "https://raw.githubusercontent.com/chenchen1116331/jiaoben/refs/heads/main/IMG_20261110_210630.jpg",
+    ["少司缘（小狐娘）"] = "https://raw.githubusercontent.com/chenchen1116331/jiaoben/refs/heads/main/IMG_20261110_210607.jpg",
+    ["少司缘（小狐娘2）"] = "https://raw.githubusercontent.com/chenchen1116331/jiaoben/refs/heads/main/IMG_20261110_210513.jpg",
+    ["云缨（黄色）"] = "https://raw.githubusercontent.com/chenchen1116331/jiaoben/refs/heads/main/IMG_20261110_210411.jpg",
+    ["姬小满（淀粉肠联动）"] = "https://raw.githubusercontent.com/chenchen1116331/jiaoben/refs/heads/main/IMG_20261110_210355.jpg",
+    ["王者（美图）"] = "https://raw.githubusercontent.com/chenchen1116331/jiaoben/refs/heads/main/IMG_20261110_210339.jpg",
 
 }
 
@@ -3149,7 +3013,7 @@ end)
 
 
 local Window = WindUI:CreateWindow({
-    Title = "小法师融合脚本",
+    Title = "XF 小法师融合脚本",
     Icon = "rbxassetid://114890258053806",
     Author = "作者:小法师",
     Folder = "NightHub",
@@ -3178,8 +3042,7 @@ OnlyMobile = false,
 
     SideBarWidth = 150, -- ⭐稍微加宽
     ScrollBarEnabled = false, -- ⭐关掉更像mac
-Background = BackgroundEnabled and BgImage or nil,
-BackgroundImageTransparency = BgTransValue,
+    Background = nil, -- ⭐背景图改为脚本自主控制（见下方"背景图自主控制系统"）
 
     User = {
         Enabled = true,
@@ -3191,16 +3054,13 @@ BackgroundImageTransparency = BgTransValue,
 -- ⭐再补一层保险（防UI初始化不同步）
 pcall(function()
     WindUI:SetTheme(CurrentTheme)
+end)
 
-if BackgroundEnabled then
-    pcall(function()
-        Window.BackgroundImage = BgImage
-        Window.BackgroundImageTransparency = BgTransValue
-    end)
-end
+task.defer(function()
+    pcall(ApplyBgImage)
 end)
 Window:Tag({
-    Title = "小法师融合脚本",
+    Title = "XF 小法师融合脚本",
     Icon = "github",
     Color = Color3.fromRGB(255, 204, 0), -- ⭐柔和黄色（推荐）
     Radius = 8,
@@ -3212,44 +3072,301 @@ local MainTab = Window:Tab({
         Locked = false,
     })
 
-MainTab:Paragraph({ Title="夜脚本主群", Desc ="1081045774" })
+MainTab:Paragraph({ Title="小法师主群", Desc ="693390681" })
 MainTab:Button({
     Title = "复制QQ群",
     Callback = function()
         if setclipboard then
-            setclipboard("1081045774")
+            setclipboard("693390681")
         end
 end
 })
 MainTab:Paragraph({
-        Title = "夜脚本V1.4版本更新",
+        Title = "小法师V1.4版本更新",
         Desc = "主要更新：\n子弹追踪！！\n报错弹窗\n预计过几天更新吸人", 
     })
 
 MainTab:Paragraph({
-        Title = "夜脚本V1.3版本更新",
+        Title = "小法师V1.3版本更新",
         Desc = "主要更新：\n边框开关\n边框颜色选择（彩虹、红、蓝）\n更新背景图（背景图更改需要重启脚本应用）\n杂项更新：\n把穿墙调整至玩家功能\n玩家功能新增调整重力", 
     })
 
 MainTab:Paragraph({
-        Title = "夜脚本V1.2.1版本更新",
+        Title = "小法师V1.2.1版本更新",
         Desc = "修复了甩飞偶发性报错和防摔落伤害在重生后失效的问题", 
     })
 
 MainTab:Paragraph({
-        Title = "夜脚本V1.2版本更新",
+        Title = "小法师V1.2版本更新",
         Desc = "更新了动作功能\n虽然是bs那里借鉴的就是了", 
     })
 
 MainTab:Paragraph({
-        Title = "夜脚本V1.1版本更新",
+        Title = "小法师V1.1版本更新",
         Desc = "更新了若干服务器功能\n一些新功能\n开启了新版wind UI界面\n优化了脚本\n实则没有优化😋\n增加了自动检测俄亥俄州并加载其他脚本", 
     })
+
+-- ================= 引擎加速系统（W / V / CF） =================
+local EngineMode = "W"
+local EngineSpeed = 60
+local EngineEnabled = false
+local engineConn = nil
+
+local cfWin = nil
+
+local function stopEngine()
+    if engineConn then pcall(function() engineConn:Disconnect() end) end
+    engineConn = nil
+end
+
+local function startEngine()
+    stopEngine()
+    if not EngineEnabled then return end
+    local RS = game:GetService("RunService")
+    engineConn = RS.Heartbeat:Connect(function()
+        local lp = Players.LocalPlayer
+        if not (lp and lp.Character) then return end
+        local hum = lp.Character:FindFirstChildOfClass("Humanoid")
+        local hrp = lp.Character:FindFirstChild("HumanoidRootPart")
+        if not (hum and hrp) then return end
+        if EngineMode == "W" then
+            pcall(function() hum.WalkSpeed = EngineSpeed end)
+        elseif EngineMode == "V" then
+            if hum.MoveDirection.Magnitude > 0 then
+                pcall(function() hrp:TranslateBy(hum.MoveDirection * (EngineSpeed / 10)) end)
+            end
+        elseif EngineMode == "CF" then
+            pcall(function()
+                local dir = workspace.CurrentCamera.CFrame.LookVector
+                hrp.CFrame = hrp.CFrame + dir * (EngineSpeed / 40)
+                hrp.Velocity = Vector3.new()
+                hum.WalkSpeed = 16
+            end)
+        end
+    end)
+end
+
+-- 可拖动 / 可缩小 的引擎控制台小窗（CF 开启后生成）
+local function buildCFWindow()
+    if cfWin then return end
+    local pg = Players.LocalPlayer:WaitForChild("PlayerGui")
+    local sg = Instance.new("ScreenGui")
+    sg.Name = "XF_EngineUI"
+    sg.ResetOnSpawn = false
+    sg.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    sg.Parent = pg
+
+    local frame = Instance.new("Frame")
+    frame.Name = "EngineConsole"
+    frame.Size = UDim2.new(0, 230, 0, 175)
+    frame.Position = UDim2.new(0.5, -115, 0.25, 0)
+    frame.BackgroundColor3 = Color3.fromRGB(18, 18, 28)
+    frame.BorderSizePixel = 0
+    frame.Active = true
+    frame.Draggable = true
+    frame.Parent = sg
+
+    local title = Instance.new("TextLabel")
+    title.Size = UDim2.new(1, 0, 0, 28)
+    title.BackgroundColor3 = Color3.fromRGB(120, 80, 255)
+    title.BorderSizePixel = 0
+    title.Text = "小法师制作 · 引擎控制台"
+    title.TextColor3 = Color3.new(1, 1, 1)
+    title.Font = Enum.Font.GothamBold
+    title.TextSize = 13
+    title.Parent = frame
+
+    local minBtn = Instance.new("TextButton")
+    minBtn.Size = UDim2.new(0, 28, 0, 24)
+    minBtn.Position = UDim2.new(1, -30, 0, 2)
+    minBtn.Text = "—"
+    minBtn.BackgroundColor3 = Color3.fromRGB(70, 70, 95)
+    minBtn.TextColor3 = Color3.new(1, 1, 1)
+    minBtn.Parent = title
+
+    local content = Instance.new("Frame")
+    content.Size = UDim2.new(1, 0, 1, -28)
+    content.Position = UDim2.new(0, 0, 0, 28)
+    content.BackgroundTransparency = 1
+    content.Parent = frame
+
+    local modes = {"W", "V", "CF"}
+    for i, m in ipairs(modes) do
+        local b = Instance.new("TextButton")
+        b.Size = UDim2.new(0, 66, 0, 30)
+        b.Position = UDim2.new(0, 8 + (i - 1) * 72, 0, 8)
+        b.Text = "引擎 " .. m
+        b.BackgroundColor3 = (m == EngineMode) and Color3.fromRGB(120, 80, 255) or Color3.fromRGB(60, 60, 80)
+        b.TextColor3 = Color3.new(1, 1, 1)
+        b.Font = Enum.Font.Gotham
+        b.TextSize = 12
+        b.Parent = content
+        b.MouseButton1Click:Connect(function()
+            EngineMode = m
+            if EngineEnabled then startEngine() end
+            for _, c in ipairs(content:GetChildren()) do
+                if c:IsA("TextButton") and c ~= minBtn then
+                    c.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
+                end
+            end
+            b.BackgroundColor3 = Color3.fromRGB(120, 80, 255)
+            Notify("引擎", "切换为 " .. m, 1.2, "info")
+        end)
+    end
+
+    local speedLbl = Instance.new("TextLabel")
+    speedLbl.Size = UDim2.new(1, -16, 0, 20)
+    speedLbl.Position = UDim2.new(0, 8, 0, 48)
+    speedLbl.BackgroundTransparency = 1
+    speedLbl.Text = "速度: " .. EngineSpeed
+    speedLbl.TextColor3 = Color3.new(1, 1, 1)
+    speedLbl.Font = Enum.Font.Gotham
+    speedLbl.TextSize = 12
+    speedLbl.TextXAlignment = Enum.TextXAlignment.Left
+    speedLbl.Parent = content
+
+    local minus = Instance.new("TextButton")
+    minus.Size = UDim2.new(0, 30, 0, 28)
+    minus.Position = UDim2.new(0, 8, 0, 74)
+    minus.Text = "-"
+    minus.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
+    minus.TextColor3 = Color3.new(1, 1, 1)
+    minus.Parent = content
+    local plus = Instance.new("TextButton")
+    plus.Size = UDim2.new(0, 30, 0, 28)
+    plus.Position = UDim2.new(0, 44, 0, 74)
+    plus.Text = "+"
+    plus.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
+    plus.TextColor3 = Color3.new(1, 1, 1)
+    plus.Parent = content
+    minus.MouseButton1Click:Connect(function()
+        EngineSpeed = math.max(10, EngineSpeed - 10)
+        speedLbl.Text = "速度: " .. EngineSpeed
+    end)
+    plus.MouseButton1Click:Connect(function()
+        EngineSpeed = math.min(300, EngineSpeed + 10)
+        speedLbl.Text = "速度: " .. EngineSpeed
+    end)
+
+    local minimized = false
+    minBtn.MouseButton1Click:Connect(function()
+        minimized = not minimized
+        content.Visible = not minimized
+        frame.Size = minimized and UDim2.new(0, 230, 0, 28) or UDim2.new(0, 230, 0, 175)
+        minBtn.Text = minimized and "▢" or "—"
+    end)
+
+    cfWin = sg
+end
+
+local function openCFWindow()
+    pcall(function()
+        if not cfWin then buildCFWindow() end
+        cfWin.Enabled = true
+    end)
+end
+local function closeCFWindow()
+    pcall(function() if cfWin then cfWin.Enabled = false end end)
+end
+
+-- 兼容飞行 / 通用「小法师制作」状态小窗
+local makeWin = nil
+local makeDesc = nil
+local function showMakeWindow(text)
+    pcall(function()
+        local pg = Players.LocalPlayer:WaitForChild("PlayerGui")
+        if not makeWin then
+            local sg = Instance.new("ScreenGui")
+            sg.Name = "XF_MakeUI"
+            sg.ResetOnSpawn = false
+            sg.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+            sg.Parent = pg
+            local f = Instance.new("Frame")
+            f.Size = UDim2.new(0, 200, 0, 72)
+            f.Position = UDim2.new(0.5, -100, 0.12, 0)
+            f.BackgroundColor3 = Color3.fromRGB(18, 18, 28)
+            f.BorderSizePixel = 0
+            f.Active = true
+            f.Draggable = true
+            f.Parent = sg
+            local t = Instance.new("TextLabel")
+            t.Size = UDim2.new(1, 0, 0, 24)
+            t.BackgroundColor3 = Color3.fromRGB(120, 80, 255)
+            t.Text = "小法师制作"
+            t.TextColor3 = Color3.new(1, 1, 1)
+            t.Font = Enum.Font.GothamBold
+            t.TextSize = 13
+            t.Parent = f
+            local d = Instance.new("TextLabel")
+            d.Size = UDim2.new(1, -12, 0, 42)
+            d.Position = UDim2.new(0, 6, 0, 26)
+            d.BackgroundTransparency = 1
+            d.TextColor3 = Color3.new(1, 1, 1)
+            d.Font = Enum.Font.Gotham
+            d.TextSize = 12
+            d.TextWrapped = true
+            d.Parent = f
+            makeWin = f
+            makeDesc = d
+        end
+        makeDesc.Text = text
+        makeWin.Parent.Enabled = true
+    end)
+end
 
 local TabAttr = Window:Tab({
     Title = "玩家功能",
     Icon = "zap",
     Locked = false,
+})
+
+-- ================= 引擎加速（W / V / CF） =================
+TabAttr:Section({ Title = "引擎加速（W / V / CF）" })
+
+TabAttr:Dropdown({
+    Title = "引擎模式",
+    Desc = "W=行走加速  V=冲刺位移  CF=飞行推进（CF 开启后弹出控制台小窗）",
+    Values = {"W", "V", "CF"},
+    Default = "W",
+    Callback = function(v)
+        if typeof(v) == "table" then v = v.Value or v[1] end
+        if not v then return end
+        EngineMode = v
+        if EngineEnabled then
+            startEngine()
+            if v == "CF" then openCFWindow() else closeCFWindow() end
+        end
+        Notify("引擎加速", "引擎切换为 " .. tostring(v), 1.5, "info")
+    end
+})
+
+TabAttr:Slider({
+    Title = "引擎速度",
+    Value = { Min = 10, Max = 300, Default = 60 },
+    Increment = 10,
+    Callback = function(value)
+        EngineSpeed = math.clamp(tonumber(value) or 60, 10, 300)
+    end
+})
+
+TabAttr:Toggle({
+    Title = "引擎加速总开关",
+    Desc = "开启后按所选引擎加速；选择 CF 时屏幕生成可拖动/可缩小控制台",
+    Default = false,
+    Callback = function(v)
+        EngineEnabled = v
+        if v then
+            startEngine()
+            if EngineMode == "CF" then openCFWindow() end
+            AddFeature("引擎加速")
+            Notify("引擎加速", "已开启（引擎 " .. EngineMode .. "）", 2, "success")
+        else
+            stopEngine()
+            closeCFWindow()
+            RemoveFeature("引擎加速")
+            Notify("引擎加速", "已关闭", 2, "info")
+        end
+    end
 })
 
 -- ================= 速度 =================
@@ -3553,10 +3670,24 @@ local TabOther = Window:Tab({
     Icon = "info",
     Locked = false,
 })
+
+-- ================= 高性能模式 =================
+TabOther:Toggle({
+    Title = "高性能模式（降低卡顿）",
+    Desc = "开启后冻结彩虹边框动画并隐藏背景图，显著提升流畅度（可随时关闭恢复特效）",
+    Default = _G.HighPerf or false,
+    Callback = function(v)
+        if _G.SetHighPerf then
+            _G.SetHighPerf(v)
+            Notify("高性能模式", v and "已开启：已关闭边框动画与背景图" or "已关闭：恢复全部特效", 2, v and "success" or "info")
+        end
+    end
+})
+
 -- ================= 飞行 =================
 
 TabOther:Button({
-    Title = "一键飞行",
+    Title = "普通飞行",
     Callback = function()
         local ok, err = pcall(function()
             loadstring(game:HttpGet("https://raw.githubusercontent.com/ylt410/roblox-Script/refs/heads/main/flyab.lua"))()
@@ -3571,14 +3702,15 @@ TabOther:Button({
 })
 
 TabOther:Button({
-    Title = "枪械飞行",
+    Title = "兼容飞行",
     Callback = function()
         local ok, err = pcall(function()
             loadstring(game:HttpGet("https://raw.githubusercontent.com/ylt410/roblox-Script/refs/heads/main/fly"))()
         end)
 
         if ok then
-            Notify("成功", "枪械飞行已加载", 2, "success")
+            Notify("成功", "兼容飞行已加载", 2, "success")
+            showMakeWindow("兼容飞行已激活 · 小法师制作")
         else
             Notify("错误", tostring(err), 3, "error")
         end
@@ -8705,13 +8837,20 @@ local currentAngle = 1
 -- ⭐ 关键修复：连接前先强制写一次 Rotation，激活 Roblox 渲染管线
 Gradient.Rotation = currentAngle
 
+local rotAccum = 0
 RunService.RenderStepped:Connect(function(dt)
+    if _G.HighPerf then return end
     if not Stroke or not Stroke.Parent then return end
     if BorderMode ~= "Rainbow" then return end
     if not Gradient.Enabled then return end
 
     currentAngle = (currentAngle + dt * 150) % 360
-    Gradient.Rotation = currentAngle
+    -- ⭐ 节流：约 30fps 刷新即可，避免每帧重绘边框导致卡顿
+    rotAccum = rotAccum + dt
+    if rotAccum >= 0.033 then
+        rotAccum = 0
+        Gradient.Rotation = currentAngle
+    end
 end)
 
 -- ===== 圆角 =====
@@ -8727,6 +8866,312 @@ _G.ApplyBorderMode = ApplyBorderMode
 _G.SetBorderEnabled = SetBorderEnabled
 _G.BorderMode = BorderMode
 _G.BorderEnabled = BorderEnabled
+
+-- ================= 背景图自主控制系统（修复透明度失效） =================
+-- 说明：WindUI 本版本窗口并不渲染 Background / BackgroundImageTransparency，
+-- 所以之前所有 Window.BackgroundImageTransparency = ... 都是空操作。
+-- 这里改为脚本自己持有并控制一个 ImageLabel，图片与透明度均由我们直接管理。
+local BgLabel = nil
+local function EnsureBgLabel()
+    local container = Window.UIElements and (Window.UIElements.MainContainer or Window.UIElements.Main)
+    if not container then return end
+    if BgLabel and BgLabel.Parent == container then return end
+    local lbl = Instance.new("ImageLabel")
+    lbl.Name = "XF_Background"
+    lbl.BackgroundTransparency = 1
+    lbl.BorderSizePixel = 0
+    lbl.Size = UDim2.new(1, 0, 1, 0)
+    lbl.Position = UDim2.new(0, 0, 0, 0)
+    lbl.ScaleType = Enum.ScaleType.Crop
+    lbl.ZIndex = -1
+    lbl.Visible = BackgroundEnabled
+    lbl.Image = BackgroundEnabled and BgImage or ""
+    lbl.ImageTransparency = BgTransValue
+    lbl.Parent = container
+    container.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    BgLabel = lbl
+end
+
+local function ApplyBgImage()
+    pcall(EnsureBgLabel)
+    if BgLabel then
+        pcall(function()
+            BgLabel.Image = BackgroundEnabled and BgImage or ""
+            BgLabel.ImageTransparency = BgTransValue
+            BgLabel.Visible = BackgroundEnabled
+        end)
+    end
+end
+
+local function ApplyBgTransparency(val)
+    BgTransValue = val
+    pcall(function()
+        if writefile then writefile(BgTransFile, tostring(val)) end
+    end)
+    if BgLabel then
+        pcall(function() BgLabel.ImageTransparency = val end)
+    end
+end
+
+-- ================= 高性能模式 =================
+-- 开启后：冻结彩虹边框动画 + 隐藏背景图 + 尽量关闭毛玻璃模糊，
+-- 把每帧合成开销降到最低，显著缓解卡顿。
+_G.HighPerf = _G.HighPerf or false
+local HighPerfFile = "XF_HighPerf.txt"
+
+local function SetHighPerf(on)
+    _G.HighPerf = on
+    pcall(function()
+        if writefile then writefile(HighPerfFile, on and "true" or "false") end
+    end)
+
+    if on then
+        -- 冻结边框：保留最后角度，停止旋转
+        pcall(function() if Gradient then Gradient.Rotation = 1 end end)
+        -- 隐藏背景图（省去大图合成）
+        pcall(function() if BgLabel then BgLabel.Visible = false end end)
+        -- 尽量关闭 WindUI 毛玻璃模糊（DepthOfFieldEffect / BlurEffect）
+        pcall(function()
+            local lighting = game:GetService("Lighting")
+            for _, eff in ipairs(lighting:GetChildren()) do
+                if eff:IsA("DepthOfFieldEffect") or eff:IsA("BlurEffect") then
+                    eff.Enabled = false
+                end
+            end
+        end)
+    else
+        -- 恢复边框动画
+        pcall(function() if Gradient then Gradient.Rotation = 1 end end)
+        -- 恢复背景图
+        ApplyBgImage()
+    end
+end
+_G.SetHighPerf = SetHighPerf
+
+-- ================= 字体颜色控制 =================
+local FontColorFile = "XF_FontColor.txt"
+local FontColor = Color3.fromRGB(235, 235, 235)
+local FontColorEnabled = false
+
+pcall(function()
+    if isfile and isfile(FontColorFile) then
+        local s = readfile(FontColorFile)
+        if s and s ~= "" then
+            local r, g, b = s:match("(%d+)%s*,%s*(%d+)%s*,%s*(%d+)")
+            if r then
+                FontColor = Color3.fromRGB(tonumber(r), tonumber(g), tonumber(b))
+                FontColorEnabled = true
+            end
+        end
+    end
+end)
+
+local function ApplyFontColor()
+    if not FontColorEnabled then return end
+    local main = Window.UIElements and (Window.UIElements.MainContainer or Window.UIElements.Main)
+    if not main then return end
+    for _, obj in ipairs(main:GetDescendants()) do
+        if obj:IsA("TextLabel") or obj:IsA("TextButton") or obj:IsA("TextBox") then
+            pcall(function() obj.TextColor3 = FontColor end)
+        end
+    end
+end
+
+-- 低频率重刷：切换标签 / 弹出下拉后会新建文本，1 秒回填一次保证颜色不丢失（开销极小）
+task.spawn(function()
+    while task.wait(1) do
+        if FontColorEnabled then pcall(ApplyFontColor) end
+    end
+end)
+
+pcall(ApplyBgImage)
+if FontColorEnabled then pcall(ApplyFontColor) end
+
+-- 应用已保存的高性能模式（确保重载后背景/边框状态正确）
+pcall(function() if _G.SetHighPerf then _G.SetHighPerf(_G.HighPerf) end end)
+
+-- ================= 脚本整合（来自其他通用脚本的功能） =================
+local TabMerge = Window:Tab({
+    Title = "脚本整合",
+    Icon = "layers",
+    Locked = false,
+})
+
+local RunS = game:GetService("RunService")
+local WKS = workspace
+
+-- 1) 透明角色（自己）
+local xfTransparent = false
+local function applyTransparent(on)
+    pcall(function()
+        local char = Players.LocalPlayer.Character
+        if not char then return end
+        for _, p in ipairs(char:GetDescendants()) do
+            if p:IsA("BasePart") then p.Transparency = on and 1 or 0 end
+        end
+    end)
+end
+TabMerge:Toggle({
+    Title = "透明角色（自己）",
+    Desc = "让自己在本地视角透明（仅自己可见，不影响他人）",
+    Callback = function(v)
+        xfTransparent = v
+        applyTransparent(v)
+        if v then AddFeature("透明角色") else RemoveFeature("透明角色") end
+    end
+})
+Players.LocalPlayer.CharacterAdded:Connect(function()
+    if xfTransparent then task.wait(1); applyTransparent(true) end
+end)
+
+-- 2) FPS 显示
+local xfFpsGui, xfFpsLabel, xfFpsConn
+TabMerge:Toggle({
+    Title = "FPS 显示",
+    Callback = function(v)
+        if v then
+            if not xfFpsGui then
+                local pg = Players.LocalPlayer:WaitForChild("PlayerGui")
+                xfFpsGui = Instance.new("ScreenGui")
+                xfFpsGui.ResetOnSpawn = false
+                xfFpsGui.Parent = pg
+                xfFpsLabel = Instance.new("TextLabel")
+                xfFpsLabel.Size = UDim2.new(0, 120, 0, 24)
+                xfFpsLabel.Position = UDim2.new(0, 10, 0, 10)
+                xfFpsLabel.BackgroundTransparency = 0.4
+                xfFpsLabel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+                xfFpsLabel.TextColor3 = Color3.fromRGB(0, 255, 120)
+                xfFpsLabel.Font = Enum.Font.GothamBold
+                xfFpsLabel.TextSize = 14
+                xfFpsLabel.Parent = xfFpsGui
+            end
+            xfFpsGui.Enabled = true
+            local last = tick()
+            local frames = 0
+            xfFpsConn = RunS.RenderStepped:Connect(function()
+                frames = frames + 1
+                if tick() - last >= 1 then
+                    xfFpsLabel.Text = "FPS: " .. frames
+                    frames = 0
+                    last = tick()
+                end
+            end)
+        else
+            if xfFpsConn then pcall(function() xfFpsConn:Disconnect() end); xfFpsConn = nil end
+            if xfFpsGui then xfFpsGui.Enabled = false end
+        end
+    end
+})
+
+-- 3) 锁定第一人称视角
+TabMerge:Toggle({
+    Title = "锁定第一人称视角",
+    Callback = function(v)
+        pcall(function()
+            local lp = Players.LocalPlayer
+            if v then
+                lp.CameraMode = Enum.CameraMode.LockFirstPerson
+                lp.CameraMaxZoomDistance = 0.5
+            else
+                lp.CameraMode = Enum.CameraMode.Classic
+                lp.CameraMaxZoomDistance = 50
+            end
+        end)
+        if v then AddFeature("第一人称") else RemoveFeature("第一人称") end
+    end
+})
+
+-- 4) 自动连跳
+local xfJumpConn
+TabMerge:Toggle({
+    Title = "自动连跳",
+    Callback = function(v)
+        if v then
+            xfJumpConn = RunS.Heartbeat:Connect(function()
+                pcall(function()
+                    local hum = Players.LocalPlayer.Character and Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+                    if hum then hum.Jump = true end
+                end)
+            end)
+            AddFeature("自动连跳")
+        else
+            if xfJumpConn then pcall(function() xfJumpConn:Disconnect() end); xfJumpConn = nil end
+            RemoveFeature("自动连跳")
+        end
+    end
+})
+
+-- 5) 慢动作（时间缩放）
+TabMerge:Toggle({
+    Title = "慢动作（时间缩放）",
+    Desc = "降低全局 TimeScale，全场变慢",
+    Callback = function(v)
+        pcall(function() WKS.TimeScale = v and 0.4 or 1 end)
+        if v then AddFeature("慢动作") else RemoveFeature("慢动作") end
+    end
+})
+
+-- 6) 玩家传送（下拉选择 + 传送）
+local xfPlayerList = {}
+local xfSelPlayer = nil
+local function refreshPlayerList()
+    xfPlayerList = {}
+    for _, pl in ipairs(Players:GetPlayers()) do
+        if pl ~= Players.LocalPlayer then table.insert(xfPlayerList, pl.Name) end
+    end
+    return xfPlayerList
+end
+TabMerge:Dropdown({
+    Title = "选择玩家",
+    Desc = "选择要传送到的玩家（打开时已在线玩家）",
+    Values = refreshPlayerList(),
+    Callback = function(v)
+        if typeof(v) == "table" then v = v.Value or v[1] end
+        xfSelPlayer = v
+    end
+})
+TabMerge:Button({
+    Title = "传送到选中玩家",
+    Callback = function()
+        if not xfSelPlayer then Notify("提示", "请先选择玩家", 2, "info"); return end
+        local target = Players:FindFirstChild(xfSelPlayer)
+        local me = Players.LocalPlayer.Character
+        if target and target.Character and me then
+            local hrp = target.Character:FindFirstChild("HumanoidRootPart")
+            local myhrp = me:FindFirstChild("HumanoidRootPart")
+            if hrp and myhrp then
+                myhrp.CFrame = hrp.CFrame + Vector3.new(0, 3, 0)
+                Notify("传送", "已传送到 " .. xfSelPlayer, 2, "success")
+            end
+        else
+            Notify("错误", "目标不存在或未加载", 2, "error")
+        end
+    end
+})
+
+-- 7) 自旋
+local xfSpinConn
+TabMerge:Toggle({
+    Title = "角色自旋",
+    Desc = "让角色原地快速旋转",
+    Callback = function(v)
+        if v then
+            xfSpinConn = RunS.Heartbeat:Connect(function()
+                pcall(function()
+                    local hrp = Players.LocalPlayer.Character and Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                    if hrp then hrp.CFrame = hrp.CFrame * CFrame.Angles(0, math.rad(8), 0) end
+                end)
+            end)
+            AddFeature("自旋")
+        else
+            if xfSpinConn then pcall(function() xfSpinConn:Disconnect() end); xfSpinConn = nil end
+            RemoveFeature("自旋")
+        end
+    end
+})
+
+TabMerge:Paragraph({ Title = "脚本整合说明", Desc = "以上为整合自多份通用脚本的通用功能（透明/视角/传送/自旋/FPS/慢动作等），适配大部分游戏。" })
+
 -- ================= 配置 =================
 local TabConfig = Window:Tab({
     Title = "配置",
@@ -8813,7 +9258,7 @@ TabConfig:Dropdown({
 
 -- ================= 背景图开关 =================
 TabConfig:Toggle({
-    Title = "背景图（重启脚本生效）",
+    Title = "背景图",
     Value = BackgroundEnabled,
     Callback = function(v)
         BackgroundEnabled = v
@@ -8824,16 +9269,7 @@ TabConfig:Toggle({
             end
         end)
 
-        if v then
-            pcall(function()
-                Window.BackgroundImage = BgImage
-                Window.BackgroundImageTransparency = BgTransValue
-            end)
-        else
-            pcall(function()
-                Window.BackgroundImage = ""
-            end)
-        end
+        ApplyBgImage()
     end
 })
 
@@ -8852,11 +9288,20 @@ local BgPresetNames = {
     "你懂的3",
     "罪恶王冠楪祈",
     "罪恶王冠楪祈2",
+    "蔚蓝档案普通",
+    "萝莉（黄色）",
+    "萝莉（兽娘）",
+    "少司缘（三星堆）",
+    "少司缘（小狐娘）",
+    "少司缘（小狐娘2）",
+    "云缨（黄色）",
+    "姬小满（淀粉肠联动）",
+    "王者（美图）",
 }
 
 TabConfig:Dropdown({
     Title = "背景图预设",
-    Desc = "选择预设背景重启脚本生效",
+    Desc = "选择预设背景立即生效",
     Values = BgPresetNames,
     Default = SavedBgPreset,
     Callback = function(v)
@@ -8880,12 +9325,7 @@ TabConfig:Dropdown({
         end)
 
         -- 应用（仅在开启时生效）
-        if BackgroundEnabled then
-            pcall(function()
-                Window.BackgroundImage = BgImage
-                Window.BackgroundImageTransparency = BgTransValue
-            end)
-        end
+        ApplyBgImage()
 
         Notify("背景图", "已切换为 "..tostring(v), 2, "success")
     end
@@ -8893,8 +9333,8 @@ TabConfig:Dropdown({
 
 -- ================= 背景图透明度 =================
 TabConfig:Slider({
-    Title = "背景图透明度（重启脚本生效）",
-    Desc = "0=不透明  100=全透明",
+    Title = "背景图透明度",
+    Desc = "0=不透明  100=全透明（立即生效）",
     Value = {
         Min = 0,
         Max = 100,
@@ -8903,19 +9343,7 @@ TabConfig:Slider({
     Increment = 5,
     Callback = function(v)
         local realVal = v / 100
-        BgTransValue = realVal
-
-        pcall(function()
-            if writefile then
-                writefile(BgTransFile, tostring(realVal))
-            end
-        end)
-
-        if BackgroundEnabled then
-            pcall(function()
-                Window.BackgroundImageTransparency = realVal
-            end)
-        end
+        ApplyBgTransparency(realVal)
     end
 })
 TabConfig:Toggle({
@@ -8941,6 +9369,38 @@ TabConfig:Dropdown({
         _G.ApplyBorderMode(v)
 
         Notify("边框样式", "已切换为 "..tostring(v), 2, "success")
+    end
+})
+
+-- ================= 字体颜色 =================
+TabConfig:Colorpicker({
+    Title = "字体颜色",
+    Default = FontColor,
+    Callback = function(Value)
+        FontColor = Value
+        FontColorEnabled = true
+        pcall(function()
+            if writefile then
+                writefile(FontColorFile, string.format("%d,%d,%d",
+                    math.floor(Value.R * 255), math.floor(Value.G * 255), math.floor(Value.B * 255)))
+            end
+        end)
+        ApplyFontColor()
+        Notify("字体颜色", "已应用", 2, "success")
+    end
+})
+
+TabConfig:Toggle({
+    Title = "启用自定义字体颜色",
+    Value = FontColorEnabled,
+    Callback = function(v)
+        FontColorEnabled = v
+        if v then
+            ApplyFontColor()
+        else
+            pcall(function() WindUI:SetTheme(CurrentTheme) end)
+        end
+        Notify("字体颜色", v and "已启用自定义" or "已恢复默认", 2, "success")
     end
 })
 
@@ -9121,6 +9581,547 @@ do
         end,
     })
 end
+
+
+-- =====================================================================
+-- ================= 融合追加：Xa / Bk / YX 模块 =================
+-- 来源：Xa源码(通用/网络所有权/国内脚本/FE/开发工具)、Bk脚本(服务器实时检测)、YX脚本中心(自动翻译)
+-- 说明：loadstring 类 hub 直接使用原源码 URL；本地数值/逻辑功能按 WindUI 重写接入
+-- =====================================================================
+do
+    local XA_P   = game:GetService("Players")
+    local XA_LP  = XA_P.LocalPlayer
+    local XA_Run = game:GetService("RunService")
+    local XA_UIS = game:GetService("UserInputService")
+    local XA_HTTP= game:GetService("HttpService")
+    local XA_TP  = game:GetService("TeleportService")
+    local XA_Core= game:GetService("CoreGui")
+    local XA_SG  = XA_LP:WaitForChild("PlayerGui")
+    local XA_Mouse = XA_LP:GetMouse()
+    local XA_Lighting = game:GetService("Lighting")
+
+    local function XA_Char() return XA_LP.Character end
+    local function XA_Hum() local c = XA_Char() return c and c:FindFirstChildOfClass("Humanoid") end
+    local function XA_Root() local c = XA_Char() return c and c:FindFirstChild("HumanoidRootPart") end
+    local function XA_Cam() return workspace.CurrentCamera end
+    local function nf(t, c, d) pcall(function() Notify(t or "提示", c or "", d or 3) end) end
+    local function xload(url) local ok, err = pcall(function() loadstring(game:HttpGet(url))() end); if not ok then nf("加载失败", tostring(err), 4) end end
+    local function clip(s) pcall(function() setclipboard(s) end) end
+
+    -- ===================== Tab 1：Xa 通用 =====================
+    local TabXA_G = Window:Tab({ Title = "Xa通用", Icon = "user", Locked = false })
+
+    TabXA_G:Section({ Title = "本地玩家" })
+
+    TabXA_G:Slider({
+        Title = "移动速度", Value = { Min = 0, Max = 500, Default = 16 }, Increment = 1,
+        Callback = function(v) local h = XA_Hum() if h then h.WalkSpeed = v end end
+    })
+    TabXA_G:Slider({
+        Title = "跳跃高度", Value = { Min = 0, Max = 500, Default = 50 }, Increment = 1,
+        Callback = function(v) local h = XA_Hum() if h then h.JumpPower = v end end
+    })
+    TabXA_G:Slider({
+        Title = "重力", Value = { Min = 0, Max = 200, Default = 196 }, Increment = 1,
+        Callback = function(v) workspace.Gravity = v end
+    })
+    TabXA_G:Slider({
+        Title = "视角(FOV)", Value = { Min = 30, Max = 120, Default = 70 }, Increment = 1,
+        Callback = function(v) local c = XA_Cam() if c then c.FieldOfView = v end end
+    })
+    TabXA_G:Slider({
+        Title = "人物高度(HipHeight)", Value = { Min = 0, Max = 200, Default = 2 }, Increment = 1,
+        Callback = function(v) local h = XA_Hum() if h then h.HipHeight = v end end
+    })
+    TabXA_G:Toggle({ Title = "无限跳", Default = false, Callback = function(v)
+        _G.XA_InfJump = v
+        if v then
+            local c; c = XA_UIS.JumpRequest:Connect(function()
+                if _G.XA_InfJump and XA_Hum() then XA_Hum():ChangeState(Enum.HumanoidStateType.Jumping) end
+            end)
+            _G.XA_InfJumpConn = c
+        else
+            if _G.XA_InfJumpConn then _G.XA_InfJumpConn:Disconnect() end
+        end
+    end })
+    TabXA_G:Toggle({ Title = "穿墙", Default = false, Callback = function(v)
+        local c = XA_Char()
+        if c then for _, p in ipairs(c:GetDescendants()) do if p:IsA("BasePart") then p.CanCollide = not v end end end
+        _G.XA_Noclip = v
+        if v then
+            local conn; conn = XA_Run.Stepped:Connect(function()
+                if not _G.XA_Noclip then conn:Disconnect() return end
+                local ch = XA_Char() if ch then for _, p in ipairs(ch:GetDescendants()) do if p:IsA("BasePart") then p.CanCollide = false end end end
+            end); _G.XA_NoclipConn = conn
+        end
+    end })
+    TabXA_G:Toggle({ Title = "高亮(全亮)", Default = false, Callback = function(v)
+        for _, d in ipairs(XA_Lighting:GetDescendants()) do if d:IsA("PostEffect") then d.Enabled = not v end end
+    end })
+    TabXA_G:Toggle({ Title = "没有雾", Default = false, Callback = function(v)
+        XA_Lighting.FogEnd = v and 100000 or 1000
+        if v then for _, d in ipairs(XA_Lighting:GetDescendants()) do if d:IsA("Atmosphere") then pcall(function() d:Destroy() end) end end end
+    end })
+    TabXA_G:Toggle({ Title = "去除阴影", Default = false, Callback = function(v) XA_Lighting.GlobalShadows = not v end })
+    TabXA_G:Toggle({ Title = "隐身(伪)", Default = false, Callback = function(v)
+        local root = XA_Root()
+        if not root then return nf("隐身", "未检测到角色") end
+        if v then
+            local cf = root.CFrame
+            local seat = Instance.new("Seat", workspace)
+            seat.Anchored = false; seat.CanCollide = false; seat.Name = "_XA_InvisSeat"; seat.Transparency = 1
+            seat.Position = Vector3.new(-25.95, 84, 3537.55)
+            local w = Instance.new("Weld", seat)
+            w.Part0 = seat; w.Part1 = XA_Char():FindFirstChild("Torso") or XA_Char():FindFirstChild("UpperTorso")
+            seat.CFrame = cf; _G.XA_InvisSeat = seat
+        else
+            pcall(function() _G.XA_InvisSeat:Destroy() end)
+        end
+    end })
+    TabXA_G:Toggle({ Title = "锁定第一人称", Default = false, Callback = function(v) pcall(function() XA_LP.CameraMode = v and Enum.CameraMode.LockFirstPerson or Enum.CameraMode.Classic end) end })
+
+    TabXA_G:Section({ Title = "实用工具" })
+
+    TabXA_G:Button({ Title = "飞行v3", Callback = function() xload("https://raw.githubusercontent.com/Xingtaiduan/Script/main/Content/FlyGuiV3") end })
+    TabXA_G:Button({ Title = "F3X 建筑工具", Callback = function()
+        xload("https://raw.githubusercontent.com/Xingtaiduan/Script/refs/heads/main/Content/F3X") 
+    end })
+    TabXA_G:Button({ Title = "建筑工具(复制/删除)", Callback = function()
+        pcall(function()
+            local b1 = Instance.new("HopperBin"); b1.Name = "复制"; b1.BinType = Enum.BinType.Copy; b1.Parent = XA_LP.Backpack
+            local b2 = Instance.new("HopperBin"); b2.Name = "删除"; b2.BinType = Enum.BinType.Hammer; b2.Parent = XA_LP.Backpack
+        end)
+    end })
+    TabXA_G:Button({ Title = "Delta键盘", Callback = function() xload("https://raw.githubusercontent.com/Xingtaiduan/Script/refs/heads/main/Content/DeltaKeyBoard.lua") end })
+    TabXA_G:Button({ Title = "提高画质", Callback = function() xload("https://raw.githubusercontent.com/Xingtaiduan/Script/main/Content/HighQuality") end })
+    TabXA_G:Button({ Title = "光影", Callback = function() xload("https://raw.githubusercontent.com/MZEEN2424/Graphics/main/Graphics.xml") end })
+    TabXA_G:Button({ Title = "反挂机", Callback = function()
+        local function disableConn(c)
+            if c.Disable then c:Disable() else c:Disconnect() end
+        end
+        for _, c in ipairs(getconnections(XA_LP.Idled)) do pcall(disableConn, c) end
+        nf("反挂机", "已禁用挂机检测")
+    end })
+    TabXA_G:Button({ Title = "点击传送工具", Callback = function()
+        pcall(function()
+            local tool = Instance.new("Tool"); tool.RequiresHandle = false; tool.Name = "Xa点击传送"
+            tool.Activated:Connect(function() local r = XA_Root() if r then r.CFrame = XA_Mouse.Hit + Vector3.new(0, 2.5, 0) end end)
+            tool.Parent = XA_LP.Backpack
+        end)
+    end })
+    TabXA_G:Button({ Title = "复制位置", Callback = function() local r = XA_Root() if r then clip("CFrame.new(" .. tostring(r.Position) .. ")") nf("已复制", "角色位置已复制到剪贴板") end end })
+    TabXA_G:Button({ Title = "复制加入当前游戏脚本", Callback = function()
+        clip(string.format('game:GetService("TeleportService"):Teleport(%d, game:GetService("Players").LocalPlayer)', game.PlaceId))
+        nf("已复制", "加入当前游戏脚本")
+    end })
+    TabXA_G:Button({ Title = "复制加入当前服务器脚本", Callback = function()
+        clip(string.format('game:GetService("TeleportService"):TeleportToPlaceInstance(%d, "%s", game:GetService("Players").LocalPlayer)', game.PlaceId, game.JobId))
+        nf("已复制", "加入当前服务器脚本")
+    end })
+    TabXA_G:Button({ Title = "重新加入服务器", Callback = function()
+        pcall(function()
+            if #XA_P:GetPlayers() <= 1 then XA_LP:Kick("重新加入中..."); wait(); XA_TP:Teleport(game.PlaceId, XA_LP)
+            else XA_TP:TeleportToPlaceInstance(game.PlaceId, game.JobId, XA_LP) end
+        end)
+    end })
+    TabXA_G:Button({ Title = "玩家加入/退出提示", Callback = function() xload("https://raw.githubusercontent.com/boyscp/scriscriptsc/main/bbn.lua") end })
+
+    -- ===================== Tab 2：Xa 网络所有权 =====================
+    local TabXA_NW = Window:Tab({ Title = "Xa网络权", Icon = "box", Locked = false })
+    TabXA_NW:Section({ Title = "未锚固物体控制" })
+
+    local function getUnanchored()
+        local t = {}
+        for _, o in ipairs(workspace:GetDescendants()) do
+            if o:IsA("BasePart") and not o.Anchored and isnetworkowner and isnetworkowner(o) then table.insert(t, o) end
+        end
+        return t
+    end
+
+    TabXA_NW:Button({ Title = "传送未锚固物体至自己", Callback = function()
+        local r = XA_Root(); if not r then return end
+        local n = 0 for _, o in ipairs(getUnanchored()) do pcall(function() o.CFrame = r.CFrame end); n = n + 1 end
+        nf("已传送", "共 " .. n .. " 个物体至自己")
+    end })
+    TabXA_NW:Dropdown({ Title = "选择甩飞目标玩家", Options = (function() local t = {} for _, p in ipairs(XA_P:GetPlayers()) do if p ~= XA_LP then table.insert(t, p.Name) end end return t end)(), Default = nil, Callback = function() end })
+    TabXA_NW:Button({ Title = "甩飞未锚固物体给选中玩家", Callback = function()
+        nf("提示", "请在上方下拉选择目标后使用「甩飞(选中)」变体", 3)
+    end })
+    TabXA_NW:Button({ Title = "使用未锚固物体甩飞(最近玩家)", Callback = function()
+        local r = XA_Root(); if not r then return end
+        local nearest, nd = nil, math.huge
+        for _, p in ipairs(XA_P:GetPlayers()) do if p ~= XA_LP and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+            local d = (p.Character.HumanoidRootPart.Position - r.Position).Magnitude
+            if d < nd then nd = d; nearest = p end end end
+        if not nearest then return nf("甩飞", "附近无玩家") end
+        local ch = nearest.Character
+        for _, o in ipairs(getUnanchored()) do
+            if o.CanCollide then
+                task.spawn(function()
+                    while o.Parent and ch.Parent and ch.PrimaryPart and ch.PrimaryPart.Velocity.Magnitude < 200 do
+                        pcall(function() o.CFrame = ch:GetPivot(); o.Velocity = Vector3.new(0, 1000000, 0) end)
+                        task.wait()
+                    end
+                end)
+            end
+        end
+        nf("已甩飞", "物体已飞向 " .. nearest.Name)
+    end })
+
+    local dragAnchor = nil
+    TabXA_NW:Toggle({ Title = "拖动未锚固物体(点击抓取)", Default = false, Callback = function(v)
+        if v then
+            dragAnchor = Instance.new("Part")
+            dragAnchor.Name = "_XA_Drag"; dragAnchor.Anchored = true; dragAnchor.CanCollide = false; dragAnchor.Transparency = 1
+            dragAnchor.Size = Vector3.new(1,1,1); dragAnchor.Parent = workspace
+            local att = Instance.new("Attachment", dragAnchor)
+            local conn
+            conn = XA_Mouse.Button1Down:Connect(function()
+                local t = XA_Mouse.Target
+                if t and t:IsA("BasePart") and not t.Anchored then
+                    pcall(function()
+                        local pa = t:FindFirstChildOfClass("Attachment") or Instance.new("Attachment", t)
+                        local ap = t:FindFirstChildOfClass("AlignPosition") or Instance.new("AlignPosition", t)
+                        ap.MaxForce = 1e9; ap.MaxVelocity = 1e6; ap.Responsiveness = 200; ap.Attachment0 = pa; ap.Attachment1 = att
+                    end)
+                end
+            end)
+            local follow = XA_Run.RenderStepped:Connect(function()
+                if dragAnchor and dragAnchor.Parent then
+                    local cam = XA_Cam()
+                    if cam then dragAnchor.CFrame = cam.CFrame * CFrame.new(0, 0, -8) end
+                end
+            end)
+            _G.XA_DragConn = { conn, follow }
+        else
+            pcall(function()
+                for _, c in ipairs(_G.XA_DragConn or {}) do c:Disconnect() end
+                for _, o in ipairs(workspace:GetDescendants()) do
+                    if o:IsA("AlignPosition") and o.Attachment1 and o.Attachment1.Parent == dragAnchor then pcall(function() o:Destroy() end) end
+                end
+                dragAnchor:Destroy(); dragAnchor = nil
+            end)
+        end
+    end })
+    TabXA_NW:Slider({ Title = "扔出力度", Value = { Min = 0, Max = 500, Default = 350 }, Increment = 10, Callback = function(v) _G.XA_Throw = v end })
+
+    TabXA_NW:Section({ Title = "物体环绕(黑洞)" })
+    TabXA_NW:Toggle({ Title = "开启物体环绕", Default = false, Callback = function(v)
+        _G.XA_BH = v
+        if v then
+            local conn = XA_Run.Heartbeat:Connect(function()
+                if not _G.XA_BH then return end
+                local r = XA_Root(); if not r then return end
+                local i = tick()
+                for _, o in ipairs(getUnanchored()) do
+                    pcall(function()
+                        local ang = i + (o.Name:len() % 6)
+                        local rad = _G.XA_BHR or 50
+                        o.CFrame = r.CFrame * CFrame.new(math.cos(ang)*rad, 0, math.sin(ang)*rad)
+                    end)
+                end
+            end)
+            _G.XA_BHConn = conn
+        else
+            if _G.XA_BHConn then _G.XA_BHConn:Disconnect() end
+        end
+    end })
+    TabXA_NW:Slider({ Title = "环绕半径", Value = { Min = 5, Max = 100, Default = 50 }, Increment = 5, Callback = function(v) _G.XA_BHR = v end })
+
+    TabXA_NW:Section({ Title = "点击选择物品并传送" })
+    TabXA_NW:Input({ Title = "选择物品名称", Desc = "输入名称(支持 match 模糊)", Placeholder = "物品名", Callback = function(val)
+        _G.XA_Selected = {}
+        local n = 0
+        for _, o in ipairs(workspace:GetDescendants()) do
+            if o:IsA("BasePart") and isnetworkowner and isnetworkowner(o) and (o.Name == val or (val ~= "" and o.Name:match(val))) then
+                table.insert(_G.XA_Selected, o); n = n + 1
+            end
+        end
+        nf("已选择", "共 " .. n .. " 个物品")
+    end })
+    TabXA_NW:Button({ Title = "设置传送点(脚下)", Callback = function()
+        local r = XA_Root(); if not r then return end
+        pcall(function() if workspace:FindFirstChild("XA_Drop") then workspace.XA_Drop:Destroy() end end)
+        local p = Instance.new("Part"); p.Name = "XA_Drop"; p.Anchored = true; p.CanCollide = false; p.Shape = Enum.PartType.Ball
+        p.Size = Vector3.new(2,2,2); p.Color = Color3.fromRGB(0,217,255); p.Material = Enum.Material.ForceField; p.CFrame = r.CFrame; p.Parent = workspace
+        _G.XA_Drop = p
+    end })
+    TabXA_NW:Button({ Title = "传送所选物品至传送点", Callback = function()
+        if not _G.XA_Drop then return nf("提示", "请先设置传送点") end
+        local n = 0 for _, o in ipairs(_G.XA_Selected or {}) do pcall(function() o.CFrame = _G.XA_Drop.CFrame end); n = n + 1 end
+        nf("已传送", n .. " 个物品至传送点")
+    end })
+
+    TabXA_NW:Section({ Title = "NPC 控制" })
+    TabXA_NW:Dropdown({ Title = "选择NPC(按名搜索)", Options = {}, Default = nil, Callback = function() end })
+    TabXA_NW:Button({ Title = "杀死所有NPC", Callback = function()
+        local n = 0
+        for _, m in ipairs(workspace:GetDescendants()) do
+            if m:IsA("Model") and m:FindFirstChildOfClass("Humanoid") and not Players:GetPlayerFromCharacter(m) then
+                pcall(function() m:FindFirstChildOfClass("Humanoid").Health = 0 end); n = n + 1
+            end
+        end
+        nf("已杀死", n .. " 个NPC")
+    end })
+    TabXA_NW:Button({ Title = "带来所有NPC到脚下", Callback = function()
+        local r = XA_Root(); if not r then return end
+        local n = 0
+        for _, m in ipairs(workspace:GetDescendants()) do
+            if m:IsA("Model") and m:FindFirstChildOfClass("Humanoid") and m.PrimaryPart and not Players:GetPlayerFromCharacter(m) then
+                pcall(function() m:SetPrimaryPartCFrame(r.CFrame * CFrame.new(math.random(-5,5), 0, math.random(-5,5))) end); n = n + 1
+            end
+        end
+        nf("已带来", n .. " 个NPC")
+    end })
+
+    -- ===================== Tab 3：Xa 脚本库(国内脚本 + FE) =====================
+    local TabXA_Hub = Window:Tab({ Title = "Xa脚本库", Icon = "code", Locked = false })
+    TabXA_Hub:Section({ Title = "国内脚本中心" })
+    TabXA_Hub:Button({ Title = "脚本中心XC", Callback = function() xload("https://pastebin.com/raw/gemxHwA1") end })
+    TabXA_Hub:Button({ Title = "ScriptHub-银狼", Callback = function() xload("https://raw.githubusercontent.com/rbxluau/Roblox/main/ScriptHub.lua") end })
+    TabXA_Hub:Button({ Title = "落叶中心", Callback = function() xload("https://raw.githubusercontent.com/krlpl/Deciduous-center-LS/main/%E8%90%BD%E5%8F%B6%E4%B8%AD%E5%BF%83%E6%B7%B7%E6%B7%86.txt") end })
+    TabXA_Hub:Button({ Title = "情云", Callback = function() xload("https://raw.githubusercontent.com/ChinaQY/-/refs/heads/Main/%E6%83%85%E4%BA%91") end })
+    TabXA_Hub:Button({ Title = "导管中心", Callback = function() xload("https://raw.githubusercontent.com/useranewrff/roblox-/main/%E6%9D%A1%E6%AC%BE%E5%8D%8F%E8%AE%AE") end })
+
+    TabXA_Hub:Section({ Title = "FE 脚本" })
+    TabXA_Hub:Button({ Title = "Infinite Yield", Callback = function() xload("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source") end })
+    TabXA_Hub:Button({ Title = "Nameless Admin", Callback = function() xload("https://raw.githubusercontent.com/FilteringEnabled/NamelessAdmin/main/Source") end })
+    TabXA_Hub:Button({ Title = "CMD-X", Callback = function() xload("https://raw.githubusercontent.com/CMD-X/CMD-X/master/Source") end })
+    TabXA_Hub:Button({ Title = "C00lgui", Callback = function() xload("https://raw.githubusercontent.com/theawesomari0/c00lgui/main/c00lgui") end })
+    TabXA_Hub:Button({ Title = "1x1x1x1", Callback = function() xload("https://pastebin.com/raw/JipYNCht") end })
+    TabXA_Hub:Button({ Title = "Control (Xingtai)", Callback = function() xload("https://raw.githubusercontent.com/Xingtaiduan/Script/refs/heads/main/Content/Controller.lua") end })
+    TabXA_Hub:Input({ Title = "变玩家(输入名称)", Desc = "清空外观并应用目标用户形象", Placeholder = "用户名", Callback = function(name)
+        pcall(function()
+            XA_LP:ClearCharacterAppearance()
+            XA_Hum():ApplyDescriptionClientServer(XA_P:GetHumanoidDescriptionFromUserId(XA_P:GetUserIdFromNameAsync(name)))
+            nf("已变身", "变为 " .. name)
+        end)
+    end })
+    TabXA_Hub:Button({ Title = "后门扫描", Callback = function()
+        local found = 0
+        for _, r in ipairs(game:GetDescendants()) do
+            if r:IsA("RemoteEvent") or r:IsA("RemoteFunction") then
+                local tag = "_XADet" .. math.random(1,99999)
+                pcall(function()
+                    if r:IsA("RemoteEvent") then r:FireServer('workspace.Model.Name = "' .. tag .. '"')
+                    else spawn(function() r:InvokeServer('workspace.Model.Name = "' .. tag .. '"') end) end
+                end)
+                task.wait(0.05)
+                if pcall(function() return workspace:FindFirstChild(tag) end) and workspace:FindFirstChild(tag) then found = found + 1; pcall(function() workspace[tag]:Destroy() end) end
+            end
+        end
+        nf("后门扫描", found > 0 and ("发现 " .. found .. " 个可疑Remote") or "未发现明显后门")
+    end })
+
+    -- ===================== Tab 4：Xa 开发工具 =====================
+    local TabXA_Dev = Window:Tab({ Title = "Xa开发工具", Icon = "wrench", Locked = false })
+    TabXA_Dev:Section({ Title = "逆向/调试工具" })
+    TabXA_Dev:Button({ Title = "Dex Mobile", Callback = function() xload("https://raw.githubusercontent.com/Xingtaiduan/Script/refs/heads/main/Tools/DexMobile.lua") end })
+    TabXA_Dev:Button({ Title = "Simple Spy", Callback = function() xload("https://raw.githubusercontent.com/Xingtaiduan/Script/refs/heads/main/Tools/SimpleSpy.lua") end })
+    TabXA_Dev:Button({ Title = "Hydroxide", Callback = function()
+        local function hf(n) return loadstring(game:HttpGetAsync(("https://raw.githubusercontent.com/%s/MC-Hydroxide/%s/%s.lua"):format("Hosvile","revision",n)), n..".lua")() end
+        pcall(function() hf("init"); hf("ui/main") end)
+    end })
+    TabXA_Dev:Button({ Title = "UNC 测试", Callback = function() xload("https://raw.githubusercontent.com/Xingtaiduan/Script/main/Tools/UNCTest.lua") end })
+
+    TabXA_Dev:Section({ Title = "客户端保护/信息" })
+    TabXA_Dev:Button({ Title = "防踢(客户端)", Callback = function()
+        pcall(function()
+            local old = hookmetamethod(game, "__namecall", newcclosure(function(self, ...)
+                local m = getnamecallmethod()
+                if self == XA_LP and m:lower() == "kick" then nf("已拦截", "踢出被拦截"); return coroutine.yield() end
+                return old(self, ...)
+            end))
+            hookfunction(XA_LP.Kick, function() nf("已拦截", "踢出被拦截"); return coroutine.yield() end)
+            game.GuiService.ErrorMessageChanged:Connect(function(msg) pcall(function() game.GuiService:ClearError() end) end)
+            nf("防踢", "已启用客户端防踢")
+        end)
+    end })
+    TabXA_Dev:Toggle({ Title = "掉线警告", Default = false, Callback = function(v)
+        _G.XA_PingWarn = v
+        if v then
+            local last = tick()
+            local conn = XA_Run.Heartbeat:Connect(function()
+                if not _G.XA_PingWarn then conn:Disconnect() return end
+                if tick() - last > 5 then nf("警告", "您可能已经掉线") end
+            end)
+        end
+    end })
+    TabXA_Dev:Toggle({ Title = "显示FPS", Default = false, Callback = function(v)
+        if v then
+            local gui = Instance.new("ScreenGui"); gui.Name = "XAFPSGui"; gui.Parent = XA_Core; gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+            local lbl = Instance.new("TextLabel"); lbl.Parent = gui; lbl.BackgroundTransparency = 1; lbl.Position = UDim2.new(0.78,0,0,0); lbl.Size = UDim2.new(0,130,0,30)
+            lbl.Font = Enum.Font.SourceSans; lbl.TextSize = 14; lbl.TextColor3 = Color3.new(1,1,1); lbl.Text = "FPS: 0"
+            local n = 0
+            _G.XA_FPSConn = XA_Run.RenderStepped:Connect(function(dt) n = n + 1; if n >= 10 then lbl.Text = "FPS: " .. math.floor(1/dt); n = 0 end end)
+            _G.XA_FPSGui = gui
+        else
+            pcall(function() _G.XA_FPSConn:Disconnect(); _G.XA_FPSGui:Destroy() end)
+        end
+    end })
+    TabXA_Dev:Toggle({ Title = "显示NetworkOwner", Default = false, Callback = function(v) pcall(function() settings().Physics.AreOwnersShown = v end) end })
+    TabXA_Dev:Button({ Title = "保存当前位置", Callback = function() _G.XA_SaveCF = XA_Root() and XA_Root().CFrame; nf("已保存", "当前位置已记录") end })
+    TabXA_Dev:Button({ Title = "传送保存位置", Callback = function() if _G.XA_SaveCF then local c = XA_Char() if c then c:PivotTo(_G.XA_SaveCF); nf("已传送", "回到保存位置") end else nf("提示", "未保存位置") end end })
+    TabXA_Dev:Button({ Title = "打开Console", Callback = function() pcall(function() XA_Core:SetCore("DevConsoleVisible", true) end) end })
+    TabXA_Dev:Button({ Title = "开启最高FPS(120)", Callback = function() pcall(function() setfpscap(120) end) end })
+    TabXA_Dev:Button({ Title = "退出游戏", Callback = function() pcall(function() game:Shutdown() end) end })
+
+    -- ===================== Tab 5：服务器实时检测 (Bk) =====================
+    local TabServ = Window:Tab({ Title = "服务器检测", Icon = "server", Locked = false })
+    TabServ:Section({ Title = "实时服务器监测" })
+
+    local ServState = { servers = {}, lastUpdate = 0, isUpdating = false, listSection = nil, refreshConn = nil, interval = 30, maxServers = 20, sortBy = "ping", showEmpty = false, showFull = false, auto = true, enabled = false }
+
+    local function fetchServers()
+        local placeId = game.PlaceId
+        local out, cursor, pages = {}, "", 0
+        local maxPages = math.ceil(ServState.maxServers / 100)
+        while true do
+            local url = string.format("https://games.roblox.com/v1/games/%d/servers/Public?sortOrder=Asc&limit=100&cursor=%s", placeId, cursor)
+            local ok, body = pcall(function() return game:HttpGet(url, false, { ["User-Agent"] = "Roblox" }) end)
+            if not ok then break end
+            local dOk, data = pcall(XA_HTTP.JSONDecode, XA_HTTP, body)
+            if not dOk or not data or not data.data then break end
+            for _, s in ipairs(data.data) do
+                local okf = s.playing >= 0 and s.playing <= s.maxPlayers
+                if okf and (ServState.showEmpty or s.playing > 0) then
+                    if not (not ServState.showFull and s.playing >= s.maxPlayers) then
+                        table.insert(out, { id = s.id, playing = s.playing, maxPlayers = s.maxPlayers, ping = s.ping or 0, fps = s.fps or 0, name = s.name or "Unknown" })
+                    end
+                end
+            end
+            cursor = data.nextPageCursor
+            pages = pages + 1
+            if not cursor or pages >= maxPages then break end
+            if #out >= ServState.maxServers then break end
+        end
+        -- 排序
+        if ServState.sortBy == "ping" then table.sort(out, function(a,b) return a.ping < b.ping end)
+        elseif ServState.sortBy == "players" then table.sort(out, function(a,b) return a.playing > b.playing end)
+        elseif ServState.sortBy == "fps" then table.sort(out, function(a,b) return a.fps > b.fps end) end
+        -- 截断
+        while #out > ServState.maxServers do table.remove(out) end
+        return out
+    end
+
+    local function renderServers()
+        pcall(function() if ServState.listSection then ServState.listSection:Destroy() end end)
+        ServState.listSection = TabServ:Section({ Title = "服务器列表 (" .. #ServState.servers .. " 个)", Opened = true })
+        for i, s in ipairs(ServState.servers) do
+            local color = s.ping > 150 and "Red" or (s.ping > 80 and "Yellow" or "Green")
+            ServState.listSection:Paragraph({ Title = "服务器 #" .. i, Desc = string.format("延迟:%dms | 玩家:%d/%d | FPS:%d", s.ping, s.playing, s.maxPlayers, s.fps), Color = color, Icon = "server" })
+            local sid = s.id
+            ServState.listSection:Button({ Title = "加入服务器 #" .. i, Callback = function()
+                nf("正在加入", string.format("延迟:%dms 玩家:%d/%d", s.ping, s.playing, s.maxPlayers), 3)
+                pcall(function() XA_TP:TeleportToPlaceInstance(game.PlaceId, sid, XA_LP) end)
+            end })
+            ServState.listSection:Divider()
+        end
+    end
+
+    local function refreshServers()
+        if ServState.isUpdating then return end
+        ServState.isUpdating = true
+        nf("服务器监测", "正在刷新服务器列表...", 2)
+        ServState.servers = fetchServers()
+        ServState.lastUpdate = tick()
+        renderServers()
+        ServState.isUpdating = false
+        nf("服务器监测", "刷新完成，找到 " .. #ServState.servers .. " 个服务器", 2)
+    end
+
+    TabServ:Toggle({ Title = "实时服务器监测", Default = false, Callback = function(v)
+        ServState.enabled = v
+        if v then
+            refreshServers()
+            ServState.refreshConn = XA_Run.Heartbeat:Connect(function()
+                if not (ServState.enabled and ServState.auto) then return end
+                if tick() - ServState.lastUpdate >= ServState.interval then refreshServers() end
+            end)
+            nf("服务器监测", "已开始实时监测")
+        else
+            if ServState.refreshConn then ServState.refreshConn:Disconnect(); ServState.refreshConn = nil end
+            pcall(function() if ServState.listSection then ServState.listSection:Destroy(); ServState.listSection = nil end end)
+            nf("服务器监测", "已停止实时监测")
+        end
+    end })
+    TabServ:Toggle({ Title = "自动刷新服务器列表", Default = true, Callback = function(v) ServState.auto = v end })
+    TabServ:Slider({ Title = "刷新间隔(秒)", Value = { Min = 10, Max = 120, Default = 30 }, Increment = 5, Callback = function(v) ServState.interval = v end })
+    TabServ:Slider({ Title = "显示服务器数量", Value = { Min = 5, Max = 50, Default = 20 }, Increment = 5, Callback = function(v) ServState.maxServers = v end })
+    TabServ:Dropdown({ Title = "排序方式", Options = { "ping", "players", "fps" }, Default = "ping", Callback = function(v) ServState.sortBy = v; if ServState.enabled then refreshServers() end end })
+    TabServ:Toggle({ Title = "显示空服务器", Default = false, Callback = function(v) ServState.showEmpty = v; if ServState.enabled then refreshServers() end end })
+    TabServ:Toggle({ Title = "显示满服务器", Default = false, Callback = function(v) ServState.showFull = v; if ServState.enabled then refreshServers() end end })
+    TabServ:Button({ Title = "立即刷新服务器列表", Callback = function() refreshServers() end })
+
+    -- ===================== Tab 6：自动翻译 (YX) =====================
+    local TabTrans = Window:Tab({ Title = "自动翻译", Icon = "languages", Locked = false })
+    TabTrans:Section({ Title = "翻译设置" })
+
+    local Trans = { enabled = false, mode = "智能翻译", speed = 2, numbers = false, symbols = false, cache = {}, done = {}, lastScan = 0, conn = nil, target = "zh-CN", baseInterval = 2 }
+
+    local function isText(i) return i:IsA("TextLabel") or i:IsA("TextButton") or i:IsA("TextBox") end
+    local function skip(i)
+        if not i then return true end
+        if i == XA_Core or i:IsDescendantOf(XA_Core) then return true end
+        if i:FindFirstAncestorWhichIsA("TextChannel") then return true end
+        return false
+    end
+    local function translateGoogle(text, from, to)
+        local url = string.format("https://translate.googleapis.com/translate_a/single?client=gtx&sl=%s&tl=%s&dt=t&q=%s", from, to, XA_HTTP:UrlEncode(text))
+        local ok, body = pcall(function() return game:HttpGet(url, false, { ["User-Agent"] = "Mozilla/5.0" }) end)
+        if not ok or not body then return nil end
+        local dOk, data = pcall(XA_HTTP.JSONDecode, XA_HTTP, body)
+        if not dOk or not data or not data[1] then return nil end
+        local res = ""
+        for _, part in ipairs(data[1]) do if part[1] then res = res .. part[1] end end
+        return res ~= "" and res or nil
+    end
+    local function transText(text)
+        if Trans.cache[text] then return Trans.cache[text] end
+        if text == "" then return text end
+        if not Trans.numbers and text:match("^[%d%.%%,%s:/]+$") then return text end
+        if not Trans.symbols and text:match("^[^%w%s]+$") then return text end
+        local t = translateGoogle(text, "auto", Trans.target)
+        if t then Trans.cache[text] = t end
+        return t or text
+    end
+    local function scan(root)
+        local now = tick()
+        if now - Trans.lastScan < Trans.baseInterval / Trans.speed then return end
+        Trans.lastScan = now
+        for _, d in ipairs(root:GetDescendants()) do
+            if isText(d) and not Trans.done[d] and not skip(d) then
+                local orig = d.Text
+                if orig and orig ~= "" then
+                    Trans.done[d] = true
+                    local tr = transText(orig)
+                    if tr and tr ~= orig then pcall(function() d.Text = tr end) end
+                end
+            end
+        end
+    end
+    TabTrans:Paragraph({ Title = "使用提示", Desc = "先开启本翻译，再加载需要翻译的脚本；部分特殊UI无法翻译。" })
+    TabTrans:Dropdown({ Title = "翻译模式", Options = { "智能翻译", "仅翻译英文", "仅翻译日文", "仅翻译韩文", "快速翻译" }, Default = "智能翻译", Callback = function(v) Trans.mode = v end })
+    TabTrans:Toggle({ Title = "启用自动翻译", Default = false, Callback = function(v)
+        Trans.enabled = v
+        if v then
+            pcall(function() scan(XA_LP:WaitForChild("PlayerGui")) end)
+            Trans.conn = XA_Run.Heartbeat:Connect(function() if Trans.enabled then pcall(function() scan(XA_LP.PlayerGui) end) end end)
+            nf("自动翻译", "已开启 -> " .. Trans.target)
+        else
+            if Trans.conn then Trans.conn:Disconnect(); Trans.conn = nil end
+            nf("自动翻译", "已关闭")
+        end
+    end })
+    TabTrans:Slider({ Title = "翻译速度", Value = { Min = 1, Max = 5, Default = 2 }, Increment = 1, Callback = function(v) Trans.speed = v end })
+    TabTrans:Toggle({ Title = "翻译数字", Default = false, Callback = function(v) Trans.numbers = v end })
+    TabTrans:Toggle({ Title = "翻译纯符号", Default = false, Callback = function(v) Trans.symbols = v end })
+    TabTrans:Button({ Title = "清除翻译缓存", Callback = function() Trans.cache = {}; Trans.done = {}; nf("已清除", "翻译缓存已清空") end })
+
+    nf("融合追加", "已加载 Xa通用/网络权/脚本库/开发工具/服务器检测/自动翻译 共 6 个模块", 4)
+end
+-- ================= 融合追加结束 =================
+
 
 WindUI:Notify({
     Title = "脚本加载成功",
