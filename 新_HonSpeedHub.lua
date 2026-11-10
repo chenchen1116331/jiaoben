@@ -1,5 +1,5 @@
 local _pr = (type(print) == "function") and print or (type(warn) == "function" and warn) or function() end
-_pr("[HON SPEED HUB] 载入中 · v5.83 · 若只看到这一行说明文件在中途中断")
+_pr("[HON SPEED HUB] 载入中 · v5.86 · 若只看到这一行说明文件在中途中断")
 local twait  = (type(task) == "table" and task.wait)  or wait  or function() end
 local tspawn = (type(task) == "table" and task.spawn) or spawn or function(f, ...) return f(...) end
 if type(twait) ~= "function" then twait = function() end end
@@ -101,7 +101,7 @@ local State = {
 	Stealth = false, StealthHideGame = false,
 	CamNoclip = false, AirWalk = false,
 	BlackHole = false, BlackHoleForce = 60, HeroFly = false, Car = false,
-	EngineOutline = true, Trail = false, CloneArmy = false, OrbitFx = false,
+	EngineOutline = false, Trail = false, CloneArmy = false, OrbitFx = false,  -- v5.86：引擎描边默认关，避免脚本一开身上就出现白色描边方块（用户多次反馈“身体上白色方块”= HonSpeedHL，它默认开着且随角色生死重建）；开关保留在引擎页「引擎描边 OUTLINE」，想用随时开
 	HeadRide = false, Shake = false, SpinCam = false, Magnet = false,
 	ThirdPerson = false, NoFall = false, ShowHP = false, ShowFunList = false,
 	AntiKB = false, AntiStun = false, Countdown = false,
@@ -302,7 +302,7 @@ label({ Text = "HON SPEED HUB", Font = Enum.Font.GothamBold, TextSize = 21,
 	TextColor3 = Color3.fromRGB(238, 243, 255),
 	Position = UDim2.new(0, 36, 0, 16), Size = UDim2.new(0, 200, 0, 24),
 	TextXAlignment = Enum.TextXAlignment.Left }, Header)
-label({ Text = "Universal Hub  ·  W / V / CF  ·  v5.83", Font = Enum.Font.Gotham, TextSize = 11,
+label({ Text = "Universal Hub  ·  W / V / CF  ·  v5.86", Font = Enum.Font.Gotham, TextSize = 11,
 	TextColor3 = Color3.fromRGB(140, 149, 172),
 	Position = UDim2.new(0, 36, 0, 42), Size = UDim2.new(0, 240, 0, 16),
 	TextXAlignment = Enum.TextXAlignment.Left }, Header)
@@ -335,8 +335,14 @@ pcall(function() if type(task) == "table" and task.delay then task.delay(2, refr
 ServerTag.MouseButton1Click:Connect(function()
 	local j = jobIdText()
 	pcall(function()
-		if type(setclipboard) == "function" then setclipboard(j)
-		elseif type(writeclipboard) == "function" then writeclipboard(j) end
+		-- 多执行器兼容：不同注入器暴露的剪贴板 API 名字不一，逐个试到第一个可用的为止
+		local fns = {}
+		if type(setclipboard) == "function" then table.insert(fns, setclipboard) end
+		if type(writeclipboard) == "function" then table.insert(fns, writeclipboard) end
+		if type(syn) == "table" and type(syn.setclipboard) == "function" then table.insert(fns, syn.setclipboard) end
+		if type(getgenv) == "function" and type(getgenv().setclipboard) == "function" then table.insert(fns, getgenv().setclipboard) end
+		if type(_G) == "table" and type(_G.setclipboard) == "function" then table.insert(fns, _G.setclipboard) end
+		for _, f in ipairs(fns) do if type(f) == "function" then pcall(f, j); break end end
 	end)
 	if notify then notify("已复制服务器 ID：" .. j, Color3.fromRGB(120, 226, 160)) end
 end)
@@ -372,6 +378,17 @@ iconBtn("×", -34, Color3.fromRGB(255, 108, 118), function()
 end)
 -- ---------- 更新公告 ----------
 CHANGELOG = {
+	{ v = "v5.86", t = {
+"修复 · 身体上「白色正方形方块」：用户多次反馈开启脚本后身上出现白色方块、死一次消失再死（重生）又出现。根因不是叠加 bug，而是「引擎描边 OUTLINE」（HonSpeedHL 自描边）此前默认开启（State.EngineOutline=true），它挂在本地角色上、随角色生死重建——脚本一开就显示、死亡时 Died 钩子 clearFX 销毁、重生又 buildFX 重建，表现为「开启即出现、死一次消失、重生又出现」。已把引擎描边默认改为关闭（State.EngineOutline=false，并同步引擎页开关初始态为关、buildFX 重建时按开关设 Highlight.Enabled 避免重生瞬间闪现），开关保留在引擎页「引擎描边 OUTLINE」，想用随时开",
+	}},
+	{ v = "v5.85", t = {
+"修复 · 死亡/重生后身体上 Highlight 方框交替叠加：根因是 buildFX 创建新 Highlight/Emitter 前未销毁旧的，而 selfHeal 每帧在 Emitter 短暂失效时重复 buildFX（且不先清旧），导致角色上方框越叠越多（死亡随角色销毁全消失、重生又出现，表现为「每次死亡多一个/反复出现」）；已在 buildFX 开头加 clearFX 做幂等，无论 bindCharacter 还是 selfHeal 调用都保证角色上最多一个方框",
+"改进 · 给「技能碰撞箱记录」小窗加最小化键（标题栏 – 钮，接通用 winMinSetup，点一下缩成只剩标题条、再点展开；标题栏与 ×保留，列表/状态/清空/删除收缩时隐藏）；给移动端飞行 HON_Fly 新增独立小窗（标题栏可拖动 + 状态/模式/速度显示 + ×关闭联动辅助页「飞行（移动端）」开关 + –最小化键），开启飞行即弹出、关闭即收起",
+"修复 · 服务器 ID 点击复制增强多执行器兼容：依次尝试 setclipboard / writeclipboard / syn.setclipboard / getgenv().setclipboard / _G.setclipboard，避免部分注入器下复制静默失效（此前仅 setclipboard/writeclipboard，私人服/本地服或某些执行器复制不生效）",
+	}},
+	{ v = "v5.84", t = {
+"改进 · 技能碰撞箱记录改为「手动开关控制显隐」：此前是脚本加载即弹窗、且「删除」会彻底销毁且无重新打开入口，用户无法手动关闭/开启。现新增辅助页「技能碰撞箱记录」开关（makeToggle，默认关），开启=弹出小窗并开始记录、关闭=仅隐藏窗口（保留记录与监听，随时再开）；窗口内「删除」按钮语义改为彻底停止记录并销毁面板，并自动把开关归位为关，之后重开开关可再次重建。新增 HON_HB.Show()/Hide() 显隐控制、HON_HB.ToggleApi 记录开关引用供删除时同步；辅助页 PAGE_H[2] 由 940 调到 1000 容纳新开关（原 892 一键触碰按钮下方）",
+	}},
 	{ v = "v5.83", t = {
 "新增 · 技能碰撞箱记录 / Hitbox Recorder（独立小窗）：客户端拿不到服务端真实碰撞箱（按键只是触发信号），故在按键瞬间记录本地玩家附近 ≤40 格内存活目标的位置与距离作为碰撞箱近似参考。维护按键→技能名映射（数字 1~5 + 字母 Q E R F），监听 UserInputService.InputBegan（忽略已处理输入与文本框聚焦），取最近目标为记录对象，以技能名为键写入记录表、同名技能覆盖旧记录不新增第二条；每次写入/覆盖后刷新列表（显示技能名/目标名/距离）。小窗含标题栏（按住可拖动）、滚动列表（宽减20/高200/UIListLayout 间距3）、状态栏、清空按钮、删除按钮；点列表项给对应目标角色挂 Highlight 并清除上一个，目标离开/死亡自动置灰不可点；本地角色重生清空全部记录+清高亮+刷新；删除按钮停止记录并销毁面板；卸载脚本（HON_SHUTDOWN）时自清。屏幕坐标/挂载/销毁全部 pcall 包裹，单目标报错不中断整体。ScreenGui 用 ResetOnSpawn=false / IgnoreGuiInset=true / DisplayOrder=2147483647。复用 new/corner/label/bindClick/attachDrag，状态集中在全局表 HON_HB（不加 local）以规避单函数 200 局部变量上限；脚本加载即弹出并开始记录，点「删除」可关闭",
 	}},
@@ -873,7 +890,7 @@ do
 end
 local PageHost = new("Frame", { Name = "Content", Size = UDim2.new(0, 464, 0, 336), Position = UDim2.new(0, 180, 0, 84),
 	BackgroundTransparency = 1, BorderSizePixel = 0, ClipsDescendants = true, Parent = Main })
-local PAGE_H = { 620, 940, 500, 680, 560, 1280, 560, 660, 1260, 1000, 600, 280 }
+local PAGE_H = { 620, 1000, 500, 680, 560, 1280, 560, 660, 1260, 1000, 600, 280 }
 PageList = {}
 local function mkPage(i, visible)
 	return new("ScrollingFrame", { Name = "Page" .. tostring(i),
@@ -1098,7 +1115,7 @@ local TeleportToggle = makeToggle(PageEng, 456, "瞬移闪现 TP", "仅 CF · �
 	State.CFTeleport = v
 	CFAccum = 0
 end)
-OutlineTgl = makeToggle(PageEng, 504, "引擎描边 OUTLINE", "角色轮廓跟着引擎颜色", true, function(v)
+OutlineTgl = makeToggle(PageEng, 504, "引擎描边 OUTLINE", "角色轮廓跟着引擎颜色", false, function(v)
 	State.EngineOutline = v
 	if Highlight and Highlight.Parent then
 		Highlight.Enabled = v
@@ -5363,6 +5380,7 @@ function clearFX()
 	pcall(HON_clearVisualResidue, Character)
 end
 function buildFX(char, hrp)
+	clearFX()  -- 幂等：建新前先清掉旧的 Highlight/Emitter，避免死亡/重生时 selfHeal(5532) 重复 buildFX 在角色上叠加方框
 	if not char or not hrp then return end
 	Highlight = Instance.new("Highlight")
 	Highlight.Name = "HonSpeedHL"
@@ -5370,6 +5388,7 @@ function buildFX(char, hrp)
 	Highlight.OutlineTransparency = 0.4
 	Highlight.OutlineColor = Mode().Accent
 	Highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+	Highlight.Enabled = State.EngineOutline  -- v5.86：重建时尊重开关，离线描边不会重生瞬间闪现（默认 EngineOutline=false 即不显示）
 	Highlight.Parent = char
 	Emitter = Instance.new("ParticleEmitter")
 	Emitter.Name = "HonSpeedFX"
@@ -6925,7 +6944,7 @@ function windBuild(lib)
 	if not W then return false end
 	WindWin = W
 	-- 再补一层保险（夜脚本同款）：CreateWindow 可能被库吞掉背景参数，建完强制再写一次
-	windSafe("Tag", function() W:Tag({ Title = "v5.83", Color = "ElementBackground" }) end)
+	windSafe("Tag", function() W:Tag({ Title = "v5.86", Color = "ElementBackground" }) end)
 	-- 引擎页
 	local tEng = nil
 	windSafe("Tab:引擎", function() tEng = W:Tab({ Title = "引擎", Icon = "gauge" }) end)
@@ -7323,6 +7342,10 @@ function touchAllInteractables()
 	if notify then notify("已触发 " .. n .. " 个可触碰物体", Color3.fromRGB(255, 176, 32)) end
 	return n
 end
+-- 技能碰撞箱记录 开关（手动开启/关闭小窗显隐）
+HonHitboxTgl = makeToggle(PageAssist, 940, "技能碰撞箱记录", "独立小窗 · 记录按键瞬间附近目标距离（≤40格）", false, function(v)
+	if v then HON_HB.Show() else HON_HB.Hide() end
+end)
 local TouchAllBtn = new("TextButton", { Text = "一键触碰所有可触碰物体", Font = Enum.Font.GothamBold, TextSize = 11,
 	TextColor3 = Mode().Accent, BackgroundColor3 = Color3.fromRGB(255, 255, 255), BackgroundTransparency = 0.9,
 	BorderSizePixel = 0, AutoButtonColor = false,
@@ -9050,10 +9073,41 @@ local function HON_FlyCleanup()
 	HON_FlyBV, HON_FlyBG = nil, nil
 end
 
+-- v5.84：HON_Fly（移动端飞行）独立小窗（与 FlyWin 同款样式）：开启飞行即弹出，
+-- 标题栏可拖动 + 状态显示 + ×关闭（联动辅助页「飞行（移动端）」开关）+ –最小化键。
+HON_FlyWin = new("Frame", { Size = UDim2.new(0, 230, 0, 150), Position = UDim2.new(1, -260, 0, 96),
+	BackgroundColor3 = Color3.fromRGB(13, 15, 23), BackgroundTransparency = 0.06,
+	BorderSizePixel = 0, Visible = false, Active = true, Parent = Gui })
+saveWinDefault(HON_FlyWin)
+corner(HON_FlyWin, 16)
+new("UIStroke", { Color = Modes[1].Accent, Transparency = 0.5, Thickness = 1, Parent = HON_FlyWin })
+HON_FlyBar = new("Frame", { Size = UDim2.new(1, 0, 0, 30), BackgroundTransparency = 1, Parent = HON_FlyWin })
+label({ Text = "飞行 FLY MOBILE", Font = Enum.Font.GothamBold, TextSize = 13, TextColor3 = Color3.fromRGB(238, 243, 255),
+	Position = UDim2.new(0, 12, 0, 6), Size = UDim2.new(0, 140, 0, 20), TextXAlignment = Enum.TextXAlignment.Left }, HON_FlyBar)
+HON_FlyClose = new("TextButton", { Text = "×", Font = Enum.Font.GothamBold, TextSize = 16,
+	TextColor3 = Color3.fromRGB(255, 108, 118), BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+	BackgroundTransparency = 0.94, BorderSizePixel = 0, AutoButtonColor = false,
+	Position = UDim2.new(1, -30, 0, 3), Size = UDim2.new(0, 24, 0, 24), Parent = HON_FlyBar })
+corner(HON_FlyClose, 8)
+HON_FlyClose.MouseButton1Click:Connect(function() if HON_FlyTgl then pcall(function() HON_FlyTgl.Set(false) end) end end)
+HON_FlyMinBtn = new("TextButton", { Text = "–", Font = Enum.Font.GothamBold, TextSize = 14,
+	TextColor3 = Color3.fromRGB(150, 158, 180), BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+	BackgroundTransparency = 0.9, BorderSizePixel = 0, AutoButtonColor = false,
+	Position = UDim2.new(1, -58, 0, 3), Size = UDim2.new(0, 24, 0, 24), Parent = HON_FlyBar })
+corner(HON_FlyMinBtn, 8)
+HON_FlyStat = label({ Text = "状态：待命", Font = Enum.Font.Gotham, TextSize = 11, TextColor3 = Color3.fromRGB(150, 158, 180),
+	Position = UDim2.new(0, 12, 0, 42), Size = UDim2.new(1, -24, 0, 18), TextXAlignment = Enum.TextXAlignment.Left }, HON_FlyWin)
+label({ Text = "摇杆前后左右 · 镜头朝向即飞行方向；「普通飞行模式」锁定朝向", Font = Enum.Font.Gotham, TextSize = 10,
+	TextColor3 = Color3.fromRGB(132, 141, 163), Position = UDim2.new(0, 12, 0, 68),
+	Size = UDim2.new(1, -24, 0, 44), TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top }, HON_FlyWin)
+pcall(attachDrag, HON_FlyWin, HON_FlyBar, UserInputService, nil, "WinLock")
+winMinSetup(HON_FlyWin, HON_FlyMinBtn, { HON_FlyBar })
+
 function HON_stopFly()
 	local wasOn = HON_FlyOn
 	HON_FlyOn = false
 	HON_FlyCleanup()
+	if HON_FlyWin then HON_FlyWin.Visible = false end   -- 小窗随飞行关闭收起
 	if not wasOn then return end
 	pcall(function()
 		if Humanoid and Humanoid.Parent then
@@ -9101,6 +9155,8 @@ function HON_startFly()
 	HON_FlyBV, HON_FlyBG = bv, bg
 	HON_FlyLockCF = (hrp.CFrame - hrp.Position)
 	HON_FlyOn = true
+	if HON_FlyWin then HON_FlyWin.Visible = true end   -- 开启飞行即弹出小窗
+	if HON_FlyStat then pcall(function() HON_FlyStat.Text = "状态：飞行中 · 模式" .. (HON_FlyMode == 2 and "2 普通" or "1 跟随镜头") .. " · 速度 " .. tostring(HON_FlySpeed or 60) end) end
 	-- e)~h) RenderStepped 每帧读取 MoveDirection，相机相对 → 世界空间速度；BodyGyro 朝向每帧更新
 	HON_FlyConn = RunService.RenderStepped:Connect(function()
 		pcall(function()
@@ -9197,13 +9253,15 @@ end
 -- ▲▲▲ 新增功能：技能碰撞箱记录 / Hitbox Recorder（v5.83）▲▲▲
 -- 客户端拿不到服务端真实碰撞箱（按键只是触发信号）。本功能在按键瞬间记录附近
 -- 存活目标的位置/距离，作为碰撞箱近似参考。同名技能只保留最新一条；窗口即界面，
--- 出现即记录中，点「删除」停止记录并销毁面板。所有销毁/挂载均包 pcall。
+-- 由辅助页「技能碰撞箱记录」开关控制显隐：开启=弹出小窗并开始记录，关闭=仅隐藏窗口（保留记录/监听，随时再开），
+-- 窗口内「删除」=彻底停止记录并销毁面板，并自动把开关归位为关；之后重新开启开关可再次重建。所有销毁/挂载均包 pcall。
 -- 说明：HON_HB 用全局表（不加 local），因为本脚本单函数已逼近 Lua 的 200 局部变量上限，
 -- 复用现有 HON_ 功能「全局函数」的写法，避免再占一个 main 函数 local 名额。
 HON_HB = {}
 HON_HB.Gui, HON_HB.Frame, HON_HB.Scroll, HON_HB.Status = nil, nil, nil, nil
 HON_HB.InputConn, HON_HB.CharConn = nil, nil
 HON_HB.Records, HON_HB.Items, HON_HB.HL, HON_HB.Active = {}, {}, nil, false
+HON_HB.ToggleApi = nil   -- 指向辅助页开关 api，删除面板时同步归位
 
 -- 按键 -> 技能名（数字 1~5 + 字母 Q E R F）
 HON_HB.Keys = {
@@ -9344,7 +9402,21 @@ function HON_HB.OnRespawn()
 	HON_HB.Refresh()
 end
 
--- 销毁：停止记录、断开监听、清高亮、销毁面板
+-- 显隐控制：由辅助页开关调用。开启=弹出/显示并开始记录；关闭=仅隐藏窗口、停止记录（保留监听与记录，随时再开）
+function HON_HB.Show()
+	if HON_HB.Gui then
+		if HON_HB.Frame then HON_HB.Frame.Visible = true end
+		HON_HB.Active = true
+		return
+	end
+	HON_HB.Build()   -- 首次创建
+end
+function HON_HB.Hide()
+	HON_HB.Active = false
+	if HON_HB.Frame then HON_HB.Frame.Visible = false end
+end
+
+-- 销毁：停止记录、断开监听、清高亮、销毁面板（删除按钮调用，会同步把开关归位为关）
 function HON_HB.Destroy()
 	HON_HB.Active = false
 	pcall(function() if HON_HB.InputConn then HON_HB.InputConn:Disconnect() end end)
@@ -9355,9 +9427,10 @@ function HON_HB.Destroy()
 	pcall(function() if HON_HB.Gui then HON_HB.Gui:Destroy() end end)
 	HON_HB.Gui, HON_HB.Frame, HON_HB.Scroll, HON_HB.Status = nil, nil, nil, nil
 	HON_HB.InputConn, HON_HB.CharConn = nil, nil
+	pcall(function() if HON_HB.ToggleApi then HON_HB.ToggleApi.Set(HON_HB.ToggleApi, false, true) end end)
 end
 
--- 构建面板（窗口即界面，出现即记录中）
+-- 构建面板（首次创建；之后由 Show/Hide 控制显隐）
 function HON_HB.Build()
 	if HON_HB.Gui then return end
 	HON_HB.Gui = new("ScreenGui", {
@@ -9375,9 +9448,15 @@ function HON_HB.Build()
 		Size = UDim2.new(1, 0, 0, 30), BackgroundColor3 = Color3.fromRGB(28, 31, 42),
 		BorderSizePixel = 0, Font = Enum.Font.GothamBold, TextSize = 13,
 		TextColor3 = Color3.fromRGB(235, 238, 245), Text = "技能碰撞箱记录",
-		TextXAlignment = Enum.TextXAlignment.Center, Parent = HON_HB.Frame,
+		TextXAlignment = Enum.TextXAlignment.Left, Parent = HON_HB.Frame,
 	})
 	corner(bar, 8)
+	-- 最小化键（– 缩成只剩标题条，再点展开；标题栏与 ×保留）
+	local minBtn = new("TextButton", { Text = "–", Font = Enum.Font.GothamBold, TextSize = 14,
+		TextColor3 = Color3.fromRGB(150, 158, 180), BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+		BackgroundTransparency = 0.9, BorderSizePixel = 0, AutoButtonColor = false,
+		Position = UDim2.new(1, -30, 0, 3), Size = UDim2.new(0, 24, 0, 24), Parent = bar })
+	corner(minBtn, 8)
 	-- 滚动列表（宽减 20、高 200、UIListLayout 间距 3）
 	HON_HB.Scroll = new("ScrollingFrame", {
 		Size = UDim2.new(1, -20, 0, 200), Position = UDim2.new(0, 10, 0, 34),
@@ -9433,11 +9512,14 @@ function HON_HB.Build()
 		end
 	end)
 	HON_HB.Refresh()
+	winMinSetup(HON_HB.Frame, minBtn, { bar })   -- 标题栏 + 最小化键收缩时保持可见，其余（列表/状态/清空/删除）隐藏
 end
 
-HON_HB.Build()   -- 脚本加载即弹出小窗并开始记录（点「删除」可关闭）
+-- 注意：不再脚本加载即弹，改由辅助页「技能碰撞箱记录」开关控制（makeToggle 默认 false 不触发 onChange）。
+-- 开关开启 -> HON_HB.Show()；关闭 -> HON_HB.Hide()。记录 HON_HB 开关引用供删除时归位：
+pcall(function() HON_HB.ToggleApi = HonHitboxTgl end)
 -- ▼▼▼ 技能碰撞箱记录 / Hitbox Recorder（v5.83）▼▼▼
 
-_pr("[HON SPEED HUB] v5.83 已加载 · 完整文件约 9444 行 · 若你的脚本远大于此行数说明粘贴重复了")
+_pr("[HON SPEED HUB] v5.83 已加载 · 完整文件约 9526 行 · 若你的脚本远大于此行数说明粘贴重复了")
 
 
