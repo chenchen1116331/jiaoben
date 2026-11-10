@@ -10119,6 +10119,185 @@ do
     TabTrans:Button({ Title = "清除翻译缓存", Callback = function() Trans.cache = {}; Trans.done = {}; nf("已清除", "翻译缓存已清空") end })
 
     nf("融合追加", "已加载 Xa通用/网络权/脚本库/开发工具/服务器检测/自动翻译 共 6 个模块", 4)
+
+    -- ===================== Tab 通用2：BS 源码精选（通用功能 + 后门 + 其他，已去重） =====================
+    local TabG2 = Window:Tab({ Title = "通用2", Icon = "box", Locked = false })
+
+    -- 通用功能（BS 独有，已剔除与 Xa通用 重复的飞行/穿墙/隐身/无限跳/点击传送等）
+    TabG2:Section({ Title = "通用功能（BS精选）" })
+    TabG2:Button({ Title = "肘飞", Callback = function() xload("https://pastebin.com/raw/acUSx6XU") end })
+    TabG2:Button({ Title = "在聊天框中进行图画(Pro版)", Callback = function() xload("https://pastebin.com/raw/Zmb2u7Pp") end })
+    TabG2:Button({ Title = "撞飞碰到的人", Callback = function() xload("https://raw.githubusercontent.com/0Ben1/fe/main/obf_5wpM7bBcOPspmX7lQ3m75SrYNWqxZ858ai3tJdEAId6jSI05IOUB224FQ0VSAswH.lua.txt") end })
+    TabG2:Button({ Title = "铁拳打人", Callback = function() xload("https://raw.githubusercontent.com/0Ben1/fe/main/obf_rf6iQURzu1fqrytcnLBAvW34C9N55kS9g9G3CKz086rC47M6632sEd4ZZYB0AYgV.lua.txt") end })
+    TabG2:Button({ Title = "透视", Callback = function() xload("https://raw.githubusercontent.com/Lucasfin000/SpaceHub/main/UESP") end })
+    TabG2:Button({ Title = "甩飞所有人", Callback = function() xload("https://pastebin.com/raw/zqyDSUWX") end })
+    TabG2:Button({ Title = "滚动", Callback = function() xload("https://pastebin.com/raw/8U2YyZQE") end })
+    TabG2:Button({ Title = "认真反复横跳", Callback = function() xload("https://raw.githubusercontent.com/0Ben1/fe/main/obf_11l7Y131YqJjZ31QmV5L8pI23V02b3191sEg26E75472Wl78Vi8870jRv5txZyL1.lua.txt") end })
+    TabG2:Button({ Title = "工具包", Callback = function() xload("https://raw.githubusercontent.com/Bebo-Mods/BeboScripts/main/StandAwekening.lua") end })
+    TabG2:Button({ Title = "踏空行走", Callback = function() xload("https://raw.githubusercontent.com/GhostPlayer352/Test4/main/Float") end })
+    TabG2:Button({ Title = "选人甩飞", Callback = function() xload("https://raw.githubusercontent.com/GhostPlayer352/Test4/main/Auto%20Fling%20Player") end })
+    TabG2:Button({ Title = "爬墙", Callback = function() xload("https://pastebin.com/raw/zXk4Rq2r") end })
+    TabG2:Button({ Title = "让物体起飞(Q键)", Callback = function() xload("https://raw.githubusercontent.com/BOOSBS/ajduoxc/refs/heads/main/ajduoxcz") end })
+    TabG2:Button({ Title = "键盘脚本(第2种)", Callback = function() xload("https://raw.githubusercontent.com/Xxtan31/Ata/main/deltakeyboardcrack.txt") end })
+    TabG2:Button({ Title = "瞄准头部", Callback = function()
+        getgenv().Camlock_Settings = { Prediction=0, AimPart="Head", AutoPrediction=false, Notification=true, Button=true, AntiGroundShots=false, UnderGroundResolver=false, Version="2.5.1", Credits="space_0999", DiscordServer="discord.gg/SKhamGzTdn" }
+        xload("https://raw.githubusercontent.com/elxocasXD/Trip-Hub/main/Scripts/Cam%20Lock.lua")
+    end })
+    TabG2:Button({ Title = "瞄准身体", Callback = function()
+        getgenv().Camlock_Settings = { Prediction=0, AimPart="HumanoidRootPart", AutoPrediction=false, Notification=true, Button=true, AntiGroundShots=false, UnderGroundResolver=false, Version="2.5.1", Credits="space_0999", DiscordServer="discord.gg/SKhamGzTdn" }
+        xload("https://raw.githubusercontent.com/elxocasXD/Trip-Hub/main/Scripts/Cam%20Lock.lua")
+    end })
+    TabG2:Button({ Title = "子弹追踪(视角会变)", Callback = function()
+        pcall(function()
+            local Camera = workspace.CurrentCamera
+            local Players = game:GetService("Players")
+            local LocalPlayer = Players.LocalPlayer
+            local function GetClosestPlayer()
+                local Closest, Farthest = nil, math.huge
+                for _, v in pairs(Players:GetPlayers()) do
+                    if v ~= LocalPlayer and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
+                        local d = (LocalPlayer.Character.HumanoidRootPart.Position - v.Character.HumanoidRootPart.Position).Magnitude
+                        if d < Farthest then Farthest = d; Closest = v end
+                    end
+                end
+                return Closest
+            end
+            local mt = getrawmetatable(game); local old = mt.__namecall
+            setreadonly(mt, false)
+            mt.__namecall = newcclosure(function(obj, ...)
+                local method = getnamecallmethod(); local args = {...}
+                if tostring(method) == "FindPartOnRayWithIgnoreList" then
+                    local cp = GetClosestPlayer()
+                    if cp and cp.Character then
+                        args[1] = Ray.new(Camera.CFrame.Position, (cp.Character.Head.Position - Camera.CFrame.Position).Unit * (Camera.CFrame.Position - cp.Character.Head.Position).Magnitude)
+                    end
+                end
+                return old(obj, unpack(args))
+            end)
+            setreadonly(mt, true)
+            nf("子弹追踪", "已启用")
+        end)
+    end })
+    TabG2:Button({ Title = "吸人脚本(全局吸)", Callback = function()
+        pcall(function()
+            local L_1_ = true
+            local L_2_ = game.Players.LocalPlayer.Character.HumanoidRootPart
+            local L_3_ = L_2_.Position - Vector3.new(5,0,0)
+            game.Players.LocalPlayer:GetMouse().KeyDown:Connect(function(k)
+                if k == 'f' then L_1_ = not L_1_ end
+                if k == 'r' then L_2_ = game.Players.LocalPlayer.Character.HumanoidRootPart; L_3_ = L_2_.Position - Vector3.new(5,0,0) end
+            end)
+            for _, plr in pairs(game.Players:GetPlayers()) do
+                if plr ~= game.Players.LocalPlayer and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+                    game:GetService("RunService").RenderStepped:Connect(function()
+                        pcall(function()
+                            if L_1_ then
+                                plr.Backpack:ClearAllChildren()
+                                for _, t in pairs(plr.Character:GetChildren()) do if t:IsA("Tool") then t:Destroy() end end
+                                plr.Character.HumanoidRootPart.CFrame = CFrame.new(L_3_)
+                            end
+                        end)
+                    end)
+                end
+            end
+            nf("吸人", "已开启(按F暂停/恢复, 按R重置)")
+        end)
+    end })
+    local function G2_setHead(size)
+        _G.HeadSize = size; _G.Disabled = true
+        game:GetService("RunService").RenderStepped:Connect(function()
+            if _G.Disabled then
+                for _, v in pairs(game:GetService("Players"):GetPlayers()) do
+                    if v.Name ~= game.Players.LocalPlayer.Name and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
+                        pcall(function()
+                            v.Character.HumanoidRootPart.Size = Vector3.new(_G.HeadSize,_G.HeadSize,_G.HeadSize)
+                            v.Character.HumanoidRootPart.Transparency = 0.7
+                            v.Character.HumanoidRootPart.BrickColor = BrickColor.new("Really red")
+                            v.Character.HumanoidRootPart.Material = "Neon"
+                            v.Character.HumanoidRootPart.CanCollide = false
+                        end)
+                    end
+                end
+            end
+        end)
+    end
+    TabG2:Button({ Title = "范围-0", Callback = function() G2_setHead(0) end })
+    TabG2:Button({ Title = "范围-普通(30)", Callback = function() G2_setHead(30) end })
+    TabG2:Button({ Title = "范围-中等(100)", Callback = function() G2_setHead(100) end })
+    TabG2:Button({ Title = "范围-全图(500)", Callback = function() G2_setHead(500) end })
+    TabG2:Button({ Title = "范围-终极(2500)", Callback = function() G2_setHead(2500) end })
+    TabG2:Toggle({ Title = "定住自己", Default = false, Callback = function(v)
+        pcall(function()
+            if v then
+                for _, plr in pairs(game.Players:GetChildren()) do
+                    local R_C = Instance.new("BallSocketConstraint")
+                    R_C.Parent = game.Players.LocalPlayer.Character.HumanoidRootPart
+                    local hah = Instance.new("Attachment"); hah.Parent = game.Players[plr.Name].Character.HumanoidRootPart
+                    local hah2 = Instance.new("Attachment"); hah2.Parent = game.Players.LocalPlayer.Character.HumanoidRootPart
+                    R_C.Attachment0 = hah; R_C.Attachment1 = hah2; R_C.Visible = false
+                    task.wait(0.1)
+                end
+            else
+                for _, player in ipairs(game:GetService("Players"):GetPlayers()) do
+                    if player.Character then
+                        local hr = player.Character:FindFirstChild("HumanoidRootPart")
+                        if hr then
+                            for _, c in ipairs(hr:GetChildren()) do
+                                if c:IsA("Constraint") or c:IsA("Attachment") then c:Destroy() end
+                            end
+                        end
+                    end
+                end
+            end
+        end)
+    end })
+
+    -- 后门与黑客（脚本注入）
+    TabG2:Section({ Title = "后门与黑客（脚本注入）" })
+    TabG2:Button({ Title = "快乐中心", Callback = function() xload("https://pastebin.com/raw/8sv4bsPa") end })
+    TabG2:Button({ Title = "后门v6x注入器", Callback = function() xload("https://raw.githubusercontent.com/iK4oS/backdoor.exe/v6x/source.lua") end })
+    TabG2:Button({ Title = "汉化后门注入器", Callback = function() xload("https://raw.githubusercontent.com/pijiaobenMSJMleng/backdoor/refs/heads/main/backdoor.lua") end })
+    TabG2:Button({ Title = "复制快乐中心链接", Callback = function() clip("https://pastebin.com/YDYR4AXt") end })
+    TabG2:Button({ Title = "复制漏洞大全链接", Callback = function() clip("链接: https://yun.139.com/shareweb/#/w/i/2s2xSLyyrd089 提取码: v1ii") end })
+    TabG2:Button({ Title = "复制ss后门网站", Callback = function() clip("aureus.wtf") end })
+
+    -- 后门与黑客（经典命令，需游戏存在后门才生效）
+    TabG2:Section({ Title = "后门经典命令（需游戏后门）" })
+    TabG2:Button({ Title = "666", Callback = function() xload("https://pastebin.com/raw/Zv3QMGj2") end })
+    TabG2:Button({ Title = "Big Head all", Callback = function() xload("https://pastebin.com/raw/uySTmniR") end })
+    TabG2:Button({ Title = "Germany music", Callback = function() xload("https://pastebin.com/raw/54XkwkFr") end })
+    TabG2:Button({ Title = "Joblify", Callback = function() xload("https://pastebin.com/raw/0Q1tjkc8") end })
+    TabG2:Button({ Title = "Fire all", Callback = function() xload("https://pastebin.com/raw/MBF1xR9P") end })
+    TabG2:Button({ Title = "Sparkles All", Callback = function() xload("https://pastefy.app/nrNgKPBI/raw") end })
+    TabG2:Button({ Title = "Skybox 1", Callback = function() xload("https://pastebin.com/raw/eMFC32H0") end })
+    TabG2:Button({ Title = "Epik Skeleton Sky", Callback = function() xload("https://pastebin.com/raw/XAgyaQKp") end })
+    TabG2:Button({ Title = "Skybox 2", Callback = function() xload("https://pastebin.com/raw/tRCYYvR3") end })
+
+    -- 其他功能
+    TabG2:Section({ Title = "其他功能" })
+    TabG2:Button({ Title = "清理视觉效果", Callback = function()
+        pcall(function()
+            for _, p in pairs(game.Players:GetPlayers()) do
+                if p ~= game.Players.LocalPlayer and p.Character then
+                    local h = p.Character:FindFirstChild("Highlight"); if h then h:Destroy() end
+                end
+            end
+            if Drawing and Drawing.clear then pcall(Drawing.clear) end
+            nf("清理", "已清理高亮与绘制")
+        end)
+    end })
+    TabG2:Button({ Title = "复制自身坐标", Callback = function()
+        pcall(function()
+            local r = game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+            if r then clip(tostring(r.CFrame)) end
+        end)
+    end })
+    TabG2:Button({ Title = "复制服务器ID", Callback = function() pcall(function() clip(game.JobId ~= "" and game.JobId or tostring(game.PlaceId)) end) end })
+    TabG2:Button({ Title = "重新加入服务器", Callback = function()
+        pcall(function() game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, game.JobId, game.Players.LocalPlayer) end)
+    end })
+
+    nf("通用2", "已加载 BS 精选：通用功能 + 后门与黑客 + 其他", 4)
 end
 -- ================= 融合追加结束 =================
 
