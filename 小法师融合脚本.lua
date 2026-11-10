@@ -1118,7 +1118,7 @@ local SelectedTarget = nil
 local PlayerList = {}
 
 -- =================== 全局变量与属性记录 (修改这里) ===================
-loadstring(game:HttpGet("https://raw.githubusercontent.com/ylt410/roblox-Script/refs/heads/main/防布娃娃"))()
+-- 防布娃娃改为「点击加载」：见「其他功能」页的「加载防布娃娃(远程)」按钮，启动时不再自动拉取远程脚本
 -- =================== 旋转模块（完全修复版） ===================
 
 local SpinEnabled = false
@@ -4160,6 +4160,15 @@ TabOther:Toggle({
 
     end
 })
+TabOther:Button({
+    Title = "加载防布娃娃(远程)",
+    Callback = function()
+        pcall(function()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/ylt410/roblox-Script/refs/heads/main/防布娃娃"))()
+        end)
+        FallbackNotify("防布娃娃", "已尝试加载远程防布娃娃脚本（失败请检查网络或关闭 LiteMode）", 4)
+    end
+})
 local TabVisual = Window:Tab({
     Title = "透视功能",
     Icon = "eye",
@@ -5104,8 +5113,8 @@ end)
 
 end
 (function()
-loadstring(game:HttpGet("https://raw.githubusercontent.com/Pixeluted/adoniscries/main/Source.lua", true))()
-
+-- 静默瞄准为脚本自带实现（CalculateChance/getDirection/currentTargetPart 均为本脚本定义），
+-- adoniscries 引擎改为「点击加载」：见「通用2」页的「加载静默瞄准引擎(adonis)」按钮
 if not game:IsLoaded() then
     game.Loaded:Wait()
 end
@@ -10122,6 +10131,10 @@ do
 
     -- ===================== Tab 通用2：BS 源码精选（通用功能 + 后门 + 其他，已去重） =====================
     local TabG2 = Window:Tab({ Title = "通用2", Icon = "box", Locked = false })
+
+    -- 引擎/环境加载（按需点击，不再启动时自动拉取远程混淆脚本）
+    TabG2:Section({ Title = "引擎加载（点击加载）" })
+    TabG2:Button({ Title = "加载静默瞄准引擎(adonis)", Callback = function() xload("https://raw.githubusercontent.com/Pixeluted/adoniscries/main/Source.lua") end })
 
     -- 通用功能（BS 独有，已剔除与 Xa通用 重复的飞行/穿墙/隐身/无限跳/点击传送等）
     TabG2:Section({ Title = "通用功能（BS精选）" })
