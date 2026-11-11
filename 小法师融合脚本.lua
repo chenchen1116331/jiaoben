@@ -2,13 +2,12 @@
 --[[
 ╔═══════════════════════════════════════════════╗
 ║                                               ║
-║                 by 联邦破解--Yeskid。                ║
+║                XF 小法师融合脚本                  ║
 ║                                               ║
 ╚═══════════════════════════════════════════════╝
 ]]
 
---恭喜你找到了我的源码
--- by 夜
+-- 小法师制作
 local Players = game:GetService("Players")
 
 -- 高性能模式初始状态（尽早读取，供通用页开关默认显示正确）
@@ -901,9 +900,9 @@ end
 -- =================== 添加 ===================
 local function AddFeature(name)
 
-    if name == "夜脚本" then
+    if name == "小法师" then
         for i, v in ipairs(EnabledFeatures) do
-            if v == "夜脚本" then
+            if v == "小法师" then
                 table.remove(EnabledFeatures, i)
                 break
             end
@@ -2699,9 +2698,9 @@ function AddDevESP(player)
         txt.TextSize = 12
 
         if role == "author" then
-            txt.Text = "夜脚本作者"
+            txt.Text = "小法师作者"
         elseif role == "old" then
-            txt.Text = "夜脚本老用户"
+            txt.Text = "小法师老用户"
         elseif role == "toptime" then
             txt.Text = "最高使用时长（580分钟）" -- ✅ 新标签
         end
@@ -3879,14 +3878,14 @@ TabOther:Button({
     end
 })
 TabOther:Button({
-    Title = "夜脚本测试版",
+    Title = "小法师测试版",
     Callback = function()
         local ok, err = pcall(function()
             loadstring(game:HttpGet("https://raw.githubusercontent.com/ylt410/roblox-Script/refs/heads/main/fyukvdrf"))()
         end)
 
         if ok then
-            Notify("成功", "夜脚本测试版已加载", 2, "success")
+            Notify("成功", "小法师测试版已加载", 2, "success")
         else
             Notify("错误", tostring(err), 3, "error")
         end
@@ -4090,7 +4089,7 @@ end)
 })
 
 TabOther:Button({
-    Title = "点击传送工具（夜脚本重制版）",
+    Title = "点击传送工具（小法师重制版）",
     Callback = function()
         local ok, err = pcall(function()
 -- 服务
@@ -4517,11 +4516,11 @@ TabNight:Toggle({
 
             task.wait(0.05)
 
-            AddFeature("夜脚本")
+            AddFeature("小法师")
             RefreshFeatureUI()
 
         else
-            RemoveFeature("夜脚本")
+            RemoveFeature("小法师")
             RefreshFeatureUI()
         end
 
@@ -4538,7 +4537,7 @@ task.spawn(function()
 
     task.wait(0.05)
 
-    AddFeature("夜脚本")
+    AddFeature("小法师")
     RefreshFeatureUI()
 
 end)
@@ -7614,7 +7613,7 @@ local TabAb = Window:Tab({
 })
 TabAb:Paragraph({
         Title = "免责声明",
-        Desc = "以下缝合的所有服务器脚本源码或加载链接均来源于qq，如果认为您的脚本为付费脚本或不想让我缝合，请先不要挂我，加入夜脚本主群联系我，我会立刻删除您的脚本，并向您道歉，如果我没有看到的话可以多说几遍，感谢\n\n我会保留所有原作者标识并标明出处\n\n对用户说：缝合脚本有问题我不负责修复或处理请不要向我反馈", 
+        Desc = "以下缝合的所有服务器脚本源码或加载链接均来源于qq，如果认为您的脚本为付费脚本或不想让我缝合，请先不要挂我，加入小法师主群联系我，我会立刻删除您的脚本，并向您道歉，如果我没有看到的话可以多说几遍，感谢\n\n我会保留所有原作者标识并标明出处\n\n对用户说：缝合脚本有问题我不负责修复或处理请不要向我反馈", 
     })
 
 TabAb:Button({
@@ -7789,7 +7788,7 @@ local TabFE = Window:Tab({
 -- ===== 提示 =====
 TabFE:Paragraph({
     Title = "提示",
-    Desc = "实测下面动作全部是别人可见但是如果那个人是新进来的人需要重新开动作他才会可见\n所有动作来自bs源码，感谢bs脚本\n部分不可用是正常的，可能是动作代码被原作者删了"
+    Desc = "实测下面动作全部是别人可见但是如果那个人是新进来的人需要重新开动作他才会可见\n部分不可用是正常的，可能是动作代码被原作者删了"
 })
 
 -- ===== 基础 =====
@@ -9492,7 +9491,7 @@ do
     })
 end
 
--- =================== 小法师融合·多游戏加载（融合自夜脚本 多游戏加载） ===================
+-- =================== 小法师融合·多游戏加载（融合自小法师 多游戏加载） ===================
 do
     local TabGL = Window:Tab({ Title = "多游戏加载", Icon = "gamepad", Locked = false })
 
@@ -9558,7 +9557,7 @@ do
     for name in pairs(GameLoader) do GL_Names[#GL_Names+1] = name end
     table.sort(GL_Names)
 
-    TabGL:Paragraph({ Title = "多游戏加载", Desc = "融合自夜脚本，选择后点击加载（通用加载器适配多种游戏）" })
+    TabGL:Paragraph({ Title = "多游戏加载", Desc = "融合自小法师，选择后点击加载（通用加载器适配多种游戏）" })
 
     local glSel = GL_Names[1]
     TabGL:Dropdown({
@@ -10321,5 +10320,5 @@ WindUI:Notify({
     Duration = 3,
    Icon = "bird",
 })
--- 注：已移除原夜脚本末尾的两条私有外部 loadstring 加载（djejhebr / njdjdn），
+-- 注：已移除原小法师末尾的两条私有外部 loadstring 加载（djejhebr / njdjdn），
 -- 其核心功能已完整保留在上方各模块中；融合脚本保持自包含、可控，不拉取未知私有脚本。
