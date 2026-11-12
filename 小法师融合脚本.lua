@@ -8,7 +8,7 @@
 ]]
 
 -- 小法师制作
-local Players = game:GetService("Players")
+Players = game:GetService("Players")
 
 -- 高性能模式初始状态（尽早读取，供通用页开关默认显示正确）
 _G.HighPerf = false
@@ -19,9 +19,9 @@ pcall(function()
 end)
 
 -- 公告已本地化（见下方「公告」标签页），不再加载远程公告
-local StarterGui = game:GetService("StarterGui")
+StarterGui = game:GetService("StarterGui")
 
-local function FallbackNotify(title, content, duration)
+function FallbackNotify(title, content, duration)
     pcall(function()
         StarterGui:SetCore("SendNotification", {
             Title = title or "通知",
@@ -36,7 +36,7 @@ FallbackNotify("小法师融合脚本", "基础脚本已加载，正在加载 UI
 FallbackNotify("加载中", "开始载入 UI，预计约1秒（网络差会延长）", 3)
 
 -- WindUI 加载函数（带重试）
-local function tryLoadWindUI(retries, timeoutPerAttempt)
+function tryLoadWindUI(retries, timeoutPerAttempt)
     retries = retries or 3
     timeoutPerAttempt = timeoutPerAttempt or 5
 
@@ -80,7 +80,7 @@ local function tryLoadWindUI(retries, timeoutPerAttempt)
 end
 
 -- 启动加载
-local WindUI, loadErr = tryLoadWindUI(5, 7)
+WindUI, loadErr = tryLoadWindUI(5, 7)
 
 -- 加载失败处理
 if not WindUI then
@@ -98,7 +98,7 @@ FallbackNotify("加载成功", "WindUI 已加载，脚本继续执行", 3)
 -- 这里开始写你原本的 WindUI 代码
 -- 例如：
 -- local Window = WindUI:CreateWindow({...})
-local BgPresets = {
+BgPresets = {
     ["蓝色系少女"] = "https://raw.githubusercontent.com/ylt410/Liquid-glass-script/refs/heads/main/E7B068E4-0859-420F-A6B1-AF519C804C39.png",
     ["粉色系少女"] = "https://raw.githubusercontent.com/ylt410/Liquid-glass-script/refs/heads/main/A19A17E7-7AF5-4E1D-998B-DA69A7C0CD77.png",
     ["蓝色系猫娘"] = "https://raw.githubusercontent.com/ylt410/Liquid-glass-script/refs/heads/main/FB28370F-CEA8-4CC6-A6E0-51B7DF9071D3.png",
@@ -122,7 +122,7 @@ local BgPresets = {
 
 }
 
-local function Notify(title, content, duration, icon)
+function Notify(title, content, duration, icon)
 
     pcall(function()
         WindUI:Notify({
@@ -138,8 +138,8 @@ end
 
 -- ================= 瞬移模块（稳定无跳跃冲突版）=================
 
-local TP_Module = {}
-local TP_Loaded = false
+TP_Module = {}
+TP_Loaded = false
 
 function EnableTPUI()
 
@@ -408,13 +408,13 @@ end
 -- ================= 主题注册 =================
 -- 🖤 BlackGold
 -- =================== 背景图配置 ===================
-local BgFile = "NightBackground.txt"
-local BgPresetFile = "NightBgPreset.txt"
-local BgTransFile = "NightBgTrans.txt"
-local BackgroundEnabled = true
-local BgTransValue = 0.55
-local SavedBgPreset = "默认背景"
-local BgImage = "https://raw.githubusercontent.com/ylt410/Liquid-glass-script/refs/heads/main/E7B068E4-0859-420F-A6B1-AF519C804C39.png"
+BgFile = "NightBackground.txt"
+BgPresetFile = "NightBgPreset.txt"
+BgTransFile = "NightBgTrans.txt"
+BackgroundEnabled = true
+BgTransValue = 0.55
+SavedBgPreset = "默认背景"
+BgImage = "https://raw.githubusercontent.com/ylt410/Liquid-glass-script/refs/heads/main/E7B068E4-0859-420F-A6B1-AF519C804C39.png"
 
 pcall(function()
     if isfile and isfile(BgFile) then
@@ -606,8 +606,8 @@ WindUI:AddTheme({
     Checkbox = Color3.fromRGB(100,120,180),
     CheckboxIcon = Color3.fromRGB(255,255,255),
 })
-local ThemeFile = "NightTheme.txt"
-local CurrentTheme = "Dark"
+ThemeFile = "NightTheme.txt"
+CurrentTheme = "Dark"
 
 -- 读取
 pcall(function()
@@ -620,15 +620,15 @@ pcall(function()
 end)
 
 -- =================== UI版FOV圈 ===================
-local player = Players.LocalPlayer
+player = Players.LocalPlayer
 
-local screenGui = Instance.new("ScreenGui")
+screenGui = Instance.new("ScreenGui")
 screenGui.Name = "FOVCircle_UI"
 screenGui.IgnoreGuiInset = true
 screenGui.ResetOnSpawn = false
 screenGui.Parent = game.CoreGui
 
-local circle = Instance.new("Frame")
+circle = Instance.new("Frame")
 circle.Name = "FOVCircle"
 circle.AnchorPoint = Vector2.new(0.5, 0.5)
 circle.Position = UDim2.new(0.5, 0, 0.5, 0)
@@ -637,20 +637,20 @@ circle.BackgroundTransparency = 1
 circle.Parent = screenGui
 circle.Visible = false -- ⭐关键：初始化隐藏
 
-local stroke = Instance.new("UIStroke")
+stroke = Instance.new("UIStroke")
 stroke.Thickness = 2
 stroke.Color = Color3.fromRGB(128, 0, 128)
 stroke.Parent = circle
 
-local corner = Instance.new("UICorner")
+corner = Instance.new("UICorner")
 corner.CornerRadius = UDim.new(1, 0)
 corner.Parent = circle
 -- =================== 管理员检测系统 ===================
 
-local AdminDetectEnabled = true
-local flaggedAdmins = {}
+AdminDetectEnabled = true
+flaggedAdmins = {}
 
-local function CheckAdmin(player)
+function CheckAdmin(player)
     if not AdminDetectEnabled then return end
     if flaggedAdmins[player] then return end
     if not player or not player.Parent then return end
@@ -707,14 +707,14 @@ Players.PlayerRemoving:Connect(function(p)
 end)
 -- =================== 强制解锁第三人称 ===================
 
-local ThirdPersonUnlock = {
+ThirdPersonUnlock = {
     Enabled = false,
     Connection = nil
 }
-local LocalPlayer = Players.LocalPlayer
-local RunService = game:GetService("RunService")
+LocalPlayer = Players.LocalPlayer
+RunService = game:GetService("RunService")
 
-local function ApplyUnlock()
+function ApplyUnlock()
 
     pcall(function()
         -- ⭐核心：解除锁定
@@ -728,7 +728,7 @@ local function ApplyUnlock()
     end)
 end
 
-local function EnableUnlock()
+function EnableUnlock()
 
     if ThirdPersonUnlock.Connection then return end
 
@@ -743,7 +743,7 @@ local function EnableUnlock()
     end)
 end
 
-local function DisableUnlock()
+function DisableUnlock()
 
     ThirdPersonUnlock.Enabled = false
 
@@ -764,35 +764,35 @@ LocalPlayer.CharacterAdded:Connect(function()
 end)
 -- =================== 功能显示系统（终极进阶版） ===================
 
-local FeatureDisplayEnabled = true
-local EnabledFeatures = {}
-local FeatureItems = {}
+FeatureDisplayEnabled = true
+EnabledFeatures = {}
+FeatureItems = {}
 
-local FeatureGui = Instance.new("ScreenGui")
+FeatureGui = Instance.new("ScreenGui")
 FeatureGui.Name = "FeatureDisplay"
 FeatureGui.Parent = game.CoreGui
 
-local Container = Instance.new("Frame")
+Container = Instance.new("Frame")
 Container.AnchorPoint = Vector2.new(1, 0)
 Container.Position = UDim2.new(1, -10, 0, 10)
 Container.Size = UDim2.new(0, 200, 0, 300)
 Container.BackgroundTransparency = 1
 Container.Parent = FeatureGui
 
-local UIList = Instance.new("UIListLayout")
+UIList = Instance.new("UIListLayout")
 UIList.Padding = UDim.new(0, 4)
 UIList.HorizontalAlignment = Enum.HorizontalAlignment.Right
 UIList.Parent = Container
 
-local TextService = game:GetService("TextService")
-local TweenService = game:GetService("TweenService")
+TextService = game:GetService("TextService")
+TweenService = game:GetService("TweenService")
 
-local function Rainbow()
+function Rainbow()
     return Color3.fromHSV((tick()*0.25)%1,1,1)
 end
 
 -- =================== 刷新 ===================
-local function RefreshFeatureUI()
+function RefreshFeatureUI()
 
     Container.Visible = FeatureDisplayEnabled
     if not FeatureDisplayEnabled then return end
@@ -898,7 +898,7 @@ end
 end
 
 -- =================== 添加 ===================
-local function AddFeature(name)
+function AddFeature(name)
 
     if name == "小法师" then
         for i, v in ipairs(EnabledFeatures) do
@@ -918,7 +918,7 @@ local function AddFeature(name)
 end
 
 -- =================== 删除 ===================
-local function RemoveFeature(name)
+function RemoveFeature(name)
     for i, v in ipairs(EnabledFeatures) do
         if v == name then
             table.remove(EnabledFeatures, i)
@@ -929,14 +929,14 @@ local function RemoveFeature(name)
 end
 -- =================== 自身血量显示（极简稳定版·全游戏开启） ===================
 
-local HealthPosFile = "NightHealthPos.txt"
+HealthPosFile = "NightHealthPos.txt"
 
-local HealthDisplay = {
+HealthDisplay = {
     Enabled = true, -- ⭐永远默认开启
     Position = "LeftTop", -- ⭐默认左上角
     Label = nil
 }
-local LocalPlayer = Players.LocalPlayer
+LocalPlayer = Players.LocalPlayer
 
 -- ================= 读取保存位置 =================
 pcall(function()
@@ -949,12 +949,12 @@ pcall(function()
 end)
 
 -- ================= UI =================
-local HealthGui = Instance.new("ScreenGui")
+HealthGui = Instance.new("ScreenGui")
 HealthGui.Name = "SelfHealthDisplay"
 HealthGui.ResetOnSpawn = false
 HealthGui.Parent = game.CoreGui
 
-local function CreateHealthUI()
+function CreateHealthUI()
 
     if HealthDisplay.Label then
         HealthDisplay.Label:Destroy()
@@ -973,7 +973,7 @@ local function CreateHealthUI()
 end
 
 -- ================= 位置 =================
-local function UpdatePosition()
+function UpdatePosition()
 
     local label = HealthDisplay.Label
     if not label then return end
@@ -1058,7 +1058,7 @@ end)
 
 
 -- 自瞄总开关状态
-local ESP_SETTINGS = {
+ESP_SETTINGS = {
     HighlightEnabled = false, -- 自瞄开关
     TeamCheck = false,         -- 队伍检测
     SmoothAim = false,         -- 平滑自瞄
@@ -1066,11 +1066,11 @@ local ESP_SETTINGS = {
     WallCheck = false          -- 墙体检测
 }
 -- ⭐团队白名单（核心）
-local AimbotTeamWhitelist = {}
-local AimbotTeamWhitelistEnabled = false
+AimbotTeamWhitelist = {}
+AimbotTeamWhitelistEnabled = false
 
 -- ================= 玩家透视专用变量 =================
-local PLAYER_ESP = {
+PLAYER_ESP = {
     Enabled = false,        -- 总开关（⭐核心）
     HighlightEnabled = false,
     BoxEnabled = false,
@@ -1081,21 +1081,21 @@ local PLAYER_ESP = {
 }
 
 -- 自瞄参数
-local FOV = 120              -- 自瞄范围（和圈同步）
-local Smoothness = 0.18      -- 平滑程度
-local AimPart = "Head"
-local ShowFOVCircle = true -- ⭐FOV圈显示开关（新增）
+FOV = 120              -- 自瞄范围（和圈同步）
+Smoothness = 0.18      -- 平滑程度
+AimPart = "Head"
+ShowFOVCircle = true -- ⭐FOV圈显示开关（新增）
 
 -- ⭐可选部位列表（顺便做容错）
-local AimPartsList = {
+AimPartsList = {
     "Head",
     "HumanoidRootPart",
     "UpperTorso",
     "Torso"
 }
-local MaxDistance = 1000     -- 最大距离
+MaxDistance = 1000     -- 最大距离
 -- ⭐统一获取瞄准部位（必须放全局）
-local function GetAimPart(char)
+function GetAimPart(char)
 
     if not char then return nil end
 
@@ -1110,25 +1110,25 @@ local function GetAimPart(char)
 end
 
 -- 自瞄连接（防重复）
-local AimbotConnection = nil
+AimbotConnection = nil
 -- ================= 指定自瞄目标 =================
-local LockTargetEnabled = false
-local SelectedTarget = nil
-local PlayerList = {}
+LockTargetEnabled = false
+SelectedTarget = nil
+PlayerList = {}
 
 -- =================== 全局变量与属性记录 (修改这里) ===================
 -- 防布娃娃改为「点击加载」：见「其他功能」页的「加载防布娃娃(远程)」按钮，启动时不再自动拉取远程脚本
 -- =================== 旋转模块（完全修复版） ===================
 
-local SpinEnabled = false
-local SpinSpeed = 5
-local SpinConnection = nil
+SpinEnabled = false
+SpinSpeed = 5
+SpinConnection = nil
 
 -- ⭐线程控制（核心修复）
-local AnimationLockThread = nil
+AnimationLockThread = nil
 
 -- ================= 锁动画 =================
-local function ApplyAnimationLock(char)
+function ApplyAnimationLock(char)
 
     if not char then return end
 
@@ -1156,7 +1156,7 @@ local function ApplyAnimationLock(char)
 end
 
 -- ================= 恢复动画 =================
-local function RemoveAnimationLock(char)
+function RemoveAnimationLock(char)
 
     if not char then return end
 
@@ -1178,7 +1178,7 @@ local function RemoveAnimationLock(char)
 end
 
 -- ================= 开始旋转 =================
-local function StartSpin()
+function StartSpin()
 
     if SpinConnection then return end
 
@@ -1202,7 +1202,7 @@ local function StartSpin()
 end
 
 -- ================= 停止旋转 =================
-local function StopSpin()
+function StopSpin()
 
     SpinEnabled = false -- ⭐必须
 
@@ -1231,7 +1231,7 @@ end)
 
 -- ================= 下面这部分保持不变 =================
 
-local function TeleportToPlayer(target)
+function TeleportToPlayer(target)
 
     if not target then return end
 
@@ -1249,9 +1249,9 @@ local function TeleportToPlayer(target)
 
 end
 
-local Spectating = false
+Spectating = false
 
-local function SpectatePlayer(target)
+function SpectatePlayer(target)
 
     if not target then return end
 
@@ -1270,7 +1270,7 @@ local function SpectatePlayer(target)
     Spectating = true
 end
 
-local function StopSpectate()
+function StopSpectate()
 
     local cam = workspace.CurrentCamera
     if not cam then return end
@@ -1286,12 +1286,12 @@ local function StopSpectate()
     Spectating = false
 end
 -- =================== 状态 ===================
-local FlingLoop = false
-local Flinging = false
-local AlreadyNotified = {}
+FlingLoop = false
+Flinging = false
+AlreadyNotified = {}
 
 -- =================== 甩飞核心 ===================
-local function SkidFling(TargetPlayer)
+function SkidFling(TargetPlayer)
 
     if not TargetPlayer or TargetPlayer == LocalPlayer then return end
     if Flinging then return end
@@ -1531,7 +1531,7 @@ local function SkidFling(TargetPlayer)
 end
 
 -- =================== 目标监控 ===================
-local function MonitorTarget(target)
+function MonitorTarget(target)
 
     if not target then return end
 
@@ -1612,7 +1612,7 @@ local function MonitorTarget(target)
 end
 
 -- =================== 循环甩飞 ===================
-local function StartFlingLoop()
+function StartFlingLoop()
 
     if FlingLoop then return end
     FlingLoop = true
@@ -1710,24 +1710,24 @@ local function StartFlingLoop()
 
 end
 
-local function StopFlingLoop()
+function StopFlingLoop()
     FlingLoop = false
 end
 
-local TargetWalkSpeed = 16
-local SpeedEnabled = false
+TargetWalkSpeed = 16
+SpeedEnabled = false
 -- 新增：自定义跳跃状态和数值
-local CustomJumpEnabled = false
-local CustomJumpValue = 50
-local Connections = {} 
-local Camera = workspace.CurrentCamera -- ⭐加这里
+CustomJumpEnabled = false
+CustomJumpValue = 50
+Connections = {} 
+Camera = workspace.CurrentCamera -- ⭐加这里
 workspace:GetPropertyChangedSignal("CurrentCamera"):Connect(function()
     Camera = workspace.CurrentCamera
 end)
-local Lighting = game:GetService("Lighting")
-local UserInputService = game:GetService("UserInputService")
-local RunService = game:GetService("RunService") -- 确保有这行
-local LocalPlayer = Players.LocalPlayer
+Lighting = game:GetService("Lighting")
+UserInputService = game:GetService("UserInputService")
+RunService = game:GetService("RunService") -- 确保有这行
+LocalPlayer = Players.LocalPlayer
 
 if not LocalPlayer then
     repeat task.wait() LocalPlayer = Players.LocalPlayer until LocalPlayer
@@ -1782,7 +1782,7 @@ LocalPlayer.CharacterAdded:Connect(function(char)
 end)
 -- =================== Freecam模块（终极稳定版） ===================
 
-local Freecam = {
+Freecam = {
 Speed = 2,
 Sensitivity = 0.01,
     Enabled = false,
@@ -1800,7 +1800,7 @@ Sensitivity = 0.01,
 }
 
 -- ✅ 初始化输入（只执行一次！）
-local function InitFreecamInput()
+function InitFreecamInput()
 
     if Freecam._InputInited then return end
     Freecam._InputInited = true
@@ -1869,7 +1869,7 @@ table.insert(Freecam.Connections,
     )
 end
 
-local function StartFreecam()
+function StartFreecam()
 
     if Freecam.Enabled then return end
     Freecam.Enabled = true
@@ -1932,7 +1932,7 @@ local function StartFreecam()
     end)
 end
 
-local function StopFreecam()
+function StopFreecam()
 
     if not Freecam.Enabled then return end
     Freecam.Enabled = false
@@ -1973,11 +1973,11 @@ local function StopFreecam()
     workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
 end
 -- --- 核心变量：记录原始数值与状态 ---
-local OriginalWalkSpeed = 16
-local OriginalJump = 50
-local InfiniteJumpEnabled = false
-local FastRunSpeed = 0
-local FastRunConnection = nil
+OriginalWalkSpeed = 16
+OriginalJump = 50
+InfiniteJumpEnabled = false
+FastRunSpeed = 0
+FastRunConnection = nil
 
 -- 自动记录服务器原本的速度和跳跃
 task.spawn(function()
@@ -1999,13 +1999,13 @@ end)
 -- ===============================================================
 
 -- --- 核心：快速跑步（位移模式）变量 ---
-local FastRunSpeed = 0
-local FastRunConnection = nil
+FastRunSpeed = 0
+FastRunConnection = nil
 -- ===============================================
 -- ===============================================
 
 -- 保存原始 Lighting 设置
-local OriginalLighting = {
+OriginalLighting = {
     Brightness = Lighting.Brightness,
     Ambient = Lighting.Ambient,
     OutdoorAmbient = Lighting.OutdoorAmbient,
@@ -2022,12 +2022,12 @@ local OriginalLighting = {
 }
 
 -- 保存原始 Atmosphere 设置 (用于完美修复去雾无法关闭的问题)
-local OriginalAtmosphere = {}
+OriginalAtmosphere = {}
 
 -- npc透视
-local NPCESP = { Enabled = false, Color = Color3.fromRGB(0,162,255), Highlights = {} }
+NPCESP = { Enabled = false, Color = Color3.fromRGB(0,162,255), Highlights = {} }
 
-local function GetNPCPart(model)
+function GetNPCPart(model)
     if not model then return nil end
     if model:FindFirstChild("HumanoidRootPart") then return model.HumanoidRootPart end
     for _, part in pairs(model:GetDescendants()) do
@@ -2036,7 +2036,7 @@ local function GetNPCPart(model)
     return nil
 end
 
-local function AddNPCESP(model)
+function AddNPCESP(model)
     if not model then return end
     local existing = NPCESP.Highlights[model]
 
@@ -2090,7 +2090,7 @@ end)
     end)
 end
 end
-local function RemoveNPCESP(model)
+function RemoveNPCESP(model)
     if not model then return end
     if NPCESP.Highlights[model] then
         pcall(function()
@@ -2102,7 +2102,7 @@ local function RemoveNPCESP(model)
     end
 end
 
-local function UpdateNPCESPColor(color)
+function UpdateNPCESPColor(color)
     NPCESP.Color = color
     for model, hl in pairs(NPCESP.Highlights) do
         if hl and hl.Parent then
@@ -2113,7 +2113,7 @@ local function UpdateNPCESPColor(color)
     end
 end
 
-local function ToggleNPCESP(state)
+function ToggleNPCESP(state)
     NPCESP.Enabled = state
 
     if state then
@@ -2179,7 +2179,7 @@ local function ToggleNPCESP(state)
         end
     end
 end
-local function ClearPlayerESP()
+function ClearPlayerESP()
     for _, obj in ipairs(workspace:GetDescendants()) do
         if obj.Name == "PlayerESP_Highlight" or obj.Name == "PlayerESP_Info" or obj.Name == "PlayerESP_Box" then
             obj:Destroy()
@@ -2187,7 +2187,7 @@ local function ClearPlayerESP()
     end
 end
 
-local function UpdatePlayerESP()
+function UpdatePlayerESP()
 
     if not PLAYER_ESP.Enabled then return end -- ⭐核心
 
@@ -2296,14 +2296,14 @@ info.Label.Text = text
     end
 end
 --旧互动物体透视
-local InteractESP = { Enabled = false, Color = Color3.fromRGB(0,255,0), Highlights = {} }
+InteractESP = { Enabled = false, Color = Color3.fromRGB(0,255,0), Highlights = {} }
 
-local function IsInteractive_Old(obj)
+function IsInteractive_Old(obj)
     if not obj then return false end
     return obj:IsA("ProximityPrompt") or obj:IsA("ClickDetector")
 end
 
-local function FindAdornPart_Old(target)
+function FindAdornPart_Old(target)
     if not target then return nil end
     if target:IsA("BasePart") then return target end
     if target:IsA("Model") then
@@ -2313,7 +2313,7 @@ local function FindAdornPart_Old(target)
     return nil
 end
 
-local function AddInteractESP(target)
+function AddInteractESP(target)
     if not target then return end
     if InteractESP.Highlights[target] then return end
     if not (target:IsA("BasePart") or target:IsA("Model")) then return end
@@ -2371,7 +2371,7 @@ local function AddInteractESP(target)
     end)
 end
 
-local function RemoveInteractESP(target)
+function RemoveInteractESP(target)
     if not target then return end
     if InteractESP.Highlights[target] then
         pcall(function() if InteractESP.Highlights[target] and InteractESP.Highlights[target].Parent then InteractESP.Highlights[target]:Destroy() end end)
@@ -2386,7 +2386,7 @@ local function RemoveInteractESP(target)
     end)
 end
 
-local function UpdateInteractColor(color)
+function UpdateInteractColor(color)
     InteractESP.Color = color
     for target, hl in pairs(InteractESP.Highlights) do
         if hl and hl.Parent then pcall(function() hl.FillColor = color end) else InteractESP.Highlights[target] = nil end
@@ -2403,7 +2403,7 @@ local function UpdateInteractColor(color)
     end
 end
 
-local function ToggleInteractESP(state)
+function ToggleInteractESP(state)
     InteractESP.Enabled = state
     if state then
         task.spawn(function()
@@ -2432,17 +2432,17 @@ local function ToggleInteractESP(state)
 end
 
 --新互动物体透视
-local NewInteractESP = { Enabled = false, Color = Color3.fromRGB(0,255,0), Highlights = {} }
+NewInteractESP = { Enabled = false, Color = Color3.fromRGB(0,255,0), Highlights = {} }
 
-local function IsInteractive_New(o) return o and (o:IsA("ProximityPrompt") or o:IsA("ClickDetector")) end
+function IsInteractive_New(o) return o and (o:IsA("ProximityPrompt") or o:IsA("ClickDetector")) end
 
-local function GetInteractiveTarget(node)
+function GetInteractiveTarget(node)
     local p = node
     while p do if p:IsA("BasePart") or p:IsA("Model") then return p end p = p.Parent end
     return nil
 end
 
-local function FindAdornPart_New(t)
+function FindAdornPart_New(t)
     if not t then return nil end
     if t:IsA("BasePart") then return t end
     if t:IsA("Model") then
@@ -2452,7 +2452,7 @@ local function FindAdornPart_New(t)
     return nil
 end
 
-local function AddNewInteractESP(target)
+function AddNewInteractESP(target)
     if not target then return end
     if NewInteractESP.Highlights[target] then return end
     local ok, h = pcall(function()
@@ -2512,7 +2512,7 @@ local function AddNewInteractESP(target)
     end)
 end
 
-local function UpdateNewInteractColor(color)
+function UpdateNewInteractColor(color)
     NewInteractESP.Color = color
     for target, hl in pairs(NewInteractESP.Highlights) do if hl and hl.Parent then pcall(function() hl.FillColor = color end) end end
     for _, obj in ipairs(workspace:GetDescendants()) do
@@ -2523,7 +2523,7 @@ local function UpdateNewInteractColor(color)
     end
 end
 
-local function ToggleNewInteractESP(state)
+function ToggleNewInteractESP(state)
     NewInteractESP.Enabled = state
     if state then
         task.spawn(function()
@@ -2562,10 +2562,10 @@ end)
 do
 -- =================== 作者检测模块（墙体检测+优化缩放版） ===================
 
-local Players = game:GetService("Players")
-local Workspace = game:GetService("Workspace")
+Players = game:GetService("Players")
+Workspace = game:GetService("Workspace")
 
-local DevESP = {
+DevESP = {
     Enabled = true,
     SelfEnabled = false,
     Targets = {
@@ -2577,12 +2577,12 @@ local DevESP = {
     Objects = {}
 }
 
-local function RainbowColor()
+function RainbowColor()
     return Color3.fromHSV((tick()*0.2) % 1, 1, 1)
 end
 
 -- 判断是否被墙挡住
-local function IsVisible(head, camera)
+function IsVisible(head, camera)
     if not head or not camera then return false end
 
     local origin = camera.CFrame.Position
@@ -2776,10 +2776,10 @@ end
 game.Players.PlayerAdded:Connect(AddDevESP)
 end
 --夜视
-local VisualModule = { NormalNightVision=false, SuperNightVision=false, NoFog=false }
+VisualModule = { NormalNightVision=false, SuperNightVision=false, NoFog=false }
 
 -- 普通夜视 (Brightness=12)
-local function ApplyNormalNightVision(enable)
+function ApplyNormalNightVision(enable)
     VisualModule.NormalNightVision = enable
     if enable then
         Lighting.Brightness=10
@@ -2800,7 +2800,7 @@ local function ApplyNormalNightVision(enable)
 end
 
 -- 超级夜视 
-local function ApplySuperNightVision(enable)
+function ApplySuperNightVision(enable)
     VisualModule.SuperNightVision = enable
     if enable then
 
@@ -2821,7 +2821,7 @@ local function ApplySuperNightVision(enable)
 end
 
 -- 去雾 (修复版：支持 Atmosphere 还原)
-local function ApplyNoFog(enable)
+function ApplyNoFog(enable)
     VisualModule.NoFog = enable
     if enable then
         Lighting.FogStart = 0
@@ -2875,10 +2875,10 @@ LocalPlayer.CharacterAdded:Connect(function()
 end)
 -- ================= 防摔落伤害2（平滑位移补偿） =================
 
-local AntiFall2Enabled = false
-local AntiFall2Connection = nil
+AntiFall2Enabled = false
+AntiFall2Connection = nil
 
-local function StartAntiFall2(character)
+function StartAntiFall2(character)
 
     if AntiFall2Connection then
         AntiFall2Connection:Disconnect()
@@ -2931,11 +2931,11 @@ if game.Players.LocalPlayer.Character then
 end
 -- =================== 防摔落伤害模块 (最终稳定版) ===================
 
-local AntiFallEnabled = false
-local AntiFallConnection = nil
+AntiFallEnabled = false
+AntiFallConnection = nil
 
 -- =================== 核心 ===================
-local function StartAntiFall(character)
+function StartAntiFall(character)
 
     local root = character:WaitForChild("HumanoidRootPart", 10)
     if not root then return end
@@ -2964,7 +2964,7 @@ local function StartAntiFall(character)
 end
 
 -- =================== 开关 ===================
-local function ToggleAntiFall(state)
+function ToggleAntiFall(state)
 
     AntiFallEnabled = state
 
@@ -3011,7 +3011,7 @@ end)
 
 
 
-local Window = WindUI:CreateWindow({
+Window = WindUI:CreateWindow({
     Title = "XF 小法师融合脚本",
     Icon = "rbxassetid://114890258053806",
     Author = "作者:小法师",
@@ -3065,7 +3065,7 @@ Window:Tag({
     Radius = 8,
 })
 
-local MainTab = Window:Tab({
+MainTab = Window:Tab({
         Title = "公告",
         Icon = "megaphone",
         Locked = false,
@@ -3106,19 +3106,19 @@ MainTab:Paragraph({
     })
 
 -- ================= 引擎加速系统（W / V / CF） =================
-local EngineMode = "W"
-local EngineSpeed = 60
-local EngineEnabled = false
-local engineConn = nil
+EngineMode = "W"
+EngineSpeed = 60
+EngineEnabled = false
+engineConn = nil
 
-local cfWin = nil
+cfWin = nil
 
-local function stopEngine()
+function stopEngine()
     if engineConn then pcall(function() engineConn:Disconnect() end) end
     engineConn = nil
 end
 
-local function startEngine()
+function startEngine()
     stopEngine()
     if not EngineEnabled then return end
     local RS = game:GetService("RunService")
@@ -3146,7 +3146,7 @@ local function startEngine()
 end
 
 -- 可拖动 / 可缩小 的引擎控制台小窗（CF 开启后生成）
-local function buildCFWindow()
+function buildCFWindow()
     if cfWin then return end
     local pg = Players.LocalPlayer:WaitForChild("PlayerGui")
     local sg = Instance.new("ScreenGui")
@@ -3258,20 +3258,20 @@ local function buildCFWindow()
     cfWin = sg
 end
 
-local function openCFWindow()
+function openCFWindow()
     pcall(function()
         if not cfWin then buildCFWindow() end
         cfWin.Enabled = true
     end)
 end
-local function closeCFWindow()
+function closeCFWindow()
     pcall(function() if cfWin then cfWin.Enabled = false end end)
 end
 
 -- 兼容飞行 / 通用「小法师制作」状态小窗
-local makeWin = nil
-local makeDesc = nil
-local function showMakeWindow(text)
+makeWin = nil
+makeDesc = nil
+function showMakeWindow(text)
     pcall(function()
         local pg = Players.LocalPlayer:WaitForChild("PlayerGui")
         if not makeWin then
@@ -3313,7 +3313,7 @@ local function showMakeWindow(text)
     end)
 end
 
-local TabAttr = Window:Tab({
+TabAttr = Window:Tab({
     Title = "玩家功能",
     Icon = "zap",
     Locked = false,
@@ -3503,9 +3503,9 @@ TabAttr:Slider({
 do
 -- ================= 重力控制系统 =================
 
-local GravityEnabled = false
-local CustomGravity = 196.2
-local OriginalGravity = workspace.Gravity
+GravityEnabled = false
+CustomGravity = 196.2
+OriginalGravity = workspace.Gravity
 
 -- ⭐防止被游戏改回
 RunService.RenderStepped:Connect(function()
@@ -3519,7 +3519,7 @@ RunService.RenderStepped:Connect(function()
 end)
 
 -- ⭐开启
-local function EnableGravity(value)
+function EnableGravity(value)
 
     value = tonumber(value)
     if not value then return end
@@ -3533,7 +3533,7 @@ local function EnableGravity(value)
 end
 
 -- ⭐关闭（恢复原本）
-local function DisableGravity()
+function DisableGravity()
 
     GravityEnabled = false
 
@@ -3596,9 +3596,9 @@ TabAttr:Toggle({
 do
 -- ================= 穿墙 =================
 
-local NoclipConnection = nil
-local CharacterConnection = nil
-local OriginalCollision = {}
+NoclipConnection = nil
+CharacterConnection = nil
+OriginalCollision = {}
 
 TabAttr:Toggle({
     Title = "穿墙",
@@ -3664,7 +3664,7 @@ TabAttr:Toggle({
 })
 end
 
-local TabOther = Window:Tab({
+TabOther = Window:Tab({
     Title = "通用",
     Icon = "info",
     Locked = false,
@@ -3799,7 +3799,7 @@ TabOther:Toggle({
 })
 -- ================= 安全加载 =================
 
-local function SafeLoad(url, name)
+function SafeLoad(url, name)
 
     Notify("加载中", "正在加载 "..name, 2, "info")
 
@@ -3925,10 +3925,10 @@ TabOther:Button({
     Title = "绕过群组检测",
     Callback = function()
         local ok, err = pcall(function()
-local getnamecallmethod
+getnamecallmethod
 = getnamecallmethod
-local Speaker = cloneref(game:GetService("Players")).LocalPlayer
-local OldNameCall
+Speaker = cloneref(game:GetService("Players")).LocalPlayer
+OldNameCall = nil
 OldNameCall = hookmetamethod(game, "__namecall", function(self, ...)
 if self ~= Speaker or getnamecallmethod() ~= "IsInGroup" then
 return OldNameCall(self, ...)
@@ -3953,21 +3953,21 @@ TabOther:Button({
     Callback = function()
         local ok, err = pcall(function()
 -- ================== 全GUI隐藏（可拖拽版） ==================
-local UserInputService = game:GetService("UserInputService")
+UserInputService = game:GetService("UserInputService")
 
-local LocalPlayer = Players.LocalPlayer
-local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+LocalPlayer = Players.LocalPlayer
+PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
-local Hidden = false
-local Stored = {}
+Hidden = false
+Stored = {}
 
 -- 🖱 创建自己的UI
-local ScreenGui = Instance.new("ScreenGui")
+ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "FullUIToggle"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = PlayerGui
 
-local Button = Instance.new("TextButton")
+Button = Instance.new("TextButton")
 Button.Size = UDim2.new(0, 120, 0, 30)
 Button.Position = UDim2.new(1, -130, 0, 10)
 Button.BackgroundColor3 = Color3.fromRGB(20,20,20)
@@ -3979,8 +3979,8 @@ Instance.new("UICorner", Button)
 
 -- ================== 拖拽逻辑 ==================
 
-local dragging = false
-local dragInput, startPos, startFramePos
+dragging = false
+dragInput, startPos, startFramePos = nil
 
 Button.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 
@@ -4018,15 +4018,15 @@ end)
 
 -- ================== 原逻辑 ==================
 
-local function IsUI(obj)
+function IsUI(obj)
     return obj:IsA("GuiObject")
 end
 
-local function ShouldSkip(obj)
+function ShouldSkip(obj)
     return obj:IsDescendantOf(ScreenGui)
 end
 
-local function Process(container, hide)
+function Process(container, hide)
     for _, obj in ipairs(container:GetDescendants()) do
         if IsUI(obj) and not ShouldSkip(obj) then
             if hide then
@@ -4043,7 +4043,7 @@ local function Process(container, hide)
     end
 end
 
-local function Toggle(state)
+function Toggle(state)
     if state then
         Stored = {}
         Process(PlayerGui, true)
@@ -4065,7 +4065,7 @@ Button.MouseButton1Click:Connect(function()
     Button.Text = Hidden and "Show ALL UI" or "Hide ALL UI"
 end)
 
-local function Hook(container)
+function Hook(container)
     container.DescendantAdded:Connect(function(obj)
         if Hidden and obj:IsA("GuiObject") and not ShouldSkip(obj) then
             Stored[obj] = obj.Visible
@@ -4093,15 +4093,15 @@ TabOther:Button({
     Callback = function()
         local ok, err = pcall(function()
 -- 服务
-local Workspace = game:GetService("Workspace")
+Workspace = game:GetService("Workspace")
 
 -- 玩家
-local LocalPlayer = Players.LocalPlayer
-local Mouse = LocalPlayer:GetMouse()
-local Camera = Workspace.CurrentCamera
+LocalPlayer = Players.LocalPlayer
+Mouse = LocalPlayer:GetMouse()
+Camera = Workspace.CurrentCamera
 
 -- 工具
-local Tool = Instance.new("Tool")
+Tool = Instance.new("Tool")
 Tool.Name = "点击传送道具"
 Tool.RequiresHandle = false
 
@@ -4168,7 +4168,7 @@ TabOther:Button({
         FallbackNotify("防布娃娃", "已尝试加载远程防布娃娃脚本（失败请检查网络或关闭 LiteMode）", 4)
     end
 })
-local TabVisual = Window:Tab({
+TabVisual = Window:Tab({
     Title = "透视功能",
     Icon = "eye",
     Locked = false,
@@ -4243,7 +4243,7 @@ TabVisual:Button({
 -- ================= 玩家ESP =================
 do
 -- 总开关
-local function ClearPlayerESP()
+function ClearPlayerESP()
     for _, obj in ipairs(workspace:GetDescendants()) do
         if obj.Name == "PlayerESP_Highlight" or obj.Name == "PlayerESP_Info" or obj.Name == "PlayerESP_Box" then
             obj:Destroy()
@@ -4251,7 +4251,7 @@ local function ClearPlayerESP()
     end
 end
 
-local function UpdatePlayerESP()
+function UpdatePlayerESP()
 
     if not PLAYER_ESP.Enabled then return end -- ⭐核心
 
@@ -4434,7 +4434,7 @@ TabVisual:Toggle({
     end
 })
 end
-local TabNight = Window:Tab({
+TabNight = Window:Tab({
     Title = "视觉功能",
     Icon = "moon",
     Locked = false,
@@ -4577,7 +4577,7 @@ TabNight:Dropdown({
     end
 })
 do
-local TabAimbot = Window:Tab({
+TabAimbot = Window:Tab({
     Title = "自瞄",
     Icon = "target",
     Locked = false,
@@ -4603,7 +4603,7 @@ TabAimbot:Toggle({
 
     end
 })
-local FOVToggle = TabAimbot:Toggle({
+FOVToggle = TabAimbot:Toggle({
     Title = "显示FOV圈",
     Default = true,
     Callback = function(v)
@@ -4671,7 +4671,7 @@ TabAimbot:Toggle({
 })
 
 -- ================= 瞄准部位 =================
-local AimPartDropdown = TabAimbot:Dropdown({
+AimPartDropdown = TabAimbot:Dropdown({
     Title = "瞄准部位",
     Values = AimPartsList,
     Default = nil, -- ❗不要用Default
@@ -4700,11 +4700,11 @@ TabAimbot:Toggle({
     end
 })
 
-local PlayerDropdown = nil
-local AimbotPlayerList = {}
+PlayerDropdown = nil
+AimbotPlayerList = {}
 
 -- ================= 定义缺失的刷新函数 =================
-local function RefreshAimbotPlayerList()
+function RefreshAimbotPlayerList()
     -- 1. 获取最新玩家列表
     AimbotPlayerList = {}
     for _, p in ipairs(Players:GetPlayers()) do
@@ -4760,9 +4760,9 @@ TabAimbot:Toggle({
     end
 })
 -- ================= 团队白名单 =================
-local TeamDropdown = nil
+TeamDropdown = nil
 
-local function RefreshTeamList()
+function RefreshTeamList()
 
     local teams = {}
 
@@ -4812,9 +4812,9 @@ end)
 task.delay(1, function()
     RefreshAimbotPlayerList()
 end)
-local VisibilityCache = {}
+VisibilityCache = {}
 
-local function isVisible(p, part)
+function isVisible(p, part)
 
     if not Camera then return false end
     if not ESP_SETTINGS.WallCheck then return true end
@@ -4850,8 +4850,8 @@ local function isVisible(p, part)
         local direction = targetPos - origin
 
         local currentOrigin = origin
-local remaining = direction
-local hitCharacter = false
+remaining = direction
+hitCharacter = false
 
 for i = 1, 3 do  -- 最多穿透3层
 
@@ -4922,18 +4922,18 @@ end
     VisibilityCache[p] = isNowVisible
     return isNowVisible
 end
-local function isAlive(p)
+function isAlive(p)
     local c = p.Character
     local h = c and c:FindFirstChild("Humanoid")
     return h and h.Health > 0
 end
-local CurrentTarget = nil
-local LastSwitchTime = 0
+CurrentTarget = nil
+LastSwitchTime = 0
 
-local SWITCH_DELAY = 0.25
-local SWITCH_THRESHOLD = 0.7
+SWITCH_DELAY = 0.25
+SWITCH_THRESHOLD = 0.7
 
-local function shouldForceSwitch(target)
+function shouldForceSwitch(target)
 
     if not target then return true end
     if not isAlive(target) then return true end
@@ -4955,7 +4955,7 @@ local function shouldForceSwitch(target)
     return false
 end
 
-local function getTarget()
+function getTarget()
 
     local now = tick()
     local center = Camera.ViewportSize / 2
@@ -5122,7 +5122,7 @@ if not syn or not protectgui then
     getgenv().protectgui = function() end
 end
 
-local SilentAimSettings = {
+SilentAimSettings = {
     Enabled = false,
     ClassName = "Universal Silent Aim",
     ToggleKey = "RightAlt",
@@ -5177,53 +5177,53 @@ local SilentAimSettings = {
 }
 
 getgenv().SilentAimSettings = SilentAimSettings
-local MainFileName = "UniversalSilentAim"
+MainFileName = "UniversalSilentAim"
 
-local Camera = workspace.CurrentCamera
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local GuiService = game:GetService("GuiService")
-local UserInputService = game:GetService("UserInputService")
-local HttpService = game:GetService("HttpService")
-local Debris = game:GetService("Debris")
-local CoreGui = game:GetService("CoreGui")
-local PathfindingService = game:GetService("PathfindingService")
+Camera = workspace.CurrentCamera
+Players = game:GetService("Players")
+RunService = game:GetService("RunService")
+GuiService = game:GetService("GuiService")
+UserInputService = game:GetService("UserInputService")
+HttpService = game:GetService("HttpService")
+Debris = game:GetService("Debris")
+CoreGui = game:GetService("CoreGui")
+PathfindingService = game:GetService("PathfindingService")
 
-local LocalPlayer = Players.LocalPlayer
-local Mouse = LocalPlayer:GetMouse()
+LocalPlayer = Players.LocalPlayer
+Mouse = LocalPlayer:GetMouse()
 
-local GetPlayers = Players.GetPlayers
-local WorldToViewportPoint = Camera.WorldToViewportPoint
-local FindFirstChild = game.FindFirstChild
-local RenderStepped = RunService.RenderStepped
-local GetMouseLocation = UserInputService.GetMouseLocation
+GetPlayers = Players.GetPlayers
+WorldToViewportPoint = Camera.WorldToViewportPoint
+FindFirstChild = game.FindFirstChild
+RenderStepped = RunService.RenderStepped
+GetMouseLocation = UserInputService.GetMouseLocation
 
-local resume = coroutine.resume
-local create = coroutine.create
+resume = coroutine.resume
+create = coroutine.create
 
-local ValidTargetParts = {"Head", "HumanoidRootPart"}
-local PredictionAmount = 0.165
+ValidTargetParts = {"Head", "HumanoidRootPart"}
+PredictionAmount = 0.165
 
-local currentTargetPart = nil
-local currentHighlight = nil
-local currentRotationAngle = 0
-local currentIndicatorHue = 0
-local npcList = {}
-local targetMap = {}
-local avatarCache = {}
-local recentShots = {}
-local pendingDamage = {}
+currentTargetPart = nil
+currentHighlight = nil
+currentRotationAngle = 0
+currentIndicatorHue = 0
+npcList = {}
+targetMap = {}
+avatarCache = {}
+recentShots = {}
+pendingDamage = {}
 
-local lockedTargetObject = nil
+lockedTargetObject = nil
 
-local target_indicator_circle = Drawing.new("Circle")
+target_indicator_circle = Drawing.new("Circle")
 target_indicator_circle.Visible = false; target_indicator_circle.ZIndex = 1000; target_indicator_circle.Thickness = 2; target_indicator_circle.Filled = false
-local target_indicator_lines = {}
+target_indicator_lines = {}
 for i = 1, 5 do local line = Drawing.new("Line"); line.Visible = false; line.ZIndex = 1000; line.Thickness = 2; table.insert(target_indicator_lines, line) end
-local tracer_line = Drawing.new("Line")
+tracer_line = Drawing.new("Line")
 tracer_line.Visible = false; tracer_line.ZIndex = 998; tracer_line.Color = Color3.fromRGB(255, 255, 0); tracer_line.Thickness = 1; tracer_line.Transparency = 1
 
-local overhead_info_texts = {
+overhead_info_texts = {
     Name = Drawing.new("Text"),
     Health = Drawing.new("Text"),
     Distance = Drawing.new("Text"),
@@ -5233,9 +5233,9 @@ for _, text in pairs(overhead_info_texts) do
     text.Visible = false; text.ZIndex = 1001; text.Font = Drawing.Fonts.Plex; text.Size = 14; text.Color = Color3.fromRGB(255, 255, 255); text.Center = true; text.Outline = true
 end
 
-local panel_info_bg = Drawing.new("Square")
+panel_info_bg = Drawing.new("Square")
 panel_info_bg.Visible = false; panel_info_bg.ZIndex = 1002; panel_info_bg.Color = Color3.fromRGB(0, 0, 0); panel_info_bg.Thickness = 0; panel_info_bg.Filled = true; panel_info_bg.Transparency = 0.5
-local panel_info_texts = {
+panel_info_texts = {
     Name = Drawing.new("Text"),
     Health = Drawing.new("Text"),
     Distance = Drawing.new("Text"),
@@ -5245,26 +5245,26 @@ for _, text in pairs(panel_info_texts) do
     text.Visible = false; text.ZIndex = 1003; text.Font = Drawing.Fonts.Plex; text.Size = 14; text.Color = Color3.fromRGB(255, 255, 255); text.Center = false; text.Outline = true
 end
 
-local FOVCircleGui = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui"))
+FOVCircleGui = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui"))
 FOVCircleGui.Name = "FOVCircleGui"; FOVCircleGui.ResetOnSpawn = false; FOVCircleGui.IgnoreGuiInset = true; FOVCircleGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-local FOVCircleFrame = Instance.new("Frame", FOVCircleGui)
+FOVCircleFrame = Instance.new("Frame", FOVCircleGui)
 FOVCircleFrame.Name = "FOVCircleFrame"; FOVCircleFrame.AnchorPoint = Vector2.new(0.5, 0.5); FOVCircleFrame.Position = UDim2.fromScale(0.5, 0.5); FOVCircleFrame.BackgroundTransparency = 1
-local FOVStroke = Instance.new("UIStroke", FOVCircleFrame)
+FOVStroke = Instance.new("UIStroke", FOVCircleFrame)
 FOVStroke.Name = "FOVStroke"; FOVStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border; FOVStroke.Thickness = 1; FOVStroke.Transparency = 0.5
-local FOVCorner = Instance.new("UICorner", FOVCircleFrame)
+FOVCorner = Instance.new("UICorner", FOVCircleFrame)
 FOVCorner.Name = "FOVCorner"; FOVCorner.CornerRadius = UDim.new(1, 0)
 
-local IndependentPanelGui = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui"))
+IndependentPanelGui = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui"))
 IndependentPanelGui.Name = "IndependentPanelGui"; IndependentPanelGui.ResetOnSpawn = false; IndependentPanelGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-local IndependentPanelFrame = Instance.new("Frame", IndependentPanelGui)
+IndependentPanelFrame = Instance.new("Frame", IndependentPanelGui)
 IndependentPanelFrame.Name = "PanelFrame"; IndependentPanelFrame.Size = UDim2.fromOffset(160, 100);
 IndependentPanelFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30); IndependentPanelFrame.BackgroundTransparency = 0.3; IndependentPanelFrame.BorderSizePixel = 1; IndependentPanelFrame.BorderColor3 = Color3.new(1,1,1)
 IndependentPanelFrame.Visible = false; IndependentPanelFrame.Active = true
-local IPCorner = Instance.new("UICorner", IndependentPanelFrame); IPCorner.CornerRadius = UDim.new(0, 4)
-local IPListLayout = Instance.new("UIListLayout", IndependentPanelFrame)
+IPCorner = Instance.new("UICorner", IndependentPanelFrame); IPCorner.CornerRadius = UDim.new(0, 4)
+IPListLayout = Instance.new("UIListLayout", IndependentPanelFrame)
 IPListLayout.Padding = UDim.new(0, 5); IPListLayout.SortOrder = Enum.SortOrder.LayoutOrder; IPListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center; IPListLayout.VerticalAlignment = Enum.VerticalAlignment.Center
 
-local independent_panel_texts = {}
+independent_panel_texts = {}
 for i, name in ipairs({"Name", "Health", "Distance", "Category"}) do
     local label = Instance.new("TextLabel", IndependentPanelFrame)
     label.Name = name; label.Size = UDim2.new(1, -10, 0, 15); label.BackgroundTransparency = 1
@@ -5274,21 +5274,21 @@ end
 IndependentPanelFrame.InputBegan:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 and IndependentPanelFrame.Draggable then IndependentPanelFrame.Position = UDim2.fromOffset(UserInputService:GetMouseLocation().X, UserInputService:GetMouseLocation().Y) end end)
 IndependentPanelFrame.InputEnded:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 and IndependentPanelFrame.Draggable then SilentAimSettings.IndependentPanelPosition = IndependentPanelFrame.Position.X.Offset .. "," .. IndependentPanelFrame.Position.Y.Offset end end)
 
-local ExpectedArguments = {
+ExpectedArguments = {
     FindPartOnRayWithIgnoreList = { ArgCountRequired = 3, Args = {"Instance", "Ray", "table", "boolean", "boolean"} },
     FindPartOnRayWithWhitelist = { ArgCountRequired = 3, Args = {"Instance", "Ray", "table", "boolean"} },
     FindPartOnRay = { ArgCountRequired = 2, Args = {"Instance", "Ray", "Instance", "boolean", "boolean"} },
     Raycast = { ArgCountRequired = 3, Args = {"Instance", "Vector3", "Vector3", "RaycastParams"} }
 }
 
-local HitSounds = {
+HitSounds = {
     ["bell"] = "rbxassetid://8679627751",
     ["metal"] = "rbxassetid://3125624765",
     ["click"] = "rbxassetid://17755696142",
     ["exp"] = "rbxassetid://10070796384"
 }
 
-local rainbowColor = Color3.fromHSV(0, 1, 1)
+rainbowColor = Color3.fromHSV(0, 1, 1)
 task.spawn(function()
     while task.wait() do
         if Library and Library.Unloaded then break end
@@ -5297,7 +5297,7 @@ task.spawn(function()
     end
 end)
 
-local function playHitSound(soundId)
+function playHitSound(soundId)
     local sound = Instance.new("Sound")
     sound.Parent = CoreGui
     sound.SoundId = soundId
@@ -5316,23 +5316,23 @@ do
     if not isfolder(string.format("%s/%s", MainFileName, tostring(game.PlaceId))) then makefolder(string.format("%s/%s", MainFileName, tostring(game.PlaceId))) end
 end
 
-local function getPositionOnScreen(Vector)
+function getPositionOnScreen(Vector)
     local Vec3, OnScreen = WorldToViewportPoint(Camera, Vector)
     return Vector2.new(Vec3.X, Vec3.Y), OnScreen
 end
 
-local function ValidateArguments(Args, RayMethod)
+function ValidateArguments(Args, RayMethod)
     local Matches = 0
     if #Args < RayMethod.ArgCountRequired then return false end
     for Pos, Argument in next, Args do if typeof(Argument) == RayMethod.Args[Pos] then Matches = Matches + 1 end end
     return Matches >= RayMethod.ArgCountRequired
 end
 
-local function getDirection(Origin, Position)
+function getDirection(Origin, Position)
     return (Position - Origin).Unit * 1000
 end
 
-local function isNPC(obj)
+function isNPC(obj)
     return obj:IsA("Model") and obj:FindFirstChild("Humanoid") and obj.Humanoid.Health > 0 and obj:FindFirstChild("HumanoidRootPart") and not Players:GetPlayerFromCharacter(obj)
 end
 
@@ -5366,7 +5366,7 @@ function getTargetCategory(character)
     return "未知"
 end
 
-local function updateNPCs()
+function updateNPCs()
     local newNpcList = {}
     local addedNpcs = {}
 
@@ -5406,7 +5406,7 @@ local function updateNPCs()
     npcList = newNpcList
 end
 
-local function isBlacklisted(name)
+function isBlacklisted(name)
     local lowerName = name:lower()
     for _, blacklistedName in ipairs(SilentAimSettings.BlacklistedNames) do
         if blacklistedName:lower() == lowerName then
@@ -5416,7 +5416,7 @@ local function isBlacklisted(name)
     return false
 end
 
-local function isPartVisible(part, customOrigin)
+function isPartVisible(part, customOrigin)
     if not part then return false end
     local localCharacter = LocalPlayer.Character
     if not localCharacter then return false end
@@ -5429,7 +5429,7 @@ local function isPartVisible(part, customOrigin)
     return not raycastResult
 end
 
-local function getClosestPlayer()
+function getClosestPlayer()
     local LocalPlayerCharacter = LocalPlayer.Character
     if not LocalPlayerCharacter or not LocalPlayerCharacter:FindFirstChild("HumanoidRootPart") then return nil end
     local localRoot = LocalPlayerCharacter.HumanoidRootPart
@@ -5478,7 +5478,7 @@ local function getClosestPlayer()
     return candidates[1].character
 end
 
-local function getNPCTarget()
+function getNPCTarget()
     local LocalPlayerCharacter = LocalPlayer.Character
     if not LocalPlayerCharacter or not LocalPlayerCharacter:FindFirstChild("HumanoidRootPart") then return nil end
     local localRoot = LocalPlayerCharacter.HumanoidRootPart
@@ -5546,10 +5546,10 @@ function hideAllVisuals()
 end
 
 
-local Options = {}
-local Toggles = {}
+Options = {}
+Toggles = {}
 
-local function Notify(title, content, duration)
+function Notify(title, content, duration)
     pcall(function()
         WindUI:Notify({
             Title = title or "WindUI",
@@ -5560,7 +5560,7 @@ local function Notify(title, content, duration)
     end)
 end
 
-local function KeyCodeFromString(keyName, fallback)
+function KeyCodeFromString(keyName, fallback)
     fallback = fallback or Enum.KeyCode.RightAlt
 
     if typeof(keyName) == "EnumItem" then
@@ -5578,7 +5578,7 @@ local function KeyCodeFromString(keyName, fallback)
     return fallback
 end
 
-local function NormalizeSliderValue(value, fallback)
+function NormalizeSliderValue(value, fallback)
     if typeof(value) == "number" then
         return value
     end
@@ -5605,7 +5605,7 @@ local function NormalizeSliderValue(value, fallback)
     return fallback
 end
 
-local function CloneArray(list)
+function CloneArray(list)
     local result = {}
 
     if type(list) ~= "table" then
@@ -5619,7 +5619,7 @@ local function CloneArray(list)
     return result
 end
 
-local function RemoveFromTable(list, value)
+function RemoveFromTable(list, value)
     if type(list) ~= "table" then
         return
     end
@@ -5631,7 +5631,7 @@ local function RemoveFromTable(list, value)
     end
 end
 
-local function MakeProxy(defaultValue)
+function MakeProxy(defaultValue)
     local proxy = {
         Value = defaultValue,
         Values = nil,
@@ -5677,7 +5677,7 @@ local function MakeProxy(defaultValue)
     return proxy
 end
 
-local function AddToggle(parent, key, data, callback)
+function AddToggle(parent, key, data, callback)
     local defaultValue = data.Value == true
     local proxy = MakeProxy(defaultValue)
     Toggles[key] = proxy
@@ -5706,7 +5706,7 @@ local function AddToggle(parent, key, data, callback)
     return proxy
 end
 
-local function AddSlider(parent, key, data, callback)
+function AddSlider(parent, key, data, callback)
     local defaultValue = tonumber(data.Default) or 0
     local proxy = MakeProxy(defaultValue)
     Options[key] = proxy
@@ -5736,7 +5736,7 @@ local function AddSlider(parent, key, data, callback)
     return proxy
 end
 
-local function AddDropdown(parent, key, data, callback)
+function AddDropdown(parent, key, data, callback)
     local values = data.Values or {}
     local defaultValue = data.Value
     local proxy = MakeProxy(defaultValue)
@@ -5764,7 +5764,7 @@ local function AddDropdown(parent, key, data, callback)
     return proxy
 end
 
-local function AddInput(parent, key, data, callback)
+function AddInput(parent, key, data, callback)
     local defaultValue = data.Value or ""
     local proxy = MakeProxy(defaultValue)
     Options[key] = proxy
@@ -5790,7 +5790,7 @@ local function AddInput(parent, key, data, callback)
     return proxy
 end
 
-local function AddColorpicker(parent, key, data, callback)
+function AddColorpicker(parent, key, data, callback)
     local defaultValue = data.Default or Color3.fromRGB(255, 255, 255)
     local proxy = MakeProxy(defaultValue)
     Options[key] = proxy
@@ -5815,7 +5815,7 @@ local function AddColorpicker(parent, key, data, callback)
     return proxy
 end
 
-local function AddButton(parent, data, callback)
+function AddButton(parent, data, callback)
     return parent:Button({
         Title = data.Title or "Button",
         Icon = data.Icon,
@@ -5828,9 +5828,9 @@ local function AddButton(parent, data, callback)
     })
 end
 
-local enabledKeybindConnection = nil
+enabledKeybindConnection = nil
 
-local Library = {
+Library = {
     Options = Options,
     Toggles = Toggles,
     Unloaded = false,
@@ -5860,12 +5860,12 @@ function Library:Unload()
     end
 end
 
-local ThemeManager = {}
+ThemeManager = {}
 
 function ThemeManager:SetLibrary(_) end
 function ThemeManager:ApplyToTab(_) end
 
-local SaveManager = {}
+SaveManager = {}
 
 function SaveManager:SetLibrary(_) end
 function SaveManager:IgnoreThemeSettings() end
@@ -5874,10 +5874,10 @@ function SaveManager:SetFolder(_) end
 function SaveManager:BuildConfigSection(_) end
 function SaveManager:LoadAutoloadConfig() end
 
-local originalCharacterData = {}
-local transparencyLoopConnection = nil
+originalCharacterData = {}
+transparencyLoopConnection = nil
 
-local function restoreCharacterAppearance()
+function restoreCharacterAppearance()
     for part, data in pairs(originalCharacterData) do
         if part and part.Parent then
             part.Material = data.material
@@ -5889,7 +5889,7 @@ local function restoreCharacterAppearance()
     originalCharacterData = {}
 end
 
-local function transparencyLoop()
+function transparencyLoop()
     local character = LocalPlayer.Character
 
     if not character then
@@ -5925,11 +5925,11 @@ local function transparencyLoop()
     end
 end
 
-local spinThread = nil
-local spinEnabled = false
-local spinSpeed = math.rad(10)
+spinThread = nil
+spinEnabled = false
+spinSpeed = math.rad(10)
 
-local function spinCharacter()
+function spinCharacter()
     while spinEnabled and task.wait() do
         local char = LocalPlayer.Character
         local hrp = char and char:FindFirstChild("HumanoidRootPart")
@@ -5944,7 +5944,7 @@ local function spinCharacter()
     spinThread = nil
 end
 
-local BulletTrackingSection = Window:Section({
+BulletTrackingSection = Window:Section({
     Title = "子弹追踪模块",
     Icon = "crosshair",
     Opened = false,
@@ -5981,7 +5981,7 @@ Tabs = {
         Locked = false,
     }),
 }
-local function ApplyFOVRadius(value)
+function ApplyFOVRadius(value)
     local radius = NormalizeSliderValue(value, SilentAimSettings.FOVRadius or 130)
 
     radius = math.clamp(radius, 10, 1000)
@@ -6001,7 +6001,7 @@ local function ApplyFOVRadius(value)
     end
 end
 
-local function ApplyFOVColor(color)
+function ApplyFOVColor(color)
     if typeof(color) ~= "Color3" then
         color = Color3.fromRGB(54, 57, 241)
     end
@@ -6015,7 +6015,7 @@ local function ApplyFOVColor(color)
     end
 end
 
-local function RefreshFOVVisibility()
+function RefreshFOVVisibility()
     local shouldShowFOV =
         SilentAimSettings.Enabled == true
         and SilentAimSettings.FOVVisible == true
@@ -6025,7 +6025,7 @@ local function RefreshFOVVisibility()
     end
 end
 
-local function ApplyFOVVisible(value)
+function ApplyFOVVisible(value)
     local enabled = value == true
 
     SilentAimSettings.FOVVisible = enabled
@@ -6036,7 +6036,7 @@ local function ApplyFOVVisible(value)
 
     RefreshFOVVisibility()
 end
-local function ApplyPanelPinned(value)
+function ApplyPanelPinned(value)
     SilentAimSettings.IndependentPanelPinned = value == true
 
     if IndependentPanelFrame then
@@ -6044,7 +6044,7 @@ local function ApplyPanelPinned(value)
     end
 end
 
-local function SyncAfterConfigLoad()
+function SyncAfterConfigLoad()
     task.defer(function()
         if Options.FOVRadiusSlider then
             ApplyFOVRadius(Options.FOVRadiusSlider.Value)
@@ -6090,7 +6090,7 @@ AddToggle(Tabs.Main, "EnabledToggle", {
     SilentAimSettings.Enabled = value
     RefreshFOVVisibility()
 end)
-local EnabledKeybindProxy = MakeProxy(SilentAimSettings.ToggleKey or "RightAlt")
+EnabledKeybindProxy = MakeProxy(SilentAimSettings.ToggleKey or "RightAlt")
 Options.EnabledKeybind = EnabledKeybindProxy
 
 EnabledKeybindProxy._element = Tabs.Main:Keybind({
@@ -6786,8 +6786,8 @@ AddSlider(Tabs.Misc, "SpinSpeedSlider", {
     spinSpeed = math.rad(math.clamp(NormalizeSliderValue(value, 10), 1, 100))
 end)
 
-local ConfigManager = Window.ConfigManager
-local MainConfig = nil
+ConfigManager = Window.ConfigManager
+MainConfig = nil
 
 pcall(function()
     if ConfigManager then
@@ -6874,15 +6874,15 @@ task.spawn(function()
     end
 end)
 
-local lastHealthValues = {}
-local damageIndicators = {}
-local DAMAGE_INDICATOR_FADE_TIME = 1
+lastHealthValues = {}
+damageIndicators = {}
+DAMAGE_INDICATOR_FADE_TIME = 1
 
-local pos = SilentAimSettings.IndependentPanelPosition:split(",")
+pos = SilentAimSettings.IndependentPanelPosition:split(",")
 IndependentPanelFrame.Position = UDim2.fromOffset(tonumber(pos[1]), tonumber(pos[2]))
 
-local lastTargetCharacter = nil
-local lockedRandomPart = nil
+lastTargetCharacter = nil
+lockedRandomPart = nil
 
 resume(create(function()
     RenderStepped:Connect(function()
@@ -7223,7 +7223,7 @@ resume(create(function()
     end)
 end))
 
-local oldNamecall
+oldNamecall = nil
 oldNamecall = hookmetamethod(game, "__namecall", newcclosure(function(...)
     local Method = getnamecallmethod()
     local Arguments = {...}
@@ -7270,8 +7270,8 @@ oldNamecall = hookmetamethod(game, "__namecall", newcclosure(function(...)
     return oldNamecall(...)
 end))
 
-local oldIndex
-local oldRayNew
+oldIndex = nil
+oldRayNew = nil
 oldIndex = hookmetamethod(game, "__index", newcclosure(function(self, Index)
     if self == Mouse and not checkcaller() and SilentAimSettings.Enabled and SilentAimSettings.SilentAimMethod == "Mouse.Hit/Target" then
         if currentTargetPart then
@@ -7334,7 +7334,7 @@ ThemeManager:ApplyToTab(Tabs["UI Settings"])
 
 SaveManager:LoadAutoloadConfig()
 end)()
-local TabTP = Window:Tab({
+TabTP = Window:Tab({
     Title = "传送与甩飞",
     Icon = "send",
     Locked = false,
@@ -7347,12 +7347,12 @@ TabTP:Paragraph({
 })
 
 -- ================= 玩家列表（最终统一版） =================
-local TP_PlayerList = {}
-local TP_SelectedPlayer = nil
-local TP_Dropdown = nil
+TP_PlayerList = {}
+TP_SelectedPlayer = nil
+TP_Dropdown = nil
 
 -- ================= 核心创建函数 =================
-local function CreateTPDropdown(lastSelectedName)
+function CreateTPDropdown(lastSelectedName)
 
     -- ⭐生成列表
     TP_PlayerList = {"所有人"}
@@ -7397,7 +7397,7 @@ local function CreateTPDropdown(lastSelectedName)
 end
 
 -- ================= 刷新函数 =================
-local function TP_RefreshPlayerList()
+function TP_RefreshPlayerList()
 
     -- ⭐记录当前选择
     local lastSelectedName = nil
@@ -7455,8 +7455,8 @@ TabTP:Button({
 
 -- ================= 循环传送 =================
 
-local TP_Loop = false
-local TP_LoopConnection = nil
+TP_Loop = false
+TP_LoopConnection = nil
 
 TabTP:Toggle({
     Title = "循环传送",
@@ -7606,7 +7606,7 @@ TabTP:Slider({
         SpinSpeed = v
     end
 })
-local TabAb = Window:Tab({
+TabAb = Window:Tab({
     Title = "服务器功能",
     Icon = "info",
     Locked = false,
@@ -7779,7 +7779,7 @@ end)
 })
 
 
-local TabFE = Window:Tab({
+TabFE = Window:Tab({
     Title = "动作功能",
     Icon = "eye",
     Locked = false,
@@ -7792,9 +7792,9 @@ TabFE:Paragraph({
 })
 
 -- ===== 基础 =====
-local player = Players.LocalPlayer
+player = Players.LocalPlayer
 
-local currentTrack = nil
+currentTrack = nil
 
 -- ===== 重生处理 =====
 player.CharacterAdded:Connect(function()
@@ -7802,7 +7802,7 @@ player.CharacterAdded:Connect(function()
 end)
 
 -- ===== 获取 Animator =====
-local function GetAnimator()
+function GetAnimator()
     local character = player.Character or player.CharacterAdded:Wait()
     local humanoid = character:WaitForChild("Humanoid")
 
@@ -7816,7 +7816,7 @@ local function GetAnimator()
 end
 
 -- ===== 播放函数 =====
-local function PlayAnim(animId)
+function PlayAnim(animId)
     local animator = GetAnimator()
 
     -- 停旧动画
@@ -7840,7 +7840,7 @@ local function PlayAnim(animId)
 end
 
 -- ===== 总关闭函数 =====
-local function StopAllAnim()
+function StopAllAnim()
     if currentTrack then
         currentTrack:Stop()
         currentTrack:Destroy()
@@ -8695,7 +8695,7 @@ TabFE:Button({
     end
 })
 -- ================= 终止 =================
-local TabStop = Window:Tab({
+TabStop = Window:Tab({
     Title = "终止",
     Icon = "x",
     Locked = false,
@@ -8743,16 +8743,16 @@ TabStop:Button({
 
 task.wait(0.3)
 
-local RunService = game:GetService("RunService")
-local Main = Window.UIElements.Main
+RunService = game:GetService("RunService")
+Main = Window.UIElements.Main
 
 -- ===== 文件 =====
-local BorderModeFile = "WindUI_BorderMode.txt"
-local BorderEnabledFile = "WindUI_BorderEnabled.txt"
+BorderModeFile = "WindUI_BorderMode.txt"
+BorderEnabledFile = "WindUI_BorderEnabled.txt"
 
 -- ===== 默认（强制彩虹 + 开启）=====
-local BorderMode = "Rainbow"
-local BorderEnabled = true
+BorderMode = "Rainbow"
+BorderEnabled = true
 
 -- ===== 读取（如果没有文件就用默认）=====
 pcall(function()
@@ -8776,7 +8776,7 @@ for _, v in ipairs(Main:GetDescendants()) do
 end
 
 -- ===== 创建描边 =====
-local Stroke = Instance.new("UIStroke")
+Stroke = Instance.new("UIStroke")
 Stroke.Name = "RainbowBorder"
 Stroke.Thickness = 3.5
 Stroke.Color = Color3.new(1, 1, 1)
@@ -8785,7 +8785,7 @@ Stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 Stroke.Parent = Main
 
 -- ===== 原版彩虹渐变 =====
-local Gradient = Instance.new("UIGradient")
+Gradient = Instance.new("UIGradient")
 Gradient.Name = "RainbowGradient"
 Gradient.Color = ColorSequence.new({
     ColorSequenceKeypoint.new(0,    Color3.fromRGB(255, 0, 0)),
@@ -8800,7 +8800,7 @@ Gradient.Rotation = 1
 Gradient.Parent = Stroke
 
 -- ===== 模式切换 =====
-local function ApplyBorderMode(mode)
+function ApplyBorderMode(mode)
     BorderMode = mode
 
     if mode == "Rainbow" then
@@ -8824,7 +8824,7 @@ local function ApplyBorderMode(mode)
 end
 
 -- ===== 开关 =====
-local function SetBorderEnabled(v)
+function SetBorderEnabled(v)
     BorderEnabled = v
     Stroke.Enabled = v
 
@@ -8840,12 +8840,12 @@ ApplyBorderMode(BorderMode)
 SetBorderEnabled(BorderEnabled)
 
 -- ===== 动画（初始化之后再连接，保证 BorderMode 已同步）=====
-local currentAngle = 1
+currentAngle = 1
 
 -- ⭐ 关键修复：连接前先强制写一次 Rotation，激活 Roblox 渲染管线
 Gradient.Rotation = currentAngle
 
-local rotAccum = 0
+rotAccum = 0
 RunService.RenderStepped:Connect(function(dt)
     if _G.HighPerf then return end
     if not Stroke or not Stroke.Parent then return end
@@ -8862,7 +8862,7 @@ RunService.RenderStepped:Connect(function(dt)
 end)
 
 -- ===== 圆角 =====
-local Corner = Main:FindFirstChildOfClass("UICorner")
+Corner = Main:FindFirstChildOfClass("UICorner")
 if not Corner then
     Corner = Instance.new("UICorner")
     Corner.CornerRadius = UDim.new(0, 12)
@@ -8879,8 +8879,8 @@ _G.BorderEnabled = BorderEnabled
 -- 说明：WindUI 本版本窗口并不渲染 Background / BackgroundImageTransparency，
 -- 所以之前所有 Window.BackgroundImageTransparency = ... 都是空操作。
 -- 这里改为脚本自己持有并控制一个 ImageLabel，图片与透明度均由我们直接管理。
-local BgLabel = nil
-local function EnsureBgLabel()
+BgLabel = nil
+function EnsureBgLabel()
     local container = Window.UIElements and (Window.UIElements.MainContainer or Window.UIElements.Main)
     if not container then return end
     if BgLabel and BgLabel.Parent == container then return end
@@ -8900,7 +8900,7 @@ local function EnsureBgLabel()
     BgLabel = lbl
 end
 
-local function ApplyBgImage()
+function ApplyBgImage()
     pcall(EnsureBgLabel)
     if BgLabel then
         pcall(function()
@@ -8911,7 +8911,7 @@ local function ApplyBgImage()
     end
 end
 
-local function ApplyBgTransparency(val)
+function ApplyBgTransparency(val)
     BgTransValue = val
     pcall(function()
         if writefile then writefile(BgTransFile, tostring(val)) end
@@ -8925,9 +8925,9 @@ end
 -- 开启后：冻结彩虹边框动画 + 隐藏背景图 + 尽量关闭毛玻璃模糊，
 -- 把每帧合成开销降到最低，显著缓解卡顿。
 _G.HighPerf = _G.HighPerf or false
-local HighPerfFile = "XF_HighPerf.txt"
+HighPerfFile = "XF_HighPerf.txt"
 
-local function SetHighPerf(on)
+function SetHighPerf(on)
     _G.HighPerf = on
     pcall(function()
         if writefile then writefile(HighPerfFile, on and "true" or "false") end
@@ -8957,9 +8957,9 @@ end
 _G.SetHighPerf = SetHighPerf
 
 -- ================= 字体颜色控制 =================
-local FontColorFile = "XF_FontColor.txt"
-local FontColor = Color3.fromRGB(235, 235, 235)
-local FontColorEnabled = false
+FontColorFile = "XF_FontColor.txt"
+FontColor = Color3.fromRGB(235, 235, 235)
+FontColorEnabled = false
 
 pcall(function()
     if isfile and isfile(FontColorFile) then
@@ -8974,7 +8974,7 @@ pcall(function()
     end
 end)
 
-local function ApplyFontColor()
+function ApplyFontColor()
     if not FontColorEnabled then return end
     local main = Window.UIElements and (Window.UIElements.MainContainer or Window.UIElements.Main)
     if not main then return end
@@ -8999,18 +8999,18 @@ if FontColorEnabled then pcall(ApplyFontColor) end
 pcall(function() if _G.SetHighPerf then _G.SetHighPerf(_G.HighPerf) end end)
 
 -- ================= 脚本整合（来自其他通用脚本的功能） =================
-local TabMerge = Window:Tab({
+TabMerge = Window:Tab({
     Title = "脚本整合",
     Icon = "layers",
     Locked = false,
 })
 
-local RunS = game:GetService("RunService")
-local WKS = workspace
+RunS = game:GetService("RunService")
+WKS = workspace
 
 -- 1) 透明角色（自己）
-local xfTransparent = false
-local function applyTransparent(on)
+xfTransparent = false
+function applyTransparent(on)
     pcall(function()
         local char = Players.LocalPlayer.Character
         if not char then return end
@@ -9033,7 +9033,7 @@ Players.LocalPlayer.CharacterAdded:Connect(function()
 end)
 
 -- 2) FPS 显示
-local xfFpsGui, xfFpsLabel, xfFpsConn
+xfFpsGui, xfFpsLabel, xfFpsConn = nil
 TabMerge:Toggle({
     Title = "FPS 显示",
     Callback = function(v)
@@ -9090,7 +9090,7 @@ TabMerge:Toggle({
 })
 
 -- 4) 自动连跳
-local xfJumpConn
+xfJumpConn = nil
 TabMerge:Toggle({
     Title = "自动连跳",
     Callback = function(v)
@@ -9120,9 +9120,9 @@ TabMerge:Toggle({
 })
 
 -- 6) 玩家传送（下拉选择 + 传送）
-local xfPlayerList = {}
-local xfSelPlayer = nil
-local function refreshPlayerList()
+xfPlayerList = {}
+xfSelPlayer = nil
+function refreshPlayerList()
     xfPlayerList = {}
     for _, pl in ipairs(Players:GetPlayers()) do
         if pl ~= Players.LocalPlayer then table.insert(xfPlayerList, pl.Name) end
@@ -9158,7 +9158,7 @@ TabMerge:Button({
 })
 
 -- 7) 自旋
-local xfSpinConn
+xfSpinConn = nil
 TabMerge:Toggle({
     Title = "角色自旋",
     Desc = "让角色原地快速旋转",
@@ -9181,7 +9181,7 @@ TabMerge:Toggle({
 TabMerge:Paragraph({ Title = "脚本整合说明", Desc = "以上为整合自多份通用脚本的通用功能（透明/视角/传送/自旋/FPS/慢动作等），适配大部分游戏。" })
 
 -- ================= 配置 =================
-local TabConfig = Window:Tab({
+TabConfig = Window:Tab({
     Title = "配置",
     Icon = "settings",
     Locked = false,
@@ -9191,7 +9191,7 @@ local TabConfig = Window:Tab({
 -- ⭐延迟获取主题（确保AddTheme已注册）
 task.wait()
 
-local ThemeList = {}
+ThemeList = {}
 pcall(function()
     ThemeList = WindUI:GetThemes()
 end)
@@ -9213,14 +9213,14 @@ TabConfig:Toggle({
 
 -- ================= 主题列表（关键修复） =================
 
-local ThemeList = {}
+ThemeList = {}
 
 pcall(function()
     ThemeList = WindUI:GetThemes()
 end)
 
 -- ⭐手动加入自定义主题
-local CustomThemes = {"Aurora", "Cyan", "Blue", "BlackGold"}
+CustomThemes = {"Aurora", "Cyan", "Blue", "BlackGold"}
 
 for _, v in ipairs(CustomThemes) do
     if not table.find(ThemeList, v) then
@@ -9228,7 +9228,7 @@ for _, v in ipairs(CustomThemes) do
     end
 end
 -- ⭐去重并确保Dark在第一位
-local NewList = {"Dark"}
+NewList = {"Dark"}
 
 for _, v in ipairs(ThemeList) do
     if v ~= "Dark" then
@@ -9284,7 +9284,7 @@ TabConfig:Toggle({
 -- ================= 背景图预设 =================
 
 -- 固定顺序列表
-local BgPresetNames = {
+BgPresetNames = {
     "蓝色系少女",
     "粉色系少女",
     "蓝色系猫娘",
