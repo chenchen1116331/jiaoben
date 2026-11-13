@@ -9189,6 +9189,7 @@ BgAssetCache = {}
 -- ⭐ 远程图片解析：复刻 WindUI 原生机制（HttpGet 下载 -> writefile -> getcustomasset）
 -- 这是 Roblox 里“显示远程图片”的唯一可靠方式；
 -- 直接把 http 链接塞给 ImageLabel.Image 是渲染不出来的（报错且不显示）。
+-- 优化：失败返回 nil（绝不直接塞链接），由上层兜底。
 function ResolveImage(url)
     if not url or url == "" then return nil end
     -- 已是 rbxassetid / rbxasset / 本地文件，直接可用
@@ -9208,12 +9209,31 @@ function ResolveImage(url)
     return nil
 end
 
+-- 兜底：远程图无法加载时，用渐变纯色背景代替，保证“不空窗、不报错”
+function ApplyBgFallback()
+    if not BgLabel then return end
+    pcall(function()
+        BgLabel.Image = ""
+        if not BgLabel:FindFirstChildOfClass("UIGradient") then
+            local g = Instance.new("UIGradient")
+            g.Color = ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Color3.fromRGB(18, 14, 36)),
+                ColorSequenceKeypoint.new(1, Color3.fromRGB(58, 30, 92)),
+            })
+            g.Rotation = 45
+            g.Parent = BgLabel
+        end
+        BgLabel.BackgroundColor3 = Color3.fromRGB(28, 20, 52)
+        BgLabel.BackgroundTransparency = 0
+        BgLabel.ImageTransparency = BgTransValue
+        BgLabel.Visible = BackgroundEnabled
+    end)
+end
+
 function EnsureBgLabel()
-    if BgLabel and BgLabel.Parent and BgLabel.Parent == (Window.UIElements and (Window.UIElements.MainContainer or Window.UIElements.Main)) then
-        return
-    end
     local container = Window.UIElements and (Window.UIElements.MainContainer or Window.UIElements.Main)
-    if not container then return end
+    if BgLabel and BgLabel.Parent and BgLabel.Parent == container then return true end
+    if not container then return false end
     pcall(function()
         local lbl = Instance.new("ImageLabel")
         lbl.Name = "XF_Background"
@@ -9222,7 +9242,7 @@ function EnsureBgLabel()
         lbl.Size = UDim2.new(1, 0, 1, 0)
         lbl.Position = UDim2.new(0, 0, 0, 0)
         lbl.ScaleType = Enum.ScaleType.Crop
-        lbl.ZIndex = 1
+        lbl.ZIndex = 0
         lbl.Visible = BackgroundEnabled
         lbl.Image = ""
         lbl.ImageTransparency = BgTransValue
@@ -9230,28 +9250,38 @@ function EnsureBgLabel()
         container.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
         BgLabel = lbl
     end)
+    return (BgLabel and BgLabel.Parent == container)
 end
 
 function ApplyBgImage()
-    pcall(EnsureBgLabel)
-    if not BgLabel then return end
-    pcall(function() BgLabel.Visible = BackgroundEnabled end)
-    if not BackgroundEnabled then return end
-    -- 异步解析远程图片，避免阻塞启动；解析完成后再赋值，彻底解决“链接直赋 Image 不渲染/报错”
-    task.spawn(function()
-        pcall(function()
-            local asset = ResolveImage(BgImage)
-            if asset and BgLabel then
-                BgLabel.Image = asset
-            elseif BgImage and BgLabel then
-                BgLabel.Image = BgImage
-            end
-            if BgLabel then
-                BgLabel.ImageTransparency = BgTransValue
-                BgLabel.Visible = BackgroundEnabled
-            end
-        end)
-    end)
+    -- 容器可能尚未建好（窗口懒加载），最多重试若干次，避免“永远空窗”
+    local tries = 0
+    local function tryCreate()
+        tries = tries + 1
+        if EnsureBgLabel() then
+            pcall(function() if BgLabel then BgLabel.Visible = BackgroundEnabled end end)
+            if not BackgroundEnabled then return end
+            -- 异步解析远程图片，避免阻塞启动；解析完成后再赋值
+            task.spawn(function()
+                pcall(function()
+                    local asset = ResolveImage(BgImage)
+                    if asset and BgLabel then
+                        BgLabel.Image = asset
+                        BgLabel.ImageTransparency = BgTransValue
+                        BgLabel.Visible = true
+                    else
+                        -- 图片拉不到：用渐变兜底，绝不空窗、绝不报错
+                        ApplyBgFallback()
+                    end
+                end)
+            end)
+            return
+        end
+        if tries < 40 then
+            task.delay(0.25, tryCreate)
+        end
+    end
+    tryCreate()
 end
 
 function ApplyBgTransparency(val)
@@ -9340,6 +9370,45 @@ if FontColorEnabled then pcall(ApplyFontColor) end
 
 -- 应用已保存的高性能模式（确保重载后背景/边框状态正确）
 pcall(function() if _G.SetHighPerf then _G.SetHighPerf(_G.HighPerf) end end)
+
+-- ================= 外观备份（防止皮肤被意外清空，可一键恢复）=================
+_G.MyOrigDesc = nil
+function BackupMyAppearance()
+    pcall(function()
+        local lp = game:GetService("Players").LocalPlayer
+        if not lp then return end
+        _G.MyOrigDesc = lp:GetHumanoidDescriptionFromUserId(lp.UserId)
+    end)
+end
+function RestoreMyAppearance()
+    pcall(function()
+        local lp = game:GetService("Players").LocalPlayer
+        if not (lp and lp.Character) then
+            Notify("恢复外观", "角色尚未加载，请稍候", 2, "info")
+            return
+        end
+        local hum = lp.Character:FindFirstChildOfClass("Humanoid")
+        if not hum then
+            Notify("恢复外观", "未找到 Humanoid", 2, "error")
+            return
+        end
+        if not _G.MyOrigDesc then BackupMyAppearance() end
+        if _G.MyOrigDesc then
+            hum:ApplyDescription(_G.MyOrigDesc:Clone())
+            Notify("恢复外观", "已恢复你的原始皮肤/外观", 3, "success")
+        else
+            Notify("恢复外观", "未找到备份，无法恢复", 3, "error")
+        end
+    end)
+end
+-- 启动时备份一次；每次重生也重新备份，确保随时能还原
+pcall(BackupMyAppearance)
+pcall(function()
+    game:GetService("Players").LocalPlayer.CharacterAdded:Connect(function()
+        task.wait(1)
+        BackupMyAppearance()
+    end)
+end)
 
 -- ================= 脚本整合（来自其他通用脚本的功能） =================
 TabMerge = Window:Tab({
@@ -9991,8 +10060,9 @@ do
     TabXA_Hub:Button({ Title = "C00lgui", Callback = function() xload("https://raw.githubusercontent.com/theawesomari0/c00lgui/main/c00lgui") end })
     TabXA_Hub:Button({ Title = "1x1x1x1", Callback = function() xload("https://pastebin.com/raw/JipYNCht") end })
     TabXA_Hub:Button({ Title = "Control (Xingtai)", Callback = function() xload("https://raw.githubusercontent.com/Xingtaiduan/Script/refs/heads/main/Content/Controller.lua") end })
-    TabXA_Hub:Input({ Title = "变玩家(输入名称)", Desc = "清空外观并应用目标用户形象", Placeholder = "用户名", Callback = function(name)
+    TabXA_Hub:Input({ Title = "变玩家(输入名称)", Desc = "清空外观并应用目标用户形象（已自动备份，可在“终止-恢复我的外观”还原）", Placeholder = "用户名", Callback = function(name)
         pcall(function()
+            if not _G.MyOrigDesc then BackupMyAppearance() end
             XA_LP:ClearCharacterAppearance()
             XA_Hum():ApplyDescriptionClientServer(XA_P:GetHumanoidDescriptionFromUserId(XA_P:GetUserIdFromNameAsync(name)))
             nf("已变身", "变为 " .. name)
@@ -10461,6 +10531,14 @@ TabStop:Button({
             Notify("失败", "角色未加载", 2)
         end
 
+    end
+})
+
+TabStop:Button({
+    Title = "恢复我的外观",
+    Desc = "若皮肤/穿搭被清空，点此还原为你原本的形象（脚本已自动备份）",
+    Callback = function()
+        RestoreMyAppearance()
     end
 })
 
