@@ -3269,47 +3269,87 @@ function closeCFWindow()
 end
 
 -- 兼容飞行 / 通用「小法师制作」状态小窗
+-- 常驻 CoreGui：角色重生 / 飞行脚本重置 PlayerGui 也不会消失；
+-- 若被外部销毁则自动重建，保证“小法师制作”始终存在。
 makeWin = nil
 makeDesc = nil
+makeGui = nil
+makeLastText = "小法师制作"
+
+function buildMakeWindow()
+    if makeWin and makeWin.Parent then return end
+    local parent
+    -- 优先挂到 CoreGui（不受角色重生 / PlayerGui 重置影响）
+    pcall(function()
+        local cg = game:GetService("CoreGui")
+        if cg then parent = cg end
+    end)
+    -- 兜底：某些精简环境无 CoreGui 权限，退回 PlayerGui
+    if not parent or not pcall(function() return parent:GetChildren() end) then
+        pcall(function() parent = Players.LocalPlayer:WaitForChild("PlayerGui") end)
+    end
+    if not parent then return end
+
+    local sg = Instance.new("ScreenGui")
+    sg.Name = "XF_MakeUI"
+    sg.ResetOnSpawn = false
+    sg.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    sg.Parent = parent
+
+    local f = Instance.new("Frame")
+    f.Size = UDim2.new(0, 200, 0, 72)
+    f.Position = UDim2.new(0.5, -100, 0.12, 0)
+    f.BackgroundColor3 = Color3.fromRGB(18, 18, 28)
+    f.BorderSizePixel = 0
+    f.Active = true
+    f.Draggable = true
+    f.Parent = sg
+
+    local t = Instance.new("TextLabel")
+    t.Size = UDim2.new(1, 0, 0, 24)
+    t.BackgroundColor3 = Color3.fromRGB(120, 80, 255)
+    t.Text = "小法师制作"
+    t.TextColor3 = Color3.new(1, 1, 1)
+    t.Font = Enum.Font.GothamBold
+    t.TextSize = 13
+    t.Parent = f
+
+    local d = Instance.new("TextLabel")
+    d.Size = UDim2.new(1, -12, 0, 42)
+    d.Position = UDim2.new(0, 6, 0, 26)
+    d.BackgroundTransparency = 1
+    d.TextColor3 = Color3.new(1, 1, 1)
+    d.Font = Enum.Font.Gotham
+    d.TextSize = 12
+    d.TextWrapped = true
+    d.Text = makeLastText
+    d.Parent = f
+
+    makeGui = sg
+    makeWin = f
+    makeDesc = d
+
+    -- 被外部销毁（例如飞行脚本清 GUI）时自动重建
+    local captured = sg
+    pcall(function()
+        sg.Destroying:Connect(function()
+            if makeGui ~= captured then return end
+            makeWin = nil
+            makeDesc = nil
+            makeGui = nil
+            task.delay(0.5, function()
+                pcall(showMakeWindow, makeLastText)
+            end)
+        end)
+    end)
+end
+
 function showMakeWindow(text)
     pcall(function()
-        local pg = Players.LocalPlayer:WaitForChild("PlayerGui")
-        if not makeWin then
-            local sg = Instance.new("ScreenGui")
-            sg.Name = "XF_MakeUI"
-            sg.ResetOnSpawn = false
-            sg.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-            sg.Parent = pg
-            local f = Instance.new("Frame")
-            f.Size = UDim2.new(0, 200, 0, 72)
-            f.Position = UDim2.new(0.5, -100, 0.12, 0)
-            f.BackgroundColor3 = Color3.fromRGB(18, 18, 28)
-            f.BorderSizePixel = 0
-            f.Active = true
-            f.Draggable = true
-            f.Parent = sg
-            local t = Instance.new("TextLabel")
-            t.Size = UDim2.new(1, 0, 0, 24)
-            t.BackgroundColor3 = Color3.fromRGB(120, 80, 255)
-            t.Text = "小法师制作"
-            t.TextColor3 = Color3.new(1, 1, 1)
-            t.Font = Enum.Font.GothamBold
-            t.TextSize = 13
-            t.Parent = f
-            local d = Instance.new("TextLabel")
-            d.Size = UDim2.new(1, -12, 0, 42)
-            d.Position = UDim2.new(0, 6, 0, 26)
-            d.BackgroundTransparency = 1
-            d.TextColor3 = Color3.new(1, 1, 1)
-            d.Font = Enum.Font.Gotham
-            d.TextSize = 12
-            d.TextWrapped = true
-            d.Parent = f
-            makeWin = f
-            makeDesc = d
-        end
-        makeDesc.Text = text
-        makeWin.Parent.Enabled = true
+        if text then makeLastText = text end
+        buildMakeWindow()
+        if makeDesc and makeLastText then makeDesc.Text = makeLastText end
+        if makeGui then makeGui.Enabled = true end
     end)
 end
 
@@ -8694,51 +8734,6 @@ TabFE:Button({
         PlayAnim("rbxassetid://82293338535013")
     end
 })
--- ================= 终止 =================
-TabStop = Window:Tab({
-    Title = "终止",
-    Icon = "x",
-    Locked = false,
-})
-
-TabStop:Button({
-    Title = "强制退出",
-    Callback = function()
-
-        local ok, err = pcall(function()
-            game:Shutdown()
-        end)
-
-        if ok then
-            Notify("退出", "成功", 4)
-        else
-            Notify("踢出失败", tostring(err), 5)
-        end
-
-    end
-})
-
-TabStop:Button({
-    Title = "自杀（重生）",
-    Callback = function()
-
-        local char = LocalPlayer.Character
-
-        if char then
-            local hum = char:FindFirstChildOfClass("Humanoid")
-
-            if hum then
-                hum.Health = 0
-                Notify("已自杀", "角色已重生", 2)
-            else
-                Notify("失败", "未找到Humanoid", 2)
-            end
-        else
-            Notify("失败", "角色未加载", 2)
-        end
-
-    end
-})
 -- =================== 边框系统（保留原彩虹版） ===================
 
 task.wait(0.3)
@@ -8880,35 +8875,74 @@ _G.BorderEnabled = BorderEnabled
 -- 所以之前所有 Window.BackgroundImageTransparency = ... 都是空操作。
 -- 这里改为脚本自己持有并控制一个 ImageLabel，图片与透明度均由我们直接管理。
 BgLabel = nil
+BgAssetCache = {}
+
+-- ⭐ 远程图片解析：复刻 WindUI 原生机制（HttpGet 下载 -> writefile -> getcustomasset）
+-- 这是 Roblox 里“显示远程图片”的唯一可靠方式；
+-- 直接把 http 链接塞给 ImageLabel.Image 是渲染不出来的（报错且不显示）。
+function ResolveImage(url)
+    if not url or url == "" then return nil end
+    -- 已是 rbxassetid / rbxasset / 本地文件，直接可用
+    if not string.find(url, "http") then return url end
+    if BgAssetCache[url] then return BgAssetCache[url] end
+    local ok, asset = pcall(function()
+        local body = (game.HttpGetAsync and game:HttpGetAsync(url)) or game:HttpGet(url)
+        if not body or #tostring(body) == 0 then error("empty body") end
+        local path = "XF_Bg_" .. tostring(math.random(100000, 999999)) .. ".png"
+        writefile(path, body)
+        return getcustomasset(path)
+    end)
+    if ok and asset then
+        BgAssetCache[url] = asset
+        return asset
+    end
+    return nil
+end
+
 function EnsureBgLabel()
+    if BgLabel and BgLabel.Parent and BgLabel.Parent == (Window.UIElements and (Window.UIElements.MainContainer or Window.UIElements.Main)) then
+        return
+    end
     local container = Window.UIElements and (Window.UIElements.MainContainer or Window.UIElements.Main)
     if not container then return end
-    if BgLabel and BgLabel.Parent == container then return end
-    local lbl = Instance.new("ImageLabel")
-    lbl.Name = "XF_Background"
-    lbl.BackgroundTransparency = 1
-    lbl.BorderSizePixel = 0
-    lbl.Size = UDim2.new(1, 0, 1, 0)
-    lbl.Position = UDim2.new(0, 0, 0, 0)
-    lbl.ScaleType = Enum.ScaleType.Crop
-    lbl.ZIndex = -1
-    lbl.Visible = BackgroundEnabled
-    lbl.Image = BackgroundEnabled and BgImage or ""
-    lbl.ImageTransparency = BgTransValue
-    lbl.Parent = container
-    container.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    BgLabel = lbl
+    pcall(function()
+        local lbl = Instance.new("ImageLabel")
+        lbl.Name = "XF_Background"
+        lbl.BackgroundTransparency = 1
+        lbl.BorderSizePixel = 0
+        lbl.Size = UDim2.new(1, 0, 1, 0)
+        lbl.Position = UDim2.new(0, 0, 0, 0)
+        lbl.ScaleType = Enum.ScaleType.Crop
+        lbl.ZIndex = 1
+        lbl.Visible = BackgroundEnabled
+        lbl.Image = ""
+        lbl.ImageTransparency = BgTransValue
+        lbl.Parent = container
+        container.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+        BgLabel = lbl
+    end)
 end
 
 function ApplyBgImage()
     pcall(EnsureBgLabel)
-    if BgLabel then
+    if not BgLabel then return end
+    pcall(function() BgLabel.Visible = BackgroundEnabled end)
+    if not BackgroundEnabled then return end
+    -- 异步解析远程图片，避免阻塞启动；解析完成后再赋值，彻底解决“链接直赋 Image 不渲染/报错”
+    task.spawn(function()
         pcall(function()
-            BgLabel.Image = BackgroundEnabled and BgImage or ""
-            BgLabel.ImageTransparency = BgTransValue
-            BgLabel.Visible = BackgroundEnabled
+            local asset = ResolveImage(BgImage)
+            if asset and BgLabel then
+                BgLabel.Image = asset
+            elseif BgImage and BgLabel then
+                BgLabel.Image = BgImage
+            end
+            if BgLabel then
+                BgLabel.ImageTransparency = BgTransValue
+                BgLabel.Visible = BackgroundEnabled
+            end
         end)
-    end
+    end)
 end
 
 function ApplyBgTransparency(val)
@@ -9181,256 +9215,6 @@ TabMerge:Toggle({
 TabMerge:Paragraph({ Title = "脚本整合说明", Desc = "以上为整合自多份通用脚本的通用功能（透明/视角/传送/自旋/FPS/慢动作等），适配大部分游戏。" })
 
 -- ================= 配置 =================
-TabConfig = Window:Tab({
-    Title = "配置",
-    Icon = "settings",
-    Locked = false,
-})
-
-
--- ⭐延迟获取主题（确保AddTheme已注册）
-task.wait()
-
-ThemeList = {}
-pcall(function()
-    ThemeList = WindUI:GetThemes()
-end)
-
--- ⭐严格校验
-if not table.find(ThemeList, CurrentTheme) then
-    warn("主题不存在，重置为 Dark ->", CurrentTheme)
-    CurrentTheme = "Dark"
-end
--- ================= 管理员检测 =================
-
-TabConfig:Toggle({
-    Title = "管理员检测",
-    Default = true,
-    Callback = function(v)
-        AdminDetectEnabled = v
-    end
-})
-
--- ================= 主题列表（关键修复） =================
-
-ThemeList = {}
-
-pcall(function()
-    ThemeList = WindUI:GetThemes()
-end)
-
--- ⭐手动加入自定义主题
-CustomThemes = {"Aurora", "Cyan", "Blue", "BlackGold"}
-
-for _, v in ipairs(CustomThemes) do
-    if not table.find(ThemeList, v) then
-        table.insert(ThemeList, v)
-    end
-end
--- ⭐去重并确保Dark在第一位
-NewList = {"Dark"}
-
-for _, v in ipairs(ThemeList) do
-    if v ~= "Dark" then
-        table.insert(NewList, v)
-    end
-end
-
-ThemeList = NewList
-
--- ================= 主题切换 =================
-
-TabConfig:Dropdown({
-    Title = "UI主题",
-    Values = ThemeList,
-    Default = CurrentTheme,
-
-    Callback = function(v)
-
-        CurrentTheme = v
-
-        pcall(function()
-            WindUI:SetTheme(v)
-        end)
-
-        pcall(function()
-            if writefile then
-                writefile(ThemeFile, v)
-            end
-        end)
-
-        Notify("主题切换", "已切换为 "..tostring(v), 2, "success")
-
-    end
-})
-
--- ================= 背景图开关 =================
-TabConfig:Toggle({
-    Title = "背景图",
-    Value = BackgroundEnabled,
-    Callback = function(v)
-        BackgroundEnabled = v
-
-        pcall(function()
-            if writefile then
-                writefile(BgFile, tostring(v))
-            end
-        end)
-
-        ApplyBgImage()
-    end
-})
-
--- ================= 背景图预设 =================
-
--- 固定顺序列表
-BgPresetNames = {
-    "蓝色系少女",
-    "粉色系少女",
-    "蓝色系猫娘",
-    "彩蛋",
-    "紫色系御姐",
-    "蓝色系少女2",
-    "你懂的",
-    "你懂的2",
-    "你懂的3",
-    "罪恶王冠楪祈",
-    "罪恶王冠楪祈2",
-    "蔚蓝档案普通",
-    "萝莉（黄色）",
-    "萝莉（兽娘）",
-    "少司缘（三星堆）",
-    "少司缘（小狐娘）",
-    "少司缘（小狐娘2）",
-    "云缨（黄色）",
-    "姬小满（淀粉肠联动）",
-    "王者（美图）",
-}
-
-TabConfig:Dropdown({
-    Title = "背景图预设",
-    Desc = "选择预设背景立即生效",
-    Values = BgPresetNames,
-    Default = SavedBgPreset,
-    Callback = function(v)
-        if typeof(v) == "table" then
-            v = v.Value or v[1]
-        end
-        if not v then return end
-
-        local url = BgPresets[v]
-        if not url then return end
-
-        -- 更新全局变量
-        BgImage = url
-        SavedBgPreset = v
-
-        -- 保存到文件
-        pcall(function()
-            if writefile then
-                writefile(BgPresetFile, v)
-            end
-        end)
-
-        -- 应用（仅在开启时生效）
-        ApplyBgImage()
-
-        Notify("背景图", "已切换为 "..tostring(v), 2, "success")
-    end
-})
-
--- ================= 背景图透明度 =================
-TabConfig:Slider({
-    Title = "背景图透明度",
-    Desc = "0=不透明  100=全透明（立即生效）",
-    Value = {
-        Min = 0,
-        Max = 100,
-        Default = math.floor(BgTransValue * 100),
-    },
-    Increment = 5,
-    Callback = function(v)
-        local realVal = v / 100
-        ApplyBgTransparency(realVal)
-    end
-})
-TabConfig:Toggle({
-    Title = "UI边框",
-    Value = _G.BorderEnabled,
-
-    Callback = function(v)
-        _G.SetBorderEnabled(v)
-
-        Notify("边框", v and "已开启" or "已关闭", 2, "success")
-    end
-})
-TabConfig:Dropdown({
-    Title = "边框样式",
-    Values = {"Rainbow", "Red", "Blue"},
-    Default = _G.BorderMode or "Rainbow",
-
-    Callback = function(v)
-        if typeof(v) == "table" then
-            v = v.Value or v[1]
-        end
-
-        _G.ApplyBorderMode(v)
-
-        Notify("边框样式", "已切换为 "..tostring(v), 2, "success")
-    end
-})
-
--- ================= 字体颜色 =================
-TabConfig:Colorpicker({
-    Title = "字体颜色",
-    Default = FontColor,
-    Callback = function(Value)
-        FontColor = Value
-        FontColorEnabled = true
-        pcall(function()
-            if writefile then
-                writefile(FontColorFile, string.format("%d,%d,%d",
-                    math.floor(Value.R * 255), math.floor(Value.G * 255), math.floor(Value.B * 255)))
-            end
-        end)
-        ApplyFontColor()
-        Notify("字体颜色", "已应用", 2, "success")
-    end
-})
-
-TabConfig:Toggle({
-    Title = "启用自定义字体颜色",
-    Value = FontColorEnabled,
-    Callback = function(v)
-        FontColorEnabled = v
-        if v then
-            ApplyFontColor()
-        else
-            pcall(function() WindUI:SetTheme(CurrentTheme) end)
-        end
-        Notify("字体颜色", v and "已启用自定义" or "已恢复默认", 2, "success")
-    end
-})
-
--- ⭐ 关键修复：Dropdown 创建后手动触发一次，确保初始模式生效
-task.defer(function()
-    _G.ApplyBorderMode(_G.BorderMode or "Rainbow")
-end)
--- ================= 重进服务器 =================
-
-TabConfig:Button({
-    Title = "重新进入服务器",
-    Callback = function()
-
-        Notify("正在重进", "请稍候...", 3)
-
-        local TeleportService = game:GetService("TeleportService")
-        local player = game.Players.LocalPlayer
-
-        TeleportService:Teleport(game.PlaceId, player)
-
-    end
-})
 -- =================== 小法师融合·脚本中心（融合自 YX 脚本中心） ===================
 do
     local TabSC = Window:Tab({ Title = "脚本中心", Icon = "code", Locked = false })
@@ -10322,3 +10106,303 @@ WindUI:Notify({
 })
 -- 注：已移除原小法师末尾的两条私有外部 loadstring 加载（djejhebr / njdjdn），
 -- 其核心功能已完整保留在上方各模块中；融合脚本保持自包含、可控，不拉取未知私有脚本。
+
+
+-- ================= 终止（置于最下方） =================
+-- ================= 终止 =================
+TabStop = Window:Tab({
+    Title = "终止",
+    Icon = "x",
+    Locked = false,
+})
+
+TabStop:Button({
+    Title = "强制退出",
+    Callback = function()
+
+        local ok, err = pcall(function()
+            game:Shutdown()
+        end)
+
+        if ok then
+            Notify("退出", "成功", 4)
+        else
+            Notify("踢出失败", tostring(err), 5)
+        end
+
+    end
+})
+
+TabStop:Button({
+    Title = "自杀（重生）",
+    Callback = function()
+
+        local char = LocalPlayer.Character
+
+        if char then
+            local hum = char:FindFirstChildOfClass("Humanoid")
+
+            if hum then
+                hum.Health = 0
+                Notify("已自杀", "角色已重生", 2)
+            else
+                Notify("失败", "未找到Humanoid", 2)
+            end
+        else
+            Notify("失败", "角色未加载", 2)
+        end
+
+    end
+})
+
+-- ================= 设置（原配置，置于最下方） =================
+TabConfig = Window:Tab({
+    Title = "设置",
+    Icon = "settings",
+    Locked = false,
+})
+
+
+-- ⭐延迟获取主题（确保AddTheme已注册）
+task.wait()
+
+ThemeList = {}
+pcall(function()
+    ThemeList = WindUI:GetThemes()
+end)
+
+-- ⭐严格校验
+if not table.find(ThemeList, CurrentTheme) then
+    warn("主题不存在，重置为 Dark ->", CurrentTheme)
+    CurrentTheme = "Dark"
+end
+-- ================= 管理员检测 =================
+
+TabConfig:Toggle({
+    Title = "管理员检测",
+    Default = true,
+    Callback = function(v)
+        AdminDetectEnabled = v
+    end
+})
+
+-- ================= 主题列表（关键修复） =================
+
+ThemeList = {}
+
+pcall(function()
+    ThemeList = WindUI:GetThemes()
+end)
+
+-- ⭐手动加入自定义主题
+CustomThemes = {"Aurora", "Cyan", "Blue", "BlackGold"}
+
+for _, v in ipairs(CustomThemes) do
+    if not table.find(ThemeList, v) then
+        table.insert(ThemeList, v)
+    end
+end
+-- ⭐去重并确保Dark在第一位
+NewList = {"Dark"}
+
+for _, v in ipairs(ThemeList) do
+    if v ~= "Dark" then
+        table.insert(NewList, v)
+    end
+end
+
+ThemeList = NewList
+
+-- ================= 主题切换 =================
+
+TabConfig:Dropdown({
+    Title = "UI主题",
+    Values = ThemeList,
+    Default = CurrentTheme,
+
+    Callback = function(v)
+
+        CurrentTheme = v
+
+        pcall(function()
+            WindUI:SetTheme(v)
+        end)
+
+        pcall(function()
+            if writefile then
+                writefile(ThemeFile, v)
+            end
+        end)
+
+        Notify("主题切换", "已切换为 "..tostring(v), 2, "success")
+
+    end
+})
+
+-- ================= 背景图开关 =================
+TabConfig:Toggle({
+    Title = "背景图",
+    Value = BackgroundEnabled,
+    Callback = function(v)
+        BackgroundEnabled = v
+
+        pcall(function()
+            if writefile then
+                writefile(BgFile, tostring(v))
+            end
+        end)
+
+        ApplyBgImage()
+    end
+})
+
+-- ================= 背景图预设 =================
+
+-- 固定顺序列表
+BgPresetNames = {
+    "蓝色系少女",
+    "粉色系少女",
+    "蓝色系猫娘",
+    "彩蛋",
+    "紫色系御姐",
+    "蓝色系少女2",
+    "你懂的",
+    "你懂的2",
+    "你懂的3",
+    "罪恶王冠楪祈",
+    "罪恶王冠楪祈2",
+    "蔚蓝档案普通",
+    "萝莉（黄色）",
+    "萝莉（兽娘）",
+    "少司缘（三星堆）",
+    "少司缘（小狐娘）",
+    "少司缘（小狐娘2）",
+    "云缨（黄色）",
+    "姬小满（淀粉肠联动）",
+    "王者（美图）",
+}
+
+TabConfig:Dropdown({
+    Title = "背景图预设",
+    Desc = "选择预设背景立即生效",
+    Values = BgPresetNames,
+    Default = SavedBgPreset,
+    Callback = function(v)
+        if typeof(v) == "table" then
+            v = v.Value or v[1]
+        end
+        if not v then return end
+
+        local url = BgPresets[v]
+        if not url then return end
+
+        -- 更新全局变量
+        BgImage = url
+        SavedBgPreset = v
+
+        -- 保存到文件
+        pcall(function()
+            if writefile then
+                writefile(BgPresetFile, v)
+            end
+        end)
+
+        -- 应用（仅在开启时生效）
+        ApplyBgImage()
+
+        Notify("背景图", "已切换为 "..tostring(v), 2, "success")
+    end
+})
+
+-- ================= 背景图透明度 =================
+TabConfig:Slider({
+    Title = "背景图透明度",
+    Desc = "0=不透明  100=全透明（立即生效）",
+    Value = {
+        Min = 0,
+        Max = 100,
+        Default = math.floor(BgTransValue * 100),
+    },
+    Increment = 5,
+    Callback = function(v)
+        local realVal = v / 100
+        ApplyBgTransparency(realVal)
+    end
+})
+TabConfig:Toggle({
+    Title = "UI边框",
+    Value = _G.BorderEnabled,
+
+    Callback = function(v)
+        _G.SetBorderEnabled(v)
+
+        Notify("边框", v and "已开启" or "已关闭", 2, "success")
+    end
+})
+TabConfig:Dropdown({
+    Title = "边框样式",
+    Values = {"Rainbow", "Red", "Blue"},
+    Default = _G.BorderMode or "Rainbow",
+
+    Callback = function(v)
+        if typeof(v) == "table" then
+            v = v.Value or v[1]
+        end
+
+        _G.ApplyBorderMode(v)
+
+        Notify("边框样式", "已切换为 "..tostring(v), 2, "success")
+    end
+})
+
+-- ================= 字体颜色 =================
+TabConfig:Colorpicker({
+    Title = "字体颜色",
+    Default = FontColor,
+    Callback = function(Value)
+        FontColor = Value
+        FontColorEnabled = true
+        pcall(function()
+            if writefile then
+                writefile(FontColorFile, string.format("%d,%d,%d",
+                    math.floor(Value.R * 255), math.floor(Value.G * 255), math.floor(Value.B * 255)))
+            end
+        end)
+        ApplyFontColor()
+        Notify("字体颜色", "已应用", 2, "success")
+    end
+})
+
+TabConfig:Toggle({
+    Title = "启用自定义字体颜色",
+    Value = FontColorEnabled,
+    Callback = function(v)
+        FontColorEnabled = v
+        if v then
+            ApplyFontColor()
+        else
+            pcall(function() WindUI:SetTheme(CurrentTheme) end)
+        end
+        Notify("字体颜色", v and "已启用自定义" or "已恢复默认", 2, "success")
+    end
+})
+
+-- ⭐ 关键修复：Dropdown 创建后手动触发一次，确保初始模式生效
+task.defer(function()
+    _G.ApplyBorderMode(_G.BorderMode or "Rainbow")
+end)
+-- ================= 重进服务器 =================
+
+TabConfig:Button({
+    Title = "重新进入服务器",
+    Callback = function()
+
+        Notify("正在重进", "请稍候...", 3)
+
+        local TeleportService = game:GetService("TeleportService")
+        local player = game.Players.LocalPlayer
+
+        TeleportService:Teleport(game.PlaceId, player)
+
+    end
+})
