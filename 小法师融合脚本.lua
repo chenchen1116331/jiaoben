@@ -43,7 +43,7 @@ function tryLoadWindUI(retries, timeoutPerAttempt)
     local url = "https://raw.githubusercontent.com/ylt410/roblox-Script/refs/heads/main/UI库"
 
     for i = 1, retries do
-        print("WindUI 加载尝试 #" .. i)
+        -- 仅在真正失败时由下方 FallbackNotify 提示，成功不再刷屏
 
         local success = false
         local content = nil
@@ -3105,65 +3105,300 @@ MainTab:Paragraph({
         Desc = "更新了若干服务器功能\n一些新功能\n开启了新版wind UI界面\n优化了脚本\n实则没有优化😋\n增加了自动检测俄亥俄州并加载其他脚本", 
     })
 
--- ================= 引擎加速系统（W / V / CF） =================
+
+-- ================= 引擎加速系统（W / V / CF）· 教程落地 =================
+-- 三套驱动策略：W=写 WalkSpeed（最稳）  V=自维护速度+CFrame惯性滑行  CF=CFrame位移+可选瞬移闪现
+-- 六大机制：指数速度平滑 / 移动方向优先级 / skillRooted检测 / 防穿墙WallSlide / FOV助推 / 各自写位移方式
+-- 关键坑：V/CF 不能直接写 AssemblyLinearVelocity（WalkSpeed=0 时人形控制器会在物理步清零）→ 改用 CFrame 位移绕开
+-- 新增功能一律走全局表（HON_*），避免单函数 200 局部变量上限
 EngineMode = "W"
 EngineSpeed = 60
 EngineEnabled = false
 engineConn = nil
-
 cfWin = nil
+flyWin = nil
+EngineToggleRef = nil
 
-function stopEngine()
-    if engineConn then pcall(function() engineConn:Disconnect() end) end
-    engineConn = nil
+-- 引擎运行态（全局表，不堆 local）
+HON_Engine = {
+    CurSpeed = 16,
+    SmoothK = 8,            -- 指数平滑系数
+    LastDir = Vector3.new(),
+    SkillRooted = false,
+    WallHit = false,
+    FlyBlinks = 0,
+}
+
+-- ============ 标准小窗基础设施（教程：new/corner/label/bindClick/attachDrag/winClamp/winMinSetup/saveWinDefault） ============
+HON_Win = { _defaults = {} }
+
+function HON_Win.new(name)
+    local sg = Instance.new("ScreenGui")
+    sg.Name = name or "XF_Win"
+    sg.ResetOnSpawn = false
+    sg.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    sg.Enabled = false  -- 教程：Visible 默认 false
+    local parent = nil
+    pcall(function()
+        local cg = game:GetService("CoreGui")
+        if cg then parent = cg end
+    end)
+    if not parent or not pcall(function() return parent:GetChildren() end) then
+        pcall(function() parent = Players.LocalPlayer:WaitForChild("PlayerGui") end)
+    end
+    if parent then sg.Parent = parent end
+    return sg
+end
+
+function HON_Win.corner(gui, r)
+    pcall(function()
+        local u = Instance.new("UICorner")
+        u.CornerRadius = UDim.new(0, r or 10)
+        u.Parent = gui
+    end)
+end
+
+function HON_Win.stroke(gui, color, thickness)
+    pcall(function()
+        local s = Instance.new("UIStroke")
+        s.Color = color or Color3.fromRGB(120, 80, 255)
+        s.Thickness = thickness or 2
+        s.Parent = gui
+    end)
+end
+
+function HON_Win.label(parent, text, size, pos, color)
+    local t = Instance.new("TextLabel")
+    t.Size = size or UDim2.new(1, -12, 0, 22)
+    t.Position = pos or UDim2.new(0, 6, 0, 0)
+    t.BackgroundTransparency = 1
+    t.Text = text or ""
+    t.TextColor3 = color or Color3.new(1, 1, 1)
+    t.Font = Enum.Font.Gotham
+    t.TextSize = 12
+    t.TextWrapped = true
+    t.TextXAlignment = Enum.TextXAlignment.Left
+    t.Parent = parent
+    return t
+end
+
+function HON_Win.bindClick(btn, cb)
+    pcall(function() btn.MouseButton1Click:Connect(cb) end)
+end
+
+-- 多指不串窗：拖动源严格按 UserInputService 的 input 对象区分
+function HON_Win.attachDrag(frame, handle)
+    handle = handle or frame
+    local activeInput, startPos, startPt = nil, nil, nil
+    pcall(function()
+        UserInputService.InputBegan:Connect(function(input)
+            if input.UserInputType ~= Enum.UserInputType.Touch and input.UserInputType ~= Enum.UserInputType.MouseButton1 then return end
+            local p = input.Position
+            if p.X >= handle.AbsolutePosition.X and p.X <= handle.AbsolutePosition.X + handle.AbsoluteSize.X
+               and p.Y >= handle.AbsolutePosition.Y and p.Y <= handle.AbsolutePosition.Y + handle.AbsoluteSize.Y then
+                activeInput = input
+                startPos = frame.Position
+                startPt = p
+            end
+        end)
+        UserInputService.InputChanged:Connect(function(input)
+            if not activeInput or input ~= activeInput then return end
+            local d = input.Position - startPt
+            frame.Position = UDim2.new(0, startPos.X.Offset + d.X, 0, startPos.Y.Offset + d.Y)
+            HON_Win.winClamp(frame)
+        end)
+        UserInputService.InputEnded:Connect(function(input)
+            if activeInput and input == activeInput then activeInput = nil end
+        end)
+    end)
+end
+
+function HON_Win.winClamp(frame)
+    pcall(function()
+        local vp = workspace.CurrentCamera.ViewportSize
+        local x = math.clamp(frame.Position.X.Offset, 0, math.max(0, vp.X - frame.AbsoluteSize.X))
+        local y = math.clamp(frame.Position.Y.Offset, 0, math.max(0, vp.Y - frame.AbsoluteSize.Y))
+        frame.Position = UDim2.new(0, x, 0, y)
+    end)
+end
+
+function HON_Win.winMinSetup(frame, content, minBtn)
+    local minimized = false
+    frame._fullSize = frame.Size
+    HON_Win.bindClick(minBtn, function()
+        minimized = not minimized
+        if content then content.Visible = not minimized end
+        frame.Size = minimized and UDim2.new(0, frame._fullSize.X.Offset, 0, 28) or frame._fullSize
+        minBtn.Text = minimized and "▢" or "—"
+    end)
+end
+
+function HON_Win.saveWinDefault(name, frame)
+    pcall(function()
+        HON_Win._defaults[name] = { Pos = frame.Position, Size = frame.Size }
+    end)
+end
+
+-- ============ 引擎辅助（六大机制） ============
+
+-- 移动方向优先级：原生 MoveDirection → 键盘兜底
+function HON_GetMoveDir()
+    local lp = Players.LocalPlayer
+    if not (lp and lp.Character) then return Vector3.new() end
+    local hum = lp.Character:FindFirstChildOfClass("Humanoid")
+    if hum and hum.MoveDirection.Magnitude > 0 then
+        return hum.MoveDirection
+    end
+    local cam = workspace.CurrentCamera
+    local fwd = cam.CFrame.LookVector
+    local right = cam.CFrame.RightVector
+    local dir = Vector3.new()
+    pcall(function()
+        if UserInputService:IsKeyDown(Enum.KeyCode.W) then dir = dir + fwd end
+        if UserInputService:IsKeyDown(Enum.KeyCode.S) then dir = dir - fwd end
+        if UserInputService:IsKeyDown(Enum.KeyCode.D) then dir = dir + right end
+        if UserInputService:IsKeyDown(Enum.KeyCode.A) then dir = dir - right end
+    end)
+    if dir.Magnitude > 0 then dir = dir.Unit end
+    return dir
+end
+
+-- 技能定身检测：被控 / 倒地 / 锚定时不要写位移
+function HON_CheckRooted()
+    local lp = Players.LocalPlayer
+    if not (lp and lp.Character) then return true end
+    local hum = lp.Character:FindFirstChildOfClass("Humanoid")
+    if not hum then return true end
+    if hum:GetState() == Enum.HumanoidStateType.Ragdoll then return true end
+    if hum:GetState() == Enum.HumanoidStateType.Physics then return true end
+    if hum.RootPart and hum.RootPart.Anchored then return true end
+    return false
+end
+
+-- 防穿墙：前方有阻挡则贴墙滑动
+function HON_WallSlide(hrp, move)
+    local ok, hit = pcall(function()
+        local params = RaycastParams.new()
+        params.FilterDescendantsInstances = { Players.LocalPlayer.Character }
+        params.FilterType = Enum.RaycastFilterType.Blacklist
+        return workspace:Raycast(hrp.Position, move.Unit * (move.Magnitude + 3), params)
+    end)
+    if ok and hit then
+        local n = hit.Normal
+        local slide = move - n * move:Dot(n)
+        return slide, true
+    end
+    return move, false
+end
+
+-- FOV 助推（可选）：引擎开启时抬高 FOV 增强速度感
+function HON_FOVBoost(on)
+    pcall(function()
+        local cam = workspace.CurrentCamera
+        if on then cam.FieldOfView = 90 else cam.FieldOfView = 70 end
+    end)
+end
+
+-- ============ 三套驱动策略（做成全局表，新增模式只加一项） ============
+HON_Modes = {
+    {
+        Id = "W",
+        Desc = "行走加速：直接写 WalkSpeed，最稳",
+        Step = function(hrp, hum, dt)
+            -- 四件套：锁 WalkSpeed / 处理 skillRooted / pcall / 写位移
+            pcall(function()
+                HON_Engine.CurSpeed = HON_Engine.CurSpeed + (EngineSpeed - HON_Engine.CurSpeed) * (1 - math.exp(-HON_Engine.SmoothK * dt))
+                hum.WalkSpeed = math.max(0.1, HON_Engine.CurSpeed)
+            end)
+        end,
+    },
+    {
+        Id = "V",
+        Desc = "冲刺位移：自维护速度 + CFrame 惯性滑行（不写 AssemblyLinearVelocity）",
+        Step = function(hrp, hum, dt)
+            pcall(function()
+                hum.WalkSpeed = 0  -- 锁 0，避免人形控制器清速度
+                if HON_CheckRooted() then return end
+                local dir = HON_GetMoveDir()
+                if dir.Magnitude == 0 then return end
+                HON_Engine.CurSpeed = HON_Engine.CurSpeed + (EngineSpeed - HON_Engine.CurSpeed) * (1 - math.exp(-HON_Engine.SmoothK * dt))
+                local step = dir * (HON_Engine.CurSpeed / 10)
+                step, HON_Engine.WallHit = HON_WallSlide(hrp, step)
+                -- 关键坑：直接写 AssemblyLinearVelocity 会被人形控制器在物理步清零 → 改用 CFrame 位移绕开
+                hrp.CFrame = (hrp.CFrame - hrp.CFrame.Position) + (hrp.Position + step)
+                hrp.Velocity = Vector3.new()
+            end)
+        end,
+    },
+    {
+        Id = "CF",
+        Desc = "飞行推进：CFrame 位移 + 可选瞬移闪现",
+        Step = function(hrp, hum, dt)
+            pcall(function()
+                hum.WalkSpeed = 16
+                if HON_CheckRooted() then return end
+                local cam = workspace.CurrentCamera
+                local dir = cam.CFrame.LookVector
+                HON_Engine.CurSpeed = HON_Engine.CurSpeed + (EngineSpeed - HON_Engine.CurSpeed) * (1 - math.exp(-HON_Engine.SmoothK * dt))
+                local step = dir * (HON_Engine.CurSpeed / 40)
+                hrp.CFrame = (hrp.CFrame - hrp.CFrame.Position) + (hrp.Position + step)
+                hrp.Velocity = Vector3.new()
+            end)
+        end,
+    },
+}
+
+function HON_GetMode(id)
+    for _, m in ipairs(HON_Modes) do
+        if m.Id == id then return m end
+    end
+    return HON_Modes[1]
 end
 
 function startEngine()
     stopEngine()
     if not EngineEnabled then return end
     local RS = game:GetService("RunService")
-    engineConn = RS.Heartbeat:Connect(function()
+    engineConn = RS.Heartbeat:Connect(function(dt)
         local lp = Players.LocalPlayer
         if not (lp and lp.Character) then return end
         local hum = lp.Character:FindFirstChildOfClass("Humanoid")
         local hrp = lp.Character:FindFirstChild("HumanoidRootPart")
         if not (hum and hrp) then return end
-        if EngineMode == "W" then
-            pcall(function() hum.WalkSpeed = EngineSpeed end)
-        elseif EngineMode == "V" then
-            if hum.MoveDirection.Magnitude > 0 then
-                pcall(function() hrp:TranslateBy(hum.MoveDirection * (EngineSpeed / 10)) end)
-            end
-        elseif EngineMode == "CF" then
-            pcall(function()
-                local dir = workspace.CurrentCamera.CFrame.LookVector
-                hrp.CFrame = hrp.CFrame + dir * (EngineSpeed / 40)
-                hrp.Velocity = Vector3.new()
-                hum.WalkSpeed = 16
-            end)
+        local m = HON_GetMode(EngineMode)
+        if m and m.Step then m:Step(hrp, hum, dt) end
+    end)
+    HON_FOVBoost(true)
+end
+
+function stopEngine()
+    if engineConn then pcall(function() engineConn:Disconnect() end) end
+    engineConn = nil
+    HON_FOVBoost(false)
+    HON_Engine.CurSpeed = 16
+    pcall(function()
+        local lp = Players.LocalPlayer
+        if lp and lp.Character then
+            local hum = lp.Character:FindFirstChildOfClass("Humanoid")
+            if hum then hum.WalkSpeed = 16 end
         end
     end)
 end
 
--- 可拖动 / 可缩小 的引擎控制台小窗（CF 开启后生成）
+-- ============ 加速小窗（speedWinBuild：最小可用模板，兼作 CF 控制台） ============
 function buildCFWindow()
     if cfWin then return end
-    local pg = Players.LocalPlayer:WaitForChild("PlayerGui")
-    local sg = Instance.new("ScreenGui")
-    sg.Name = "XF_EngineUI"
-    sg.ResetOnSpawn = false
-    sg.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    sg.Parent = pg
-
+    local sg = HON_Win.new("XF_EngineUI")
     local frame = Instance.new("Frame")
     frame.Name = "EngineConsole"
-    frame.Size = UDim2.new(0, 230, 0, 175)
+    frame.Size = UDim2.new(0, 230, 0, 178)
     frame.Position = UDim2.new(0.5, -115, 0.25, 0)
     frame.BackgroundColor3 = Color3.fromRGB(18, 18, 28)
     frame.BorderSizePixel = 0
     frame.Active = true
-    frame.Draggable = true
     frame.Parent = sg
+    HON_Win.corner(frame, 8)
+    HON_Win.stroke(frame, Color3.fromRGB(120, 80, 255), 2)
 
     local title = Instance.new("TextLabel")
     title.Size = UDim2.new(1, 0, 0, 28)
@@ -3174,14 +3409,23 @@ function buildCFWindow()
     title.Font = Enum.Font.GothamBold
     title.TextSize = 13
     title.Parent = frame
+    HON_Win.corner(title, 8)
 
     local minBtn = Instance.new("TextButton")
     minBtn.Size = UDim2.new(0, 28, 0, 24)
-    minBtn.Position = UDim2.new(1, -30, 0, 2)
+    minBtn.Position = UDim2.new(1, -58, 0, 2)
     minBtn.Text = "—"
     minBtn.BackgroundColor3 = Color3.fromRGB(70, 70, 95)
     minBtn.TextColor3 = Color3.new(1, 1, 1)
     minBtn.Parent = title
+
+    local closeBtn = Instance.new("TextButton")
+    closeBtn.Size = UDim2.new(0, 28, 0, 24)
+    closeBtn.Position = UDim2.new(1, -30, 0, 2)
+    closeBtn.Text = "×"
+    closeBtn.BackgroundColor3 = Color3.fromRGB(120, 40, 40)
+    closeBtn.TextColor3 = Color3.new(1, 1, 1)
+    closeBtn.Parent = title
 
     local content = Instance.new("Frame")
     content.Size = UDim2.new(1, 0, 1, -28)
@@ -3200,30 +3444,21 @@ function buildCFWindow()
         b.Font = Enum.Font.Gotham
         b.TextSize = 12
         b.Parent = content
-        b.MouseButton1Click:Connect(function()
+        HON_Win.bindClick(b, function()
             EngineMode = m
             if EngineEnabled then startEngine() end
             for _, c in ipairs(content:GetChildren()) do
-                if c:IsA("TextButton") and c ~= minBtn then
+                if c:IsA("TextButton") and c ~= minBtn and c ~= closeBtn then
                     c.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
                 end
             end
             b.BackgroundColor3 = Color3.fromRGB(120, 80, 255)
+            if EngineMode == "CF" then openFlyWin() else closeFlyWin() end
             Notify("引擎", "切换为 " .. m, 1.2, "info")
         end)
     end
 
-    local speedLbl = Instance.new("TextLabel")
-    speedLbl.Size = UDim2.new(1, -16, 0, 20)
-    speedLbl.Position = UDim2.new(0, 8, 0, 48)
-    speedLbl.BackgroundTransparency = 1
-    speedLbl.Text = "速度: " .. EngineSpeed
-    speedLbl.TextColor3 = Color3.new(1, 1, 1)
-    speedLbl.Font = Enum.Font.Gotham
-    speedLbl.TextSize = 12
-    speedLbl.TextXAlignment = Enum.TextXAlignment.Left
-    speedLbl.Parent = content
-
+    local speedLbl = HON_Win.label(content, "速度: " .. EngineSpeed, UDim2.new(1, -16, 0, 20), UDim2.new(0, 8, 0, 48))
     local minus = Instance.new("TextButton")
     minus.Size = UDim2.new(0, 30, 0, 28)
     minus.Position = UDim2.new(0, 8, 0, 74)
@@ -3238,35 +3473,108 @@ function buildCFWindow()
     plus.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
     plus.TextColor3 = Color3.new(1, 1, 1)
     plus.Parent = content
-    minus.MouseButton1Click:Connect(function()
+    HON_Win.bindClick(minus, function()
         EngineSpeed = math.max(10, EngineSpeed - 10)
         speedLbl.Text = "速度: " .. EngineSpeed
     end)
-    plus.MouseButton1Click:Connect(function()
+    HON_Win.bindClick(plus, function()
         EngineSpeed = math.min(300, EngineSpeed + 10)
         speedLbl.Text = "速度: " .. EngineSpeed
     end)
 
-    local minimized = false
-    minBtn.MouseButton1Click:Connect(function()
-        minimized = not minimized
-        content.Visible = not minimized
-        frame.Size = minimized and UDim2.new(0, 230, 0, 28) or UDim2.new(0, 230, 0, 175)
-        minBtn.Text = minimized and "▢" or "—"
+    -- 四步收尾：saveWinDefault + corner + UIStroke + 标题栏拖动 + “-”最小化 + “×”联动主开关
+    HON_Win.winMinSetup(frame, content, minBtn)
+    HON_Win.attachDrag(frame, title)
+    HON_Win.saveWinDefault("EngineConsole", frame)
+
+    -- “×”联动主开关：关闭引擎（先同步 UI，再手动兜底关，保证状态一致）
+    HON_Win.bindClick(closeBtn, function()
+        pcall(function()
+            if EngineToggleRef and EngineToggleRef.Set then
+                pcall(function() EngineToggleRef:Set(false) end)
+            end
+            EngineEnabled = false
+            stopEngine()
+            closeCFWindow()
+            closeFlyWin()
+            RemoveFeature("引擎加速")
+        end)
     end)
 
     cfWin = sg
 end
+speedWinBuild = buildCFWindow  -- 教程命名别名
 
 function openCFWindow()
     pcall(function()
         if not cfWin then buildCFWindow() end
         cfWin.Enabled = true
+        if EngineMode == "CF" then openFlyWin() else closeFlyWin() end
     end)
 end
 function closeCFWindow()
-    pcall(function() if cfWin then cfWin.Enabled = false end end)
+    pcall(function()
+        if cfWin then cfWin.Enabled = false end
+        closeFlyWin()
+    end)
 end
+
+-- ============ 飞行小窗（HON_FlyWin：状态显示型模板） ============
+function HON_FlyWin()
+    if flyWin then return end
+    local sg = HON_Win.new("XF_FlyUI")
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(0, 200, 0, 96)
+    frame.Position = UDim2.new(0.5, -100, 0.18, 0)
+    frame.BackgroundColor3 = Color3.fromRGB(18, 18, 28)
+    frame.BorderSizePixel = 0
+    frame.Active = true
+    frame.Parent = sg
+    HON_Win.corner(frame, 8)
+    HON_Win.stroke(frame, Color3.fromRGB(120, 80, 255), 2)
+
+    local title = Instance.new("TextLabel")
+    title.Size = UDim2.new(1, 0, 0, 26)
+    title.BackgroundColor3 = Color3.fromRGB(120, 80, 255)
+    title.Text = "小法师制作 · 飞行"
+    title.TextColor3 = Color3.new(1, 1, 1)
+    title.Font = Enum.Font.GothamBold
+    title.TextSize = 12
+    title.Parent = frame
+    HON_Win.corner(title, 8)
+
+    local minBtn = Instance.new("TextButton")
+    minBtn.Size = UDim2.new(0, 26, 0, 22)
+    minBtn.Position = UDim2.new(1, -28, 0, 2)
+    minBtn.Text = "—"
+    minBtn.BackgroundColor3 = Color3.fromRGB(70, 70, 95)
+    minBtn.TextColor3 = Color3.new(1, 1, 1)
+    minBtn.Parent = title
+
+    local statusLbl = HON_Win.label(frame, "飞行推进中…", UDim2.new(1, -12, 0, 22), UDim2.new(0, 8, 0, 30))
+    local spdLbl = HON_Win.label(frame, "速度: 0", UDim2.new(1, -12, 0, 22), UDim2.new(0, 8, 0, 54))
+
+    local content = Instance.new("Frame")
+    content.Size = UDim2.new(1, 0, 1, -26)
+    content.Position = UDim2.new(0, 0, 0, 26)
+    content.BackgroundTransparency = 1
+    content.Parent = frame
+
+    -- 实时刷新速度
+    local conn
+    conn = game:GetService("RunService").RenderStepped:Connect(function()
+        if not flyWin then if conn then conn:Disconnect() end return end
+        pcall(function() spdLbl.Text = "速度: " .. math.floor(HON_Engine.CurSpeed) end)
+    end)
+
+    HON_Win.winMinSetup(frame, content, minBtn)
+    HON_Win.attachDrag(frame, title)
+    HON_Win.saveWinDefault("FlyWin", frame)
+    flyWin = sg
+end
+function openFlyWin() pcall(function() if not flyWin then HON_FlyWin() end flyWin.Enabled = true end) end
+function closeFlyWin() pcall(function() if flyWin then flyWin.Enabled = false end end) end
+
 
 -- 兼容飞行 / 通用「小法师制作」状态小窗
 -- 常驻 CoreGui：角色重生 / 飞行脚本重置 PlayerGui 也不会消失；
@@ -3388,9 +3696,9 @@ TabAttr:Slider({
     end
 })
 
-TabAttr:Toggle({
+local EngineToggle = TabAttr:Toggle({
     Title = "引擎加速总开关",
-    Desc = "开启后按所选引擎加速；选择 CF 时屏幕生成可拖动/可缩小控制台",
+    Desc = "开启后按所选引擎加速；选择 CF 时屏幕生成可拖动/可缩小控制台与飞行状态窗",
     Default = false,
     Callback = function(v)
         EngineEnabled = v
@@ -3407,6 +3715,7 @@ TabAttr:Toggle({
         end
     end
 })
+EngineToggleRef = EngineToggle  -- 供控制台“×”按钮联动关闭
 
 -- ================= 速度 =================
 TabAttr:Toggle({
@@ -10166,14 +10475,22 @@ TabConfig = Window:Tab({
 -- ⭐延迟获取主题（确保AddTheme已注册）
 task.wait()
 
+-- 自定义主题（提前声明，保证下方校验能识别，避免误报“主题不存在”）
+CustomThemes = {"Aurora", "Cyan", "Blue", "BlackGold"}
+
 ThemeList = {}
 pcall(function()
     ThemeList = WindUI:GetThemes()
 end)
 
--- ⭐严格校验
+-- ⭐把已注册的自定义主题也并入校验列表
+for _, v in ipairs(CustomThemes) do
+    if not table.find(ThemeList, v) then table.insert(ThemeList, v) end
+end
+
+-- ⭐严格校验：仅当主题真的无效才回退 Dark（不再无谓刷屏告警）
 if not table.find(ThemeList, CurrentTheme) then
-    warn("主题不存在，重置为 Dark ->", CurrentTheme)
+    warn("主题不存在，已重置为 Dark（原值：", tostring(CurrentTheme), "）")
     CurrentTheme = "Dark"
 end
 -- ================= 管理员检测 =================
