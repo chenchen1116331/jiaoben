@@ -134,6 +134,31 @@ function Notify(title, content, duration, icon)
     end)
 
 end
+
+-- ================= 报错可视化（让被 pcall 吞掉的错误也能看到，且不崩脚本）=================
+XF_Logs = {}
+XF_LogSeq = 0
+function XF_LogErr(tag, msg, noNotify)
+    msg = tostring(msg or "未知错误")
+    XF_LogSeq = XF_LogSeq + 1
+    local entry = "[" .. XF_LogSeq .. "] " .. os.date("%H:%M:%S") .. " " .. (tag or "ERR") .. ": " .. msg
+    pcall(function() table.insert(XF_Logs, 1, entry) end)
+    pcall(function()
+        while #XF_Logs > 150 do table.remove(XF_Logs) end
+    end)
+    pcall(function() print("[XF报错]", entry) end)
+    if not noNotify then
+        pcall(function() Notify("运行报错", (tag or "ERR") .. ": " .. msg:sub(1, 90), 5, "error") end)
+    end
+end
+-- 统一安全包装：执行 fn，出错则记录+通知，绝不崩脚本
+function XF_Try(tag, fn, ...)
+    local args = {...}
+    local ok, err = pcall(fn, table.unpack(args))
+    if not ok then XF_LogErr(tag, err) end
+    return ok, err
+end
+
 -- ================= 瞬移模块（可开关版）=================
 
 -- ================= 瞬移模块（稳定无跳跃冲突版）=================
@@ -3041,7 +3066,7 @@ OnlyMobile = false,
 
     SideBarWidth = 150, -- ⭐稍微加宽
     ScrollBarEnabled = false, -- ⭐关掉更像mac
-    Background = nil, -- ⭐背景图改为脚本自主控制（见下方"背景图自主控制系统"）
+    Background = BackgroundEnabled and BgImage or nil, -- ⭐复刻夜脚本：直接交给 WindUI 原生 BackgroundImage 加载器
 
     User = {
         Enabled = true,
@@ -3110,7 +3135,8 @@ MainTab:Paragraph({
 -- 三套驱动策略：W=写 WalkSpeed（最稳）  V=自维护速度+CFrame惯性滑行  CF=CFrame位移+可选瞬移闪现
 -- 六大机制：指数速度平滑 / 移动方向优先级 / skillRooted检测 / 防穿墙WallSlide / FOV助推 / 各自写位移方式
 -- 关键坑：V/CF 不能直接写 AssemblyLinearVelocity（WalkSpeed=0 时人形控制器会在物理步清零）→ 改用 CFrame 位移绕开
--- 新增功能一律走全局表（HON_*），避免单函数 200 局部变量上限
+-- 引擎运行态集中放在 HON_* 全局表（历史约定，旧代码保留）。新写/改动的代码优先用 local + 函数拆分，
+-- 不再靠“全局化”绕过单函数 200 局部变量上限（Luau 硬限制，删不掉，靠拆分规避）。
 EngineMode = "W"
 EngineSpeed = 60
 EngineEnabled = false
@@ -3702,17 +3728,20 @@ local EngineToggle = TabAttr:Toggle({
     Default = false,
     Callback = function(v)
         EngineEnabled = v
-        if v then
-            startEngine()
-            if EngineMode == "CF" then openCFWindow() end
-            AddFeature("引擎加速")
-            Notify("引擎加速", "已开启（引擎 " .. EngineMode .. "）", 2, "success")
-        else
-            stopEngine()
-            closeCFWindow()
-            RemoveFeature("引擎加速")
-            Notify("引擎加速", "已关闭", 2, "info")
-        end
+        local ok, err = pcall(function()
+            if v then
+                startEngine()
+                if EngineMode == "CF" then openCFWindow() end
+                AddFeature("引擎加速")
+                Notify("引擎加速", "已开启（引擎 " .. EngineMode .. "）", 2, "success")
+            else
+                stopEngine()
+                closeCFWindow()
+                RemoveFeature("引擎加速")
+                Notify("引擎加速", "已关闭", 2, "info")
+            end
+        end)
+        if not ok then XF_LogErr("引擎开关", err) end
     end
 })
 EngineToggleRef = EngineToggle  -- 供控制台“×”按钮联动关闭
@@ -9179,20 +9208,26 @@ _G.SetBorderEnabled = SetBorderEnabled
 _G.BorderMode = BorderMode
 _G.BorderEnabled = BorderEnabled
 
--- ================= 背景图自主控制系统（修复透明度失效） =================
--- 说明：WindUI 本版本窗口并不渲染 Background / BackgroundImageTransparency，
--- 所以之前所有 Window.BackgroundImageTransparency = ... 都是空操作。
--- 这里改为脚本自己持有并控制一个 ImageLabel，图片与透明度均由我们直接管理。
-BgLabel = nil
-BgAssetCache = {}
+-- ================= 背景图系统（复刻夜脚本原生机制 + 小法师增强） =================
+-- 【夜脚本核心做法：交给 WindUI 原生 Window.BackgroundImage】
+--   WindUI v1.6.62 自带原生图片加载器（real_windui.lua 754-786）：检测到 "http" 链接时，
+--   自动 HttpGet -> writefile -> getcustomasset -> 赋给内部 ImageLabel.Image。
+--   这正是“远程背景图能显示”的唯一可靠方式；直接把 http 链接塞给 Image.Image 是渲染不出来的。
+--   （夜脚本源码 3195-3200：Window.BackgroundImage = BgImage，即依赖这个原生机制。）
+-- 【小法师增强（我之前加的）】
+--   1) 重试：窗口对象/UI 可能懒加载未完成，主循环重试直到可设置（修“重启后空窗”）。
+--   2) 兜底：WindUI 原生加载失败时，用渐变纯色背景代替，绝不空窗、绝不报错。
+--   3) 报错可见：真实错误经 XF_LogErr 输出，不吞掉、不崩溃。
+--   4) 持久化：开关/透明度/预设均读写作弊存档文件（见上方“背景图配置”段）。
+-- 本块状态用 local 声明（不再靠全局化绕过单函数 200 局部变量上限）。
+local BgLabel = nil
+local BgAssetCache = {}
 
 -- ⭐ 远程图片解析：复刻 WindUI 原生机制（HttpGet 下载 -> writefile -> getcustomasset）
--- 这是 Roblox 里“显示远程图片”的唯一可靠方式；
--- 直接把 http 链接塞给 ImageLabel.Image 是渲染不出来的（报错且不显示）。
--- 优化：失败返回 nil（绝不直接塞链接），由上层兜底。
+-- 作为“兜底通道”使用：当 WindUI 原生 BackgroundImage 加载失败（如网络拉不到）时，
+-- 我们自己建一个 ImageLabel 也能把图显示出来。失败返回 nil，绝不塞裸链接。
 function ResolveImage(url)
     if not url or url == "" then return nil end
-    -- 已是 rbxassetid / rbxasset / 本地文件，直接可用
     if not string.find(url, "http") then return url end
     if BgAssetCache[url] then return BgAssetCache[url] end
     local ok, asset = pcall(function()
@@ -9209,7 +9244,7 @@ function ResolveImage(url)
     return nil
 end
 
--- 兜底：远程图无法加载时，用渐变纯色背景代替，保证“不空窗、不报错”
+-- 兜底：原生与兜底通道都拉不到图时，用渐变纯色背景代替，保证“不空窗、不报错”
 function ApplyBgFallback()
     if not BgLabel then return end
     pcall(function()
@@ -9230,6 +9265,7 @@ function ApplyBgFallback()
     end)
 end
 
+-- 自建兜底背景层：WindUI 原生加载失败时挂到窗口容器里
 function EnsureBgLabel()
     local container = Window.UIElements and (Window.UIElements.MainContainer or Window.UIElements.Main)
     if BgLabel and BgLabel.Parent and BgLabel.Parent == container then return true end
@@ -9253,35 +9289,69 @@ function EnsureBgLabel()
     return (BgLabel and BgLabel.Parent == container)
 end
 
+-- ⭐ 主入口：复刻夜脚本的 Window.BackgroundImage 原生机制 + 重试 + 兜底
+-- 正常路径：WindUI 原生加载器自动处理 http 下载与转换，背景直接显示。
+-- 增强点：Window 对象可能尚未就绪 → 最多重试；原生失败后 → 自建 BgLabel 兜底；全程错误经 XF_LogErr。
 function ApplyBgImage()
-    -- 容器可能尚未建好（窗口懒加载），最多重试若干次，避免“永远空窗”
     local tries = 0
-    local function tryCreate()
+    local function tryApply()
         tries = tries + 1
-        if EnsureBgLabel() then
-            pcall(function() if BgLabel then BgLabel.Visible = BackgroundEnabled end end)
-            if not BackgroundEnabled then return end
-            -- 异步解析远程图片，避免阻塞启动；解析完成后再赋值
-            task.spawn(function()
+        local ok, err = pcall(function()
+            if not Window then error("Window 尚未创建") end
+            -- ⭐ 夜脚本核心：直接交给 WindUI 原生加载器（自动 http -> getcustomasset）
+            if BackgroundEnabled then
+                Window.BackgroundImage = BgImage
+            else
+                Window.BackgroundImage = ""
+            end
+            if Window.BackgroundImageTransparency ~= nil then
+                Window.BackgroundImageTransparency = BgTransValue
+            end
+        end)
+        if ok then
+            -- Window 设置成功。WindUI 原生加载是异步（内部 task.spawn 下载），
+            -- 延迟校验它是否真的把图渲染出来；没渲染就走“兜底通道”，绝不空窗。
+            -- 精确路径（WindUI 源码 11316）：Window.UIElements.Main.Background.ImageLabel
+            -- 且加载失败时 WindUI 会 Destroy 整个该 ImageLabel（源码 770-771）。
+            task.delay(1.5, function()
+                local rendered = false
                 pcall(function()
-                    local asset = ResolveImage(BgImage)
-                    if asset and BgLabel then
-                        BgLabel.Image = asset
-                        BgLabel.ImageTransparency = BgTransValue
-                        BgLabel.Visible = true
-                    else
-                        -- 图片拉不到：用渐变兜底，绝不空窗、绝不报错
-                        ApplyBgFallback()
+                    local bg = Window.UIElements
+                        and Window.UIElements.Main
+                        and Window.UIElements.Main.Background
+                        and Window.UIElements.Main.Background.ImageLabel
+                    if bg and bg.Image and bg.Image ~= "" and string.find(bg.Image, "rbxasset") then
+                        rendered = true
                     end
                 end)
+                if not rendered and BackgroundEnabled then
+                    -- 原生通道没渲染出来（网络拉不到/链接失效），自建 BgLabel 兜底
+                    if EnsureBgLabel() then
+                        local asset = ResolveImage(BgImage)
+                        if asset then
+                            pcall(function()
+                                BgLabel.Image = asset
+                                BgLabel.ImageTransparency = BgTransValue
+                                BgLabel.Visible = true
+                            end)
+                        else
+                            ApplyBgFallback()
+                        end
+                    else
+                        XF_LogErr("背景图片", "容器未就绪，无法创建兜底背景")
+                    end
+                end
             end)
             return
         end
+        -- Window 还没准备好，重试；最多 40 次（约 10 秒）
         if tries < 40 then
-            task.delay(0.25, tryCreate)
+            task.delay(0.25, tryApply)
+        else
+            XF_LogErr("背景图片", "Window 初始化超时：" .. tostring(err))
         end
     end
-    tryCreate()
+    tryApply()
 end
 
 function ApplyBgTransparency(val)
@@ -9289,6 +9359,7 @@ function ApplyBgTransparency(val)
     pcall(function()
         if writefile then writefile(BgTransFile, tostring(val)) end
     end)
+    pcall(function() if Window then Window.BackgroundImageTransparency = val end end)
     if BgLabel then
         pcall(function() BgLabel.ImageTransparency = val end)
     end
@@ -9309,7 +9380,8 @@ function SetHighPerf(on)
     if on then
         -- 冻结边框：保留最后角度，停止旋转
         pcall(function() if Gradient then Gradient.Rotation = 1 end end)
-        -- 隐藏背景图（省去大图合成）
+        -- 隐藏背景图（省去大图合成）：原生层与兜底层都藏掉
+        pcall(function() if Window then Window.BackgroundImage = "" end end)
         pcall(function() if BgLabel then BgLabel.Visible = false end end)
         -- 尽量关闭 WindUI 毛玻璃模糊（DepthOfFieldEffect / BlurEffect）
         pcall(function()
@@ -9374,14 +9446,15 @@ pcall(function() if _G.SetHighPerf then _G.SetHighPerf(_G.HighPerf) end end)
 -- ================= 外观备份（防止皮肤被意外清空，可一键恢复）=================
 _G.MyOrigDesc = nil
 function BackupMyAppearance()
-    pcall(function()
+    local ok, err = pcall(function()
         local lp = game:GetService("Players").LocalPlayer
         if not lp then return end
         _G.MyOrigDesc = lp:GetHumanoidDescriptionFromUserId(lp.UserId)
     end)
+    if not ok then XF_LogErr("外观备份", err, true) end
 end
 function RestoreMyAppearance()
-    pcall(function()
+    local ok, err = pcall(function()
         local lp = game:GetService("Players").LocalPlayer
         if not (lp and lp.Character) then
             Notify("恢复外观", "角色尚未加载，请稍候", 2, "info")
@@ -9400,6 +9473,7 @@ function RestoreMyAppearance()
             Notify("恢复外观", "未找到备份，无法恢复", 3, "error")
         end
     end)
+    if not ok then XF_LogErr("外观恢复", err) end
 end
 -- 启动时备份一次；每次重生也重新备份，确保随时能还原
 pcall(BackupMyAppearance)
@@ -9775,7 +9849,7 @@ do
     local function XA_Root() local c = XA_Char() return c and c:FindFirstChild("HumanoidRootPart") end
     local function XA_Cam() return workspace.CurrentCamera end
     local function nf(t, c, d) pcall(function() Notify(t or "提示", c or "", d or 3) end) end
-    local function xload(url) local ok, err = pcall(function() loadstring(game:HttpGet(url))() end); if not ok then nf("加载失败", tostring(err), 4) end end
+    local function xload(url) local ok, err = pcall(function() loadstring(game:HttpGet(url))() end); if not ok then XF_LogErr("远程加载", tostring(err)); nf("加载失败", tostring(err), 4) end end
     local function clip(s) pcall(function() setclipboard(s) end) end
 
     -- ===================== Tab 1：Xa 通用 =====================
@@ -10061,12 +10135,13 @@ do
     TabXA_Hub:Button({ Title = "1x1x1x1", Callback = function() xload("https://pastebin.com/raw/JipYNCht") end })
     TabXA_Hub:Button({ Title = "Control (Xingtai)", Callback = function() xload("https://raw.githubusercontent.com/Xingtaiduan/Script/refs/heads/main/Content/Controller.lua") end })
     TabXA_Hub:Input({ Title = "变玩家(输入名称)", Desc = "清空外观并应用目标用户形象（已自动备份，可在“终止-恢复我的外观”还原）", Placeholder = "用户名", Callback = function(name)
-        pcall(function()
+        local ok, err = pcall(function()
             if not _G.MyOrigDesc then BackupMyAppearance() end
             XA_LP:ClearCharacterAppearance()
             XA_Hum():ApplyDescriptionClientServer(XA_P:GetHumanoidDescriptionFromUserId(XA_P:GetUserIdFromNameAsync(name)))
             nf("已变身", "变为 " .. name)
         end)
+        if not ok then XF_LogErr("变玩家", err) end
     end })
     TabXA_Hub:Button({ Title = "后门扫描", Callback = function()
         local found = 0
@@ -10539,6 +10614,79 @@ TabStop:Button({
     Desc = "若皮肤/穿搭被清空，点此还原为你原本的形象（脚本已自动备份）",
     Callback = function()
         RestoreMyAppearance()
+    end
+})
+
+TabStop:Button({
+    Title = "查看运行日志",
+    Desc = "显示脚本运行期间的真实报错/警告（被 pcall 吞掉的错误也会记录在这里），方便排查问题。再次点击关闭面板",
+    Callback = function()
+        pcall(function()
+            local lp = game:GetService("Players").LocalPlayer
+            if not lp then Notify("日志", "未找到本地玩家", 2, "error"); return end
+            local pg = lp:FindFirstChild("PlayerGui") or lp:WaitForChild("PlayerGui")
+            local old = pg:FindFirstChild("XF_LogUI")
+            if old then old:Destroy() return end
+            local sg = Instance.new("ScreenGui")
+            sg.Name = "XF_LogUI"
+            sg.ResetOnSpawn = false
+            sg.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+            sg.Parent = pg
+            local frame = Instance.new("Frame")
+            frame.Size = UDim2.new(0, 480, 0, 340)
+            frame.Position = UDim2.new(0.5, -240, 0.5, -170)
+            frame.BackgroundColor3 = Color3.fromRGB(20, 20, 28)
+            frame.BorderSizePixel = 0
+            frame.Active = true
+            frame.Draggable = true
+            frame.Parent = sg
+            local corner = Instance.new("UICorner"); corner.CornerRadius = UDim.new(0, 10); corner.Parent = frame
+            local title = Instance.new("TextLabel")
+            title.Size = UDim2.new(1, 0, 0, 32)
+            title.BackgroundColor3 = Color3.fromRGB(120, 80, 255)
+            title.Text = "小法师 · 运行日志（" .. tostring(XF_LogSeq) .. " 条）"
+            title.TextColor3 = Color3.new(1, 1, 1)
+            title.Font = Enum.Font.GothamBold
+            title.TextSize = 14
+            title.Parent = frame
+            local tcor = Instance.new("UICorner"); tcor.CornerRadius = UDim.new(0, 10); tcor.Parent = title
+            local close = Instance.new("TextButton")
+            close.Size = UDim2.new(0, 32, 0, 28)
+            close.Position = UDim2.new(1, -36, 0, 2)
+            close.Text = "×"
+            close.BackgroundColor3 = Color3.fromRGB(120, 40, 40)
+            close.TextColor3 = Color3.new(1, 1, 1)
+            close.Font = Enum.Font.GothamBold
+            close.TextSize = 16
+            close.Parent = title
+            close.MouseButton1Click:Connect(function() pcall(function() sg:Destroy() end) end)
+            local scroll = Instance.new("ScrollingFrame")
+            scroll.Size = UDim2.new(1, -12, 1, -40)
+            scroll.Position = UDim2.new(0, 6, 0, 36)
+            scroll.BackgroundTransparency = 1
+            scroll.ScrollBarThickness = 6
+            scroll.BorderSizePixel = 0
+            scroll.Parent = frame
+            local txt = Instance.new("TextLabel")
+            txt.Size = UDim2.new(1, -8, 0, 0)
+            txt.AutomaticSize = Enum.AutomaticSize.Y
+            txt.BackgroundTransparency = 1
+            txt.TextColor3 = Color3.fromRGB(255, 160, 160)
+            txt.Font = Enum.Font.Code
+            txt.TextSize = 12
+            txt.TextXAlignment = Enum.TextXAlignment.Left
+            txt.TextYAlignment = Enum.TextYAlignment.Top
+            txt.TextWrapped = true
+            txt.Parent = scroll
+            local list = {}
+            for i = 1, #XF_Logs do list[i] = XF_Logs[i] end
+            txt.Text = (#list == 0) and "暂无报错记录，一切正常 ✅" or table.concat(list, "\n")
+            task.defer(function()
+                pcall(function()
+                    scroll.CanvasSize = UDim2.new(0, 0, 0, txt.AbsoluteSize.Y + 12)
+                end)
+            end)
+        end)
     end
 })
 
