@@ -3034,11 +3034,24 @@ end)
 
 -- ===================UI创建===================
 
-
+-- ⭐ 窗口 Logo 预解析：WindUI 此版本的图标创建器在走 http 分支时会访问 L.ImageLabel，
+-- 但该版本图标元素是 Frame、没有 ImageLabel 子节点，直接把 http 链接塞给 Icon 会报
+-- “ImageLabel is not a valid member of Frame”。所以这里先自行下载图片并转成 getcustomasset
+-- 本地资源串，让 Icon 走“普通资源”分支，避免那个坏引用。
+local XF_IconURL = "https://raw.githubusercontent.com/chenchen1116331/jiaoben/refs/heads/main/1794626064494.png"
+local XF_IconAsset = "zap" -- 兜底：解析失败就退回内置图标，绝不报错
+pcall(function()
+    local body = (game.HttpGetAsync and game:HttpGetAsync(XF_IconURL)) or game:HttpGet(XF_IconURL)
+    if body and #tostring(body) > 0 then
+        writefile("XF_Icon.png", body)
+        local a = getcustomasset("XF_Icon.png")
+        if a then XF_IconAsset = a end
+    end
+end)
 
 Window = WindUI:CreateWindow({
     Title = "XF 小法师融合脚本",
-    Icon = "https://raw.githubusercontent.com/chenchen1116331/jiaoben/refs/heads/main/1794626064494.png", -- ⭐窗口左上角 Logo：FX 图标（WindUI 自动 HttpGet→getcustomasset 显示）
+    Icon = XF_IconAsset, -- ⭐窗口左上角 Logo：FX 图标（已预下载为本地资源串，稳定显示不报错）
     Author = "作者:小法师",
     Folder = "NightHub",
 
@@ -10174,10 +10187,18 @@ do
     TabXA_Hub:Button({ Title = "1x1x1x1", Callback = function() xload("https://pastebin.com/raw/JipYNCht") end })
     TabXA_Hub:Button({ Title = "Control (Xingtai)", Callback = function() xload("https://raw.githubusercontent.com/Xingtaiduan/Script/refs/heads/main/Content/Controller.lua") end })
     TabXA_Hub:Input({ Title = "变玩家(输入名称)", Desc = "清空外观并应用目标用户形象（已自动备份，可在“终止-恢复我的外观”还原）", Placeholder = "用户名", Callback = function(name)
+        -- ⭐ 先单独解析用户名 -> UserId，遇到“用户不存在”给出友好提示，不记成报错
+        local okUid, uid = pcall(function()
+            return XA_P:GetUserIdFromNameAsync(name)
+        end)
+        if not (okUid and uid) then
+            nf("变玩家失败", "找不到用户：" .. tostring(name), 3, "error")
+            return
+        end
         local ok, err = pcall(function()
             if not _G.MyOrigDesc then BackupMyAppearance() end
             XA_LP:ClearCharacterAppearance()
-            XA_Hum():ApplyDescriptionClientServer(XA_P:GetHumanoidDescriptionFromUserId(XA_P:GetUserIdFromNameAsync(name)))
+            XA_Hum():ApplyDescriptionClientServer(XA_P:GetHumanoidDescriptionFromUserId(uid))
             nf("已变身", "变为 " .. name)
         end)
         if not ok then XF_LogErr("变玩家", err) end
