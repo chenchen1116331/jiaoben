@@ -468,6 +468,38 @@ end)
 if BgPresets[SavedBgPreset] then
     BgImage = BgPresets[SavedBgPreset]
 end
+
+-- ================= 背景图密码锁 =================
+-- 【锁的范围】仅“用户自己的图库”需要密码解锁才显示；密码 chenchen1116；输入一次后存档（XF_BgPass.txt），下次免输。
+--   ⭐用户自己的图库 = 仓库 chenchen1116331/jiaoben 下的 9 张预设背景，
+--     以及用户单独发来的那张默认背景（在 ylt410 仓库，但属于用户指定）。
+--   ⭐不锁：FX Logo（窗口图标，始终显示）+ 脚本自带/第三方图库（ylt410 的 11 张预设，选了直接显示）。
+XF_BgPassFile = "XF_BgPass.txt"
+XF_BgUnlocked = false
+-- 用户单独发来、但不在自己仓库里的那张默认背景（ylt410 仓库，用户指定为默认背景）
+XF_UserBgUrl = "https://raw.githubusercontent.com/ylt410/Liquid-glass-script/refs/heads/main/E7B068E4-0859-420F-A6B1-AF519C804C39.png"
+-- 判断某个背景图链接是否属于“用户自己的图库”（需要密码）
+function XF_IsLockedUrl(url)
+    if not url or url == "" then return false end
+    -- 用户自己的 GitHub 仓库（chenchen1116331/jiaoben）下全部图片都算
+    if string.find(url, "chenchen1116331/jiaoben") then return true end
+    -- 用户单独指定的那张默认背景（在 ylt410 仓库）
+    if url == XF_UserBgUrl then return true end
+    return false
+end
+pcall(function()
+    if readfile and readfile(XF_BgPassFile) == "1" then XF_BgUnlocked = true end
+end)
+function XF_UnlockBg(pwd)
+    if tostring(pwd) == "chenchen1116" then
+        XF_BgUnlocked = true
+        pcall(function() if writefile then writefile(XF_BgPassFile, "1") end end)
+        if BackgroundEnabled then ApplyBgImage() end
+        return true
+    end
+    return false
+end
+
 WindUI:AddTheme({
     Name = "BlackGold",
 
@@ -9307,6 +9339,10 @@ end
 -- 正常路径：WindUI 原生加载器自动处理 http 下载与转换，背景直接显示。
 -- 增强点：Window 对象可能尚未就绪 → 最多重试；原生失败后 → 自建 BgLabel 兜底；全程错误经 XF_LogErr。
 function ApplyBgImage()
+    -- ⭐ 背景图密码锁：仅当“当前背景图属于用户自己的图库”且未解锁时，才不显示（第三方图库不锁）
+    if not XF_BgUnlocked and XF_IsLockedUrl(BgImage) then
+        return
+    end
     local tries = 0
     local function tryApply()
         tries = tries + 1
@@ -9462,6 +9498,12 @@ end)
 
 pcall(ApplyBgImage)
 if FontColorEnabled then pcall(ApplyFontColor) end
+-- 背景图未解锁：仅当默认背景正好属于“用户自己的图库”时，才提示去设置页输入密码
+if not XF_BgUnlocked and XF_IsLockedUrl(BgImage) then
+    pcall(function()
+        Notify("背景图", "背景图已加密，请在「设置」页输入密码 chenchen1116 解锁", 6, "info")
+    end)
+end
 
 -- 应用已保存的高性能模式（确保重载后背景/边框状态正确）
 pcall(function() if _G.SetHighPerf then _G.SetHighPerf(_G.HighPerf) end end)
@@ -9474,11 +9516,15 @@ function BackupMyAppearance()
         if not lp or not lp.Character then return end
         local hum = lp.Character:FindFirstChildOfClass("Humanoid")
         if not hum then return end
-        -- 优先取“当前实际穿着”（无需联网，最可靠），用于一键还原
+        -- 优先取“当前实际穿着”（无需联网，最准确）
         local desc = hum:GetAppliedDescription()
-        -- 兜底：按 userId 取官方描述（需联网，可能失败）
-        if not desc then
-            desc = game:GetService("Players"):GetHumanoidDescriptionFromUserId(lp.UserId)
+        -- 若当前已被清空（裸模），改用 Roblox 存档形象作为备份来源，确保能还原真实装扮
+        local isNaked = not (desc and (desc.Shirt ~= "" or desc.Pants ~= "" or desc.GraphicTShirt ~= "" or (#desc.Hats > 0)))
+        if isNaked then
+            local ok2, d2 = pcall(function()
+                return game:GetService("Players"):GetHumanoidDescriptionFromUserId(lp.UserId)
+            end)
+            if ok2 and d2 then desc = d2 end
         end
         _G.MyOrigDesc = desc
     end)
@@ -9513,8 +9559,31 @@ pcall(function()
         if XF_Unloaded then return end
         task.wait(1)
         BackupMyAppearance()
+        task.wait(0.5)
+        XF_AppearanceWatchdog()
     end)
 end)
+
+-- ⭐ 外观看门狗：若启动/重生后装扮被莫名清空（变裸模）且有有效备份，自动还原。
+-- 仅在“备份有穿衣/配饰、而当前一件都没有”时触发，避免误覆盖正常状态或被变玩家干扰。
+XF_ChangingAppearance = false
+function XF_AppearanceWatchdog()
+    local lp = game:GetService("Players").LocalPlayer
+    if not (lp and lp.Character) then return end
+    local hum = lp.Character:FindFirstChildOfClass("Humanoid")
+    if not hum or not _G.MyOrigDesc then return end
+    if XF_ChangingAppearance then return end
+    local cur = hum:GetAppliedDescription()
+    if not cur then return end
+    local had = (_G.MyOrigDesc.Shirt ~= "" or _G.MyOrigDesc.Pants ~= "" or _G.MyOrigDesc.GraphicTShirt ~= "" or (#_G.MyOrigDesc.Hats > 0))
+    local now = (cur.Shirt ~= "" or cur.Pants ~= "" or cur.GraphicTShirt ~= "" or (#cur.Hats > 0))
+    if had and not now then
+        pcall(function() hum:ApplyDescription(_G.MyOrigDesc:Clone()) end)
+        Notify("外观保护", "检测到装扮被清空，已自动还原", 3, "warn")
+    end
+end
+-- 启动后延迟跑一次看门狗（覆盖“一启动装扮就没了”的情况）
+task.spawn(function() task.wait(2.5); pcall(XF_AppearanceWatchdog) end)
 
 -- ================= 一键关闭脚本（所有功能立即失效） =================
 -- 停止引擎/窗口/循环、隐藏界面、还原外观与 FOV；等效于“删除脚本”的效果。
@@ -10187,20 +10256,22 @@ do
     TabXA_Hub:Button({ Title = "1x1x1x1", Callback = function() xload("https://pastebin.com/raw/JipYNCht") end })
     TabXA_Hub:Button({ Title = "Control (Xingtai)", Callback = function() xload("https://raw.githubusercontent.com/Xingtaiduan/Script/refs/heads/main/Content/Controller.lua") end })
     TabXA_Hub:Input({ Title = "变玩家(输入名称)", Desc = "清空外观并应用目标用户形象（已自动备份，可在“终止-恢复我的外观”还原）", Placeholder = "用户名", Callback = function(name)
-        -- ⭐ 先单独解析用户名 -> UserId，遇到“用户不存在”给出友好提示，不记成报错
-        local okUid, uid = pcall(function()
-            return XA_P:GetUserIdFromNameAsync(name)
-        end)
-        if not (okUid and uid) then
-            nf("变玩家失败", "找不到用户：" .. tostring(name), 3, "error")
-            return
-        end
+        XF_ChangingAppearance = true -- 变身进行中：临时关闭看门狗，避免误还原
         local ok, err = pcall(function()
+            -- ⭐ 先单独解析用户名 -> UserId，遇到“用户不存在”给出友好提示，不记成报错
+            local okUid, uid = pcall(function()
+                return XA_P:GetUserIdFromNameAsync(name)
+            end)
+            if not (okUid and uid) then
+                nf("变玩家失败", "找不到用户：" .. tostring(name), 3, "error")
+                return
+            end
             if not _G.MyOrigDesc then BackupMyAppearance() end
             XA_LP:ClearCharacterAppearance()
             XA_Hum():ApplyDescriptionClientServer(XA_P:GetHumanoidDescriptionFromUserId(uid))
             nf("已变身", "变为 " .. name)
         end)
+        XF_ChangingAppearance = false
         if not ok then XF_LogErr("变玩家", err) end
     end })
     TabXA_Hub:Button({ Title = "后门扫描", Callback = function()
@@ -10930,6 +11001,20 @@ TabConfig:Dropdown({
         ApplyBgImage()
 
         Notify("背景图", "已切换为 "..tostring(v), 2, "success")
+    end
+})
+
+-- ================= 背景图密码锁（解锁后才显示背景） =================
+TabConfig:Input({
+    Title = "背景图解锁密码",
+    Desc = "仅用于解锁你发给我的那张背景图；输入 chenchen1116 一次后自动记住，下次免输。脚本自带的内置预设图无需密码，直接选即可显示",
+    Placeholder = "输入密码",
+    Callback = function(pwd)
+        if XF_UnlockBg(pwd) then
+            Notify("背景解锁", "背景图已解锁并显示", 3, "success")
+        else
+            Notify("背景解锁", "密码错误", 3, "error")
+        end
     end
 })
 
