@@ -3038,7 +3038,7 @@ end)
 
 Window = WindUI:CreateWindow({
     Title = "XF 小法师融合脚本",
-    Icon = "rbxassetid://114890258053806",
+    Icon = "https://raw.githubusercontent.com/chenchen1116331/jiaoben/refs/heads/main/1794626064494.png", -- ⭐窗口左上角 Logo：FX 图标（WindUI 自动 HttpGet→getcustomasset 显示）
     Author = "作者:小法师",
     Folder = "NightHub",
 
@@ -3392,7 +3392,7 @@ function startEngine()
         local hrp = lp.Character:FindFirstChild("HumanoidRootPart")
         if not (hum and hrp) then return end
         local m = HON_GetMode(EngineMode)
-        if m and m.Step then m:Step(hrp, hum, dt) end
+        if m and m.Step then m.Step(hrp, hum, dt) end
     end)
     HON_FOVBoost(true)
 end
@@ -3589,7 +3589,7 @@ function HON_FlyWin()
     -- 实时刷新速度
     local conn
     conn = game:GetService("RunService").RenderStepped:Connect(function()
-        if not flyWin then if conn then conn:Disconnect() end return end
+        if not flyWin or XF_Unloaded then if conn then conn:Disconnect() end return end
         pcall(function() spdLbl.Text = "速度: " .. math.floor(HON_Engine.CurSpeed) end)
     end)
 
@@ -3672,6 +3672,7 @@ function buildMakeWindow()
             makeDesc = nil
             makeGui = nil
             task.delay(0.5, function()
+                if XF_Unloaded then return end
                 pcall(showMakeWindow, makeLastText)
             end)
         end)
@@ -3707,7 +3708,7 @@ TabAttr:Dropdown({
         EngineMode = v
         if EngineEnabled then
             startEngine()
-            if v == "CF" then openCFWindow() else closeCFWindow() end
+            openCFWindow()
         end
         Notify("引擎加速", "引擎切换为 " .. tostring(v), 1.5, "info")
     end
@@ -3731,7 +3732,7 @@ local EngineToggle = TabAttr:Toggle({
         local ok, err = pcall(function()
             if v then
                 startEngine()
-                if EngineMode == "CF" then openCFWindow() end
+                openCFWindow()
                 AddFeature("引擎加速")
                 Notify("引擎加速", "已开启（引擎 " .. EngineMode .. "）", 2, "success")
             else
@@ -9359,7 +9360,16 @@ function ApplyBgTransparency(val)
     pcall(function()
         if writefile then writefile(BgTransFile, tostring(val)) end
     end)
-    pcall(function() if Window then Window.BackgroundImageTransparency = val end end)
+    -- 原生层（WindUI Background.ImageLabel）：直接改透明度，滑块实时生效
+    pcall(function()
+        local main = Window and Window.UIElements and (Window.UIElements.MainContainer or Window.UIElements.Main)
+        if main then
+            local bg = main:FindFirstChild("Background", true)
+            local il = bg and bg:FindFirstChildWhichIsA("ImageLabel")
+            if il then il.ImageTransparency = val end
+        end
+    end)
+    -- 兜底自建层（原生失败时）
     if BgLabel then
         pcall(function() BgLabel.ImageTransparency = val end)
     end
@@ -9448,10 +9458,18 @@ _G.MyOrigDesc = nil
 function BackupMyAppearance()
     local ok, err = pcall(function()
         local lp = game:GetService("Players").LocalPlayer
-        if not lp then return end
-        _G.MyOrigDesc = lp:GetHumanoidDescriptionFromUserId(lp.UserId)
+        if not lp or not lp.Character then return end
+        local hum = lp.Character:FindFirstChildOfClass("Humanoid")
+        if not hum then return end
+        -- 优先取“当前实际穿着”（无需联网，最可靠），用于一键还原
+        local desc = hum:GetAppliedDescription()
+        -- 兜底：按 userId 取官方描述（需联网，可能失败）
+        if not desc then
+            desc = game:GetService("Players"):GetHumanoidDescriptionFromUserId(lp.UserId)
+        end
+        _G.MyOrigDesc = desc
     end)
-    if not ok then XF_LogErr("外观备份", err, true) end
+    if not ok then XF_LogErr("外观备份", err) end
 end
 function RestoreMyAppearance()
     local ok, err = pcall(function()
@@ -9479,10 +9497,35 @@ end
 pcall(BackupMyAppearance)
 pcall(function()
     game:GetService("Players").LocalPlayer.CharacterAdded:Connect(function()
+        if XF_Unloaded then return end
         task.wait(1)
         BackupMyAppearance()
     end)
 end)
+
+-- ================= 一键关闭脚本（所有功能立即失效） =================
+-- 停止引擎/窗口/循环、隐藏界面、还原外观与 FOV；等效于“删除脚本”的效果。
+XF_Unloaded = false
+function XF_Unload()
+    if XF_Unloaded then return end
+    XF_Unloaded = true
+    pcall(stopEngine)
+    pcall(closeCFWindow)
+    pcall(closeFlyWin)
+    pcall(function() if makeGui and makeGui.Parent then makeGui:Destroy() end end)
+    pcall(function() if cfWin and cfWin.Parent then cfWin:Destroy() end end)
+    pcall(function() if flyWin and flyWin.Parent then flyWin:Destroy() end end)
+    pcall(function() if BgLabel and BgLabel.Parent then BgLabel:Destroy() end end)
+    -- 主窗隐藏（避免残留）
+    pcall(function() if Window and Window.SetVisible then Window:SetVisible(false) end end)
+    pcall(function()
+        local cam = workspace.CurrentCamera
+        if cam then cam.FieldOfView = 70 end
+    end)
+    pcall(RestoreMyAppearance)
+    Notify("已关闭", "小法师脚本已停止，所有功能失效", 4, "info")
+end
+_G.XF_Unload = XF_Unload
 
 -- ================= 脚本整合（来自其他通用脚本的功能） =================
 TabMerge = Window:Tab({
@@ -9675,7 +9718,7 @@ do
     ["星星实验室"] = "loadstring(game:HttpGet('https://raw.githubusercontent.com/StarGarde/Star/refs/heads/main/StarLaboratory.lua'))()",
     ["最强兵工厂"] = "loadstring(game:HttpGet('https://raw.githubusercontent.com/1xmae/Arsenal/main/loader.lua'))()",
     ["力量传奇"] = "loadstring(game:HttpGet('https://raw.githubusercontent.com/STKscripts/MainScript/master/MM2FREE'))()",
-    ["忍者传奇"] = "loadstring(game:HttpGet('https://raw.githubusercontent.com/Scriptblox/Script/main/NinjaLegends'))()",
+    -- ⭐ 已删除「忍者传奇」加载器（实测 raw 链接 404，加载即报错）
     ["战争大亨"] = "loadstring(game:HttpGet('https://raw.githubusercontent.com/KaeshBlox/WarTycoon/main/Main.lua'))()",
     ["自然灾害"] = "loadstring(game:HttpGet('https://raw.githubusercontent.com/GodScript/Scripts/main/NaturalDisaster'))()",
     ["俄亥俄州"] = "loadstring(game:HttpGet('https://raw.githubusercontent.com/ChamsFPS/Ohio/main/Loader'))()",
@@ -9926,18 +9969,14 @@ do
 
     TabXA_G:Section({ Title = "实用工具" })
 
-    TabXA_G:Button({ Title = "飞行v3", Callback = function() xload("https://raw.githubusercontent.com/Xingtaiduan/Script/main/Content/FlyGuiV3") end })
-    TabXA_G:Button({ Title = "F3X 建筑工具", Callback = function()
-        xload("https://raw.githubusercontent.com/Xingtaiduan/Script/refs/heads/main/Content/F3X") 
-    end })
+    -- ⭐ 已删除失效外链按钮：飞行v3 / F3X 建筑工具（实测 raw 链接 404，加载即报错）
     TabXA_G:Button({ Title = "建筑工具(复制/删除)", Callback = function()
         pcall(function()
             local b1 = Instance.new("HopperBin"); b1.Name = "复制"; b1.BinType = Enum.BinType.Copy; b1.Parent = XA_LP.Backpack
             local b2 = Instance.new("HopperBin"); b2.Name = "删除"; b2.BinType = Enum.BinType.Hammer; b2.Parent = XA_LP.Backpack
         end)
     end })
-    TabXA_G:Button({ Title = "Delta键盘", Callback = function() xload("https://raw.githubusercontent.com/Xingtaiduan/Script/refs/heads/main/Content/DeltaKeyBoard.lua") end })
-    TabXA_G:Button({ Title = "提高画质", Callback = function() xload("https://raw.githubusercontent.com/Xingtaiduan/Script/main/Content/HighQuality") end })
+    -- ⭐ 已删除失效外链按钮：Delta键盘 / 提高画质（实测 raw 链接 404，加载即报错）
     TabXA_G:Button({ Title = "光影", Callback = function() xload("https://raw.githubusercontent.com/MZEEN2424/Graphics/main/Graphics.xml") end })
     TabXA_G:Button({ Title = "反挂机", Callback = function()
         local function disableConn(c)
@@ -10351,8 +10390,16 @@ do
     TabTrans:Toggle({ Title = "启用自动翻译", Default = false, Callback = function(v)
         Trans.enabled = v
         if v then
-            pcall(function() scan(XA_LP:WaitForChild("PlayerGui")) end)
-            Trans.conn = XA_Run.Heartbeat:Connect(function() if Trans.enabled then pcall(function() scan(XA_LP.PlayerGui) end) end end)
+            pcall(function()
+                scan(XA_LP.PlayerGui)
+                scan(game:GetService("CoreGui"))
+            end)
+            Trans.conn = XA_Run.Heartbeat:Connect(function()
+                if Trans.enabled then pcall(function()
+                    scan(XA_LP.PlayerGui)
+                    scan(game:GetService("CoreGui"))
+                end) end
+            end)
             nf("自动翻译", "已开启 -> " .. Trans.target)
         else
             if Trans.conn then Trans.conn:Disconnect(); Trans.conn = nil end
@@ -10584,6 +10631,14 @@ TabStop:Button({
             Notify("踢出失败", tostring(err), 5)
         end
 
+    end
+})
+
+TabStop:Button({
+    Title = "关闭脚本（立即失效）",
+    Desc = "停止引擎/窗口/循环并隐藏界面，还原外观与 FOV。等效于删除脚本：所有功能立刻停止、不留残影",
+    Callback = function()
+        pcall(XF_Unload)
     end
 })
 
